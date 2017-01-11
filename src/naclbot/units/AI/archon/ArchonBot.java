@@ -21,6 +21,7 @@ public class ArchonBot extends GlobalVars {
                 }
 
                 // Move randomly
+                System.out.println("Archon Movement");
                 Move.tryMove(Move.randomDirection());
 
                 // Broadcast archon's location for other robots on the team to know
