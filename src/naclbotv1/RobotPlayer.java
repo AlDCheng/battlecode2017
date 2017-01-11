@@ -1,7 +1,7 @@
 package naclbot;
 import battlecode.common.*;
 
-public strictfp class RobotPlayer {
+public strictfp class RobotPlayer extends GlobalVars{
     static RobotController rc;
 
     /**
@@ -13,22 +13,24 @@ public strictfp class RobotPlayer {
 
         // This is the RobotController object. You use it to perform actions from this robot,
         // and to get information on its current status.
-        RobotPlayer.rc = rc;
+        
+    	//RobotPlayer.rc = rc;
+    	globalInit(rc);
 
         // Here, we've separated the controls into a different method for each RobotType.
         // You can add the missing ones or rewrite this into your own control structure.
         switch (rc.getType()) {
             case ARCHON:
-                runArchon();
-                break;
+                ArchonBot.entry();
+                break; 
             case GARDENER:
-                runGardener();
+                GardenerBot.entry();
                 break;
             case SOLDIER:
-                runSoldier();
+                SoldierBot.entry();
                 break;
             case LUMBERJACK:
-                runLumberjack();
+            	LumberjackBot.entry();
                 break;
         }
 	}
