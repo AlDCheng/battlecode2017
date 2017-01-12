@@ -19,7 +19,7 @@ public class GardenerBot extends GlobalVars {
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
 
                 // First see if there is a tree nearby and if you can do anything to it
-
+                System.out.println(TreeSearch.countNearbyTrees());
 
                 // Generate a random direction
                 Direction dir = Move.randomDirection();
@@ -29,7 +29,7 @@ public class GardenerBot extends GlobalVars {
                     rc.buildRobot(RobotType.SOLDIER, dir);
                 } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
                     rc.buildRobot(RobotType.LUMBERJACK, dir);
-                } else if (rc.canPlantTree(dir) &&  Math.random() < .01) {
+                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
                     rc.plantTree(dir);
                 }
 
