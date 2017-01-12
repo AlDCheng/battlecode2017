@@ -10,6 +10,7 @@ public class GlobalVars {
 	public static int SOLDIER_CHANNEL;
 	public static int TANK_CHANNEL;
 	public static int SCOUT_MESSAGE_OFFSET;
+	public static int SCOUT_LIMIT;
 	
 	public static void globalInit(RobotController _RC) {
 		rc = _RC;
@@ -24,6 +25,8 @@ public class GlobalVars {
 		SCOUT_MESSAGE_OFFSET = 10;
 		
 		TANK_CHANNEL = 400;
+		
+		SCOUT_LIMIT = 2;
 		
 	}
 

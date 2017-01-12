@@ -5,15 +5,22 @@ import battlecode.common.*;
 public class TreeSearch extends GlobalVars {
 	
 	// Returns the direction of the optimum tree
-	public static Direction dirNearestTree() {
-		MapLocation[] treeList = rc.senseNearbyTrees();
-		
+	public static Direction dirNearestTree(MapLocation[] treeLoc) {
+		float eucDist = rc.getLocation().distanceTo(treeLoc[0]);
+		MapLocation optimumLocation = treeLoc[0];
+		for (MapLocation loc: treeLoc) {
+			float curDist = rc.getLocation().distanceTo(loc);
+			if (curDist < eucDist) {
+				optimumLocation = loc;
+				eucDist = curDist;
+			}
+		}
+		return rc.getLocation().directionTo(optimumLocation);		
 	}
 	
 	// Counts the number of nearby trees
 	public static int countNearbyTrees() {
 		return rc.senseNearbyTrees().length;
-		
 	}
 	
 	// Returns tree locations containing bullets

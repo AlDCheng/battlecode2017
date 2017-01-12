@@ -70,21 +70,26 @@ public class ScoutBot extends GlobalVars {
             }
         }
     }
-	public static void nextLocation(int x, int y) {
-		//TODO
-		;
+	public static RobotInfo[] countNearbyEnemies(Team nemesis){
+		return rc.senseNearbyRobots(-1, nemesis);
 	}
 	
-	public static void detectBullets() {
+	public static int getNearestEnemy(){
+		return 1;
+		
+	}
+	
+	public static int simpleDodge(){
 		BulletInfo[] bullets = rc.senseNearbyBullets(-1);
 		
 		for (int i = 0; i < bullets.length; i++){
 			
-			if (rc.getLocation.distanceTo(bullets[i].MapLocation) < 5)
+			if (rc.getLocation().distanceTo(bullets[i].location) < 5)
 				;
 			
 						
 		}
+		return 1;
 	}
 	
 	

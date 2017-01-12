@@ -15,7 +15,12 @@ public class GardenerBot extends GlobalVars {
 
                 // Listen for home archon's location
                 int xPos = rc.readBroadcast(0);
-                int yPos = rc.readBroadcast(1);
+                int yPos = rc.readBroadcast(1);                
+   
+                // Check number of scouts currently in service
+                int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);
+                
+            
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
 
                 // First see if there is a tree nearby and if you can do anything to it
@@ -29,6 +34,12 @@ public class GardenerBot extends GlobalVars {
                     rc.buildRobot(RobotType.SOLDIER, dir);
                 } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
                     rc.buildRobot(RobotType.LUMBERJACK, dir);
+                    
+                    /* Check to build scout
+                     * Must assert that there are not too many scouts in service at this moment in time
+                     */
+                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
+                        rc.buildRobot(RobotType.SCOUT, dir);
                 } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
                     rc.plantTree(dir);
                 }
@@ -44,5 +55,12 @@ public class GardenerBot extends GlobalVars {
                 e.printStackTrace();
             }
         }
+	}
+	
+	public static boolean canBuildScout(int count) {
+	    if (count < SCOUT_LIMIT){
+	    	return true;	        
+        }
+	    return false;
 	}
 }
