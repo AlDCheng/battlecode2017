@@ -6,9 +6,7 @@ public class TreeSearch extends GlobalVars {
 	
 	// Returns the direction of the optimum tree
 	public static Direction dirNearestTree() {
-		ArrayList<MapLocation> treeList = rc.senseNearbyTrees();
-		
-		
+		MapLocation[] treeList = rc.senseNearbyTrees();
 		
 	}
 	
@@ -19,12 +17,13 @@ public class TreeSearch extends GlobalVars {
 	}
 	
 	// Returns tree locations containing bullets
-	public static ArrayList<MapLocation> getNearbyBulletTrees() {
-		ArrayList<MapLocation> viableList = new ArrayList<MapLocation>();
+	public static MapLocation[] getNearbyBulletTrees() {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
+		MapLocation[] viableList = new MapLocation[treeList.length];
+		int i = 0;
 		for (TreeInfo tree: treeList) {
-			if (tree.containedBullets > 0) {
-				viableList.add(tree.location);
+			if (tree.containedBullets > 0 && tree.getTeam() == rc.getTeam() && tree.getTeam() == Team.valueOf("NEUTRAL")) {
+				viableList[i] = tree.location;
 			}
 		}
 		return viableList;
