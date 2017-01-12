@@ -41,7 +41,7 @@ public class ArchonBot extends ArchonVars {
                 
                 // Find trees
                 MapLocation[] bulletTreeList = TreeSearch.getNearbyBulletTrees();
-                if (bulletTreeList.length > 0) {
+                if (bulletTreeList.length > 1) {
                 	Move.tryMove(TreeSearch.dirNearestTree(bulletTreeList));
                 }
                 else {

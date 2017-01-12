@@ -8,10 +8,10 @@ public class TreeSearch extends GlobalVars {
 	public static Direction dirNearestTree(MapLocation[] treeLoc) {
 		float eucDist = rc.getLocation().distanceTo(treeLoc[0]);
 		MapLocation optimumLocation = treeLoc[0];
-		for (MapLocation loc: treeLoc) {
-			float curDist = rc.getLocation().distanceTo(loc);
+		for (int i = 0; i < treeLoc.length-1; i++) {
+			float curDist = rc.getLocation().distanceTo(treeLoc[i]);
 			if (curDist < eucDist) {
-				optimumLocation = loc;
+				optimumLocation = treeLoc[i];
 				eucDist = curDist;
 			}
 		}
@@ -27,10 +27,9 @@ public class TreeSearch extends GlobalVars {
 	public static MapLocation[] getNearbyBulletTrees() {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		MapLocation[] viableList = new MapLocation[treeList.length];
-		int i = 0;
-		for (TreeInfo tree: treeList) {
-			if (tree.containedBullets > 0 && tree.getTeam() == rc.getTeam() && tree.getTeam() == Team.valueOf("NEUTRAL")) {
-				viableList[i] = tree.location;
+		for (int i = 0; i < treeList.length-1; i++) {
+			if (treeList[i].containedBullets > 0) {
+				viableList[i] = treeList[i].location;				
 			}
 		}
 		return viableList;
