@@ -11,5 +11,6 @@ public class Aim extends GlobalVars {
 	    MapLocation locRobot = robot.getLocation();
 	    Direction dirRobot = new Direction(myRobot,locRobot);
 	}
+	return dirRobot;
     }
 }
