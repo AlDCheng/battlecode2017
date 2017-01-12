@@ -40,4 +40,19 @@ public class TreeSearch extends GlobalVars {
 		return viableList;
 	}
 	
+	//Returns tree locations below 60% health
+	public static ArrayList<MapLocation> getNearbyLowTrees() {
+		TreeInfo[] treeList = rc.senseNearbyTrees();
+		ArrayList<MapLocation> waterList = new ArrayList<MapLocation>();
+		for (int i = 0; i < treeList.length-1; i++) {
+			float percentageHealth = treeList[i].health/treeList[i].maxHealth;
+			if (percentageHealth < 0.6 && treeList[i].team == rc.getTeam()) {
+				waterList.add(treeList[i].location);
+				System.out.println("Tree index " + i + ": " + treeList[i].location);
+			}
+		}
+		System.out.println("Len ML: " + waterList.size());
+		return waterList;
+	}
+	
 }
