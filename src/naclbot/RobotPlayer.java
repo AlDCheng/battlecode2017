@@ -23,6 +23,7 @@ public strictfp class RobotPlayer extends GlobalVars{
         switch (rc.getType()) {
             case ARCHON:
                 ArchonBot.entry();
+                ArchonBot.mainPhase(); // Move to main phase
                 break; 
             case GARDENER:
                 GardenerBot.entry();
