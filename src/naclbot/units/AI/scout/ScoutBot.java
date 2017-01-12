@@ -22,9 +22,9 @@ public class ScoutBot extends GlobalVars {
         // Important parameters for self
         Team enemy = rc.getTeam().opponent();
         int id = rc.getID();
-        int scout_number = rc.readBroadcast(SCOUT_CHANNEL)+1;
+        int scout_number = rc.readBroadcast(SCOUT_CHANNEL) + 1;
         
-        rc.broadcast(SCOUT_NUMBER, scout_number);
+        rc.broadcast(SCOUT_CHANNEL, scout_number);
 
         // The code you want your robot to perform every round should be in this loop
         while (true) {
@@ -34,6 +34,7 @@ public class ScoutBot extends GlobalVars {
             	
             	
                 MapLocation myLocation = rc.getLocation();
+                
 
                 // See if there are any nearby enemy robots
                 RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
@@ -48,10 +49,12 @@ public class ScoutBot extends GlobalVars {
                 		;
                 	}
                 	// Send current coordinates
-                	rc.broadcast(SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
-                	rc.broadcast(SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);                 
-                                       
-                }
+                	rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
+                	rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);                 
+                    
+   
+                		
+                	}
                 
                 
 
@@ -67,12 +70,12 @@ public class ScoutBot extends GlobalVars {
             }
         }
     }
-	public static int[] nextLocation(int x, int y) {
+	public static void nextLocation(int x, int y) {
 		//TODO
 		;
 	}
 	
-	public static int[] detectBullets() {
+	public static void detectBullets() {
 		BulletInfo[] bullets = rc.senseNearbyBullets(-1);
 		
 		for (int i = 0; i < bullets.length; i++){
