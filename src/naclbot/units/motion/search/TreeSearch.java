@@ -5,16 +5,9 @@ import battlecode.common.*;
 public class TreeSearch extends GlobalVars {
 	
 	// Returns the direction of the optimum tree
-	public static Direction dirNearestTree(MapLocation[] treeLoc) {
-		Direction moveDir = rc.getLocation().directionTo(treeLoc[0]);
-		float eucDist = rc.getLocation().distanceTo(treeLoc[0]);
-		for (MapLocation loc: treeLoc) {
-			float curDist = rc.getLocation().distanceTo(loc);
-			if (curDist < eucDist) {
-				moveDir = rc.getLocation().directionTo(loc);
-			}
-		}
-		return moveDir;		
+	public static Direction dirNearestTree() {
+		TreeInfo[] treeList = rc.senseNearbyTrees();
+		
 	}
 	
 	// Counts the number of nearby trees
@@ -23,7 +16,7 @@ public class TreeSearch extends GlobalVars {
 		
 	}
 	
-	// Returns tree locations containing bullets
+	// Returns locations of nearby trees that are on our team and have bullets
 	public static MapLocation[] getNearbyBulletTrees() {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		MapLocation[] viableList = new MapLocation[treeList.length];
