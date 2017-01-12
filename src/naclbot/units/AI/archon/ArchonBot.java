@@ -11,6 +11,9 @@ public class ArchonBot extends ArchonVars {
 		
 		// Initialize unit count
 		archonVarInit();
+		
+		MapLocation treeLoc = null;
+		ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
 
         // Starting phase loop
         while (true) {
@@ -39,15 +42,44 @@ public class ArchonBot extends ArchonVars {
                     rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
                 }
                 
-                // Find trees
-                MapLocation[] bulletTreeList = TreeSearch.getNearbyBulletTrees();
-                if (bulletTreeList.length > 1) {
-                	Move.tryMove(TreeSearch.dirNearestTree(bulletTreeList));
-                }
-                else {
-                	// Move randomly
-                    Move.tryMove(Move.randomDirection());
-                }
+                // Move to tree (Algorithm is very stupid. Replace with Dijkstra's or something 
+                System.out.println(treeLoc);
+    		    if (treeLoc != null) {
+    		    	try {
+    		        	if(rc.isLocationOccupiedByTree(treeLoc)) {
+    		        		if(rc.senseTreeAtLocation(treeLoc).containedBullets > 0) {
+    		        			Move.tryMove(rc.getLocation().directionTo(treeLoc));
+    		                	if(rc.canShake(treeLoc)) {
+    		                		rc.shake(treeLoc);
+    		                	}
+    		        		}
+    		        		else {
+    		        			treeLoc = null;
+    		        		}
+    		        	}
+    		        	else {
+    		        		treeLoc = null;
+    		        	}
+    		    	} catch (GameActionException e) {
+    		    		System.out.println("OOR");
+    		    		Move.tryMove(rc.getLocation().directionTo(treeLoc));
+    		    	}
+    		    }
+    		    
+    		    if (treeLoc == null) {
+    		    	bulletTreeList = TreeSearch.getNearbyBulletTrees();
+    		    	if (bulletTreeList.size() > 1) {
+    		        	treeLoc = TreeSearch.locNearestTree(bulletTreeList);
+    		        	Move.tryMove(rc.getLocation().directionTo(treeLoc));
+    		        	if(rc.canShake(treeLoc)) {
+    		        		rc.shake(treeLoc);
+    		        	}
+    		    	}
+    		    	else {
+    		        	// Move randomly
+    		            Move.tryMove(Move.randomDirection());
+    		        }
+    		    }
 
                 // Broadcast archon's location for other robots on the team to know
                 MapLocation myLocation = rc.getLocation();
