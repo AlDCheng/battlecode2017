@@ -1,12 +1,16 @@
 // AI for Archon
 package naclbot;
 import battlecode.common.*;
+import java.util.ArrayList;
 
-public class ArchonBot extends GlobalVars {
+public class ArchonBot extends ArchonVars {
 	
 	// Starting game phase
 	public static void entry() throws GameActionException {
 		System.out.println("Archon initialized!");
+		
+		// Initialize unit count
+		archonVarInit();
 
         // Starting phase loop
         while (true) {
@@ -17,13 +21,22 @@ public class ArchonBot extends GlobalVars {
             	if(rc.getRoundNum() > 100) {
             		break;
             	}
-
-                // Generate a random direction
+            	
+            	// Check for all broadcasts
+            	MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
+            	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
+            	
+            	// Generate a random direction
                 Direction dir = Move.randomDirection();
+            	
+            	// Get number of gardeners
+            	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
+            	rc.broadcast(GARDENER_CHANNEL, 0);
 
                 // Spam gardeners at random positions if possible
                 if (rc.canHireGardener(dir)) {
                     rc.hireGardener(dir);
+                    rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
                 }
 
                 // Move randomly
@@ -52,13 +65,22 @@ public class ArchonBot extends GlobalVars {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	// Check for all broadcasts
+            	MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
+            	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
 
                 // Generate a random direction
                 Direction dir = Move.randomDirection();
+                
+	            // Get number of gardeners
+            	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
+            	rc.broadcast(GARDENER_CHANNEL, 0);
+
 
                 // Randomly attempt to build a gardener in this direction
                 if (rc.canHireGardener(dir) && Math.random() < .01) {
                     rc.hireGardener(dir);
+                    rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
                 }
 
                 // Move randomly
