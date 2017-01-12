@@ -17,14 +17,35 @@ public class SoldierBot extends GlobalVars {
                 // See if there are any nearby enemy robots
                 RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
 
-                // If there are some...
-                if (robots.length > 0) {
+		// If there are some...
+		if (robots.length > 6) {
+		     // And we have enough bullets, and haven't attacked yet this turn...
+		    if (rc.canFirePentadShot()) {
+			// ...Then fire a bullet in the direction of one of the enemies.
+			rc.firePentadShot(rc.getLocation().directionTo(robots[0].location));
+		    } else if (rc.canFireTriadShot()) {
+			// ...Then fire a bullet in the direction of one of the enemies.
+			rc.fireTriadShot(rc.getLocation().directionTo(robots[0].location));
+		    } else if (rc.canFireSingleShot()) {
+			// ...Then fire a bullet in the direction of one of the enemies.
+			rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
+		    }
+		} else if (robots.length > 3 && robots.length < 6) {
+		    // And we have enough bullets, and haven't attacked yet this turn...
+		    if (rc.canFireTriadShot()) {
+			// ...Then fire a bullet in the direction of one of the enemies.
+			rc.fireTriadShot(rc.getLocation().directionTo(robots[0].location));
+		    } else if (rc.canFireSingleShot()) {
+			// ...Then fire a bullet in the direction of one of the enemies.
+			rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
+		    }
+		} else if (robots.length > 0 && robots.length < 3) {
                     // And we have enough bullets, and haven't attacked yet this turn...
                     if (rc.canFireSingleShot()) {
-                        // ...Then fire a bullet in the direction of the enemy.
+                        // ...Then fire a bullet in the direction of one of the enemies.
                         rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
                     }
-                }
+		}
 
                 // Move randomly
                 Move.tryMove(Move.randomDirection());
