@@ -7,6 +7,7 @@ public class Aim extends GlobalVars {
     // Returns the direction of the optimum single shot
     public static Direction dirSingleShoot(RobotInfo[] nearbyRobots) {
 	for (RobotInfo robot: nearbyRobots) {
-	    float locRobot = robot.getLocation()
-	    
+	    float locRobot = robot.getLocation();
+	}
     }
+}
