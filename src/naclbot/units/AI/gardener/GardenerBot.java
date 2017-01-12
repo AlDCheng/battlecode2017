@@ -18,14 +18,19 @@ public class GardenerBot extends GlobalVars {
                 int yPos = rc.readBroadcast(1);
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
 
+                // First see if there is a tree nearby and if you can do anything to it
+
+
                 // Generate a random direction
                 Direction dir = Move.randomDirection();
 
-                // Randomly attempt to build a soldier or lumberjack in this direction
+                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
                 if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
                     rc.buildRobot(RobotType.SOLDIER, dir);
                 } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
                     rc.buildRobot(RobotType.LUMBERJACK, dir);
+                } else if (rc.canPlantTree(dir) &&  Math.random() < .01) {
+                    rc.plantTree(dir);
                 }
 
                 // Move randomly
