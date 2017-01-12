@@ -1,21 +1,24 @@
 // This class deals with interactions between unit and neighboring trees
 package naclbot;
 import battlecode.common.*;
+import java.util.ArrayList;
 
 public class TreeSearch extends GlobalVars {
 	
-	// Returns the direction of the optimum tree
-	public static Direction dirNearestTree(MapLocation[] treeLoc) {
-		float eucDist = rc.getLocation().distanceTo(treeLoc[0]);
-		MapLocation optimumLocation = treeLoc[0];
-		for (int i = 0; i < treeLoc.length-1; i++) {
-			float curDist = rc.getLocation().distanceTo(treeLoc[i]);
+	// Returns the location of the optimum tree
+	public static MapLocation locNearestTree(ArrayList<MapLocation> treeLoc) {
+		float eucDist = rc.getLocation().distanceTo(treeLoc.get(0));
+		MapLocation optimumLocation = treeLoc.get(0);
+		System.out.println("Len NT: " + treeLoc.size());
+		for (int i = 0; i < treeLoc.size()-1; i++) {
+			System.out.println("Tree: " + treeLoc.get(0));
+			float curDist = rc.getLocation().distanceTo(treeLoc.get(0));
 			if (curDist < eucDist) {
-				optimumLocation = treeLoc[i];
+				optimumLocation = treeLoc.get(0);
 				eucDist = curDist;
 			}
 		}
-		return rc.getLocation().directionTo(optimumLocation);		
+		return optimumLocation;		
 	}
 	
 	// Counts the number of nearby trees
@@ -24,14 +27,16 @@ public class TreeSearch extends GlobalVars {
 	}
 	
 	// Returns tree locations containing bullets
-	public static MapLocation[] getNearbyBulletTrees() {
+	public static ArrayList<MapLocation> getNearbyBulletTrees() {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
-		MapLocation[] viableList = new MapLocation[treeList.length];
+		ArrayList<MapLocation> viableList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length-1; i++) {
 			if (treeList[i].containedBullets > 0) {
-				viableList[i] = treeList[i].location;				
+				viableList.add(treeList[i].location);
+				System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
 		}
+		System.out.println("Len ML: " + viableList.size());
 		return viableList;
 	}
 	
