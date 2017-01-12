@@ -34,6 +34,8 @@ public strictfp class RobotPlayer extends GlobalVars{
             case LUMBERJACK:
             	LumberjackBot.entry();
                 break;
+            case SCOUT:
+            	ScoutBot.entry();
         }
 	}
 }
