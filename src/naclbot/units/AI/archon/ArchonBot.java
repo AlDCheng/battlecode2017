@@ -38,9 +38,16 @@ public class ArchonBot extends ArchonVars {
                     rc.hireGardener(dir);
                     rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
                 }
-
-                // Move randomly
-                Move.tryMove(Move.randomDirection());
+                
+                // Find trees
+                MapLocation[] bulletTreeList = TreeSearch.getNearbyBulletTrees();
+                if (bulletTreeList.length > 0) {
+                	Move.tryMove(TreeSearch.dirNearestTree(bulletTreeList));
+                }
+                else {
+                	// Move randomly
+                    Move.tryMove(Move.randomDirection());
+                }
 
                 // Broadcast archon's location for other robots on the team to know
                 MapLocation myLocation = rc.getLocation();
