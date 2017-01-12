@@ -31,7 +31,7 @@ public class TreeSearch extends GlobalVars {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		ArrayList<MapLocation> viableList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length-1; i++) {
-			if (treeList[i].containedBullets > 0) {
+			if ((treeList[i].containedBullets > 0) && (treeList[i].getTeam() != rc.getTeam().opponent())) {
 				viableList.add(treeList[i].location);
 				System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
