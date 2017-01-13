@@ -11,6 +11,9 @@ public class ArchonBot extends ArchonVars {
 		
 		// Initialize unit count
 		archonVarInit();
+		
+		// Initialize enemylocation
+
 
         // Starting phase loop
         while (true) {
