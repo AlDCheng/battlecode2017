@@ -25,15 +25,9 @@ public class GardenerBot extends GlobalVars {
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
 
                 // First see if there is a tree nearby and if you can do anything to it
-                // MapLocation nearestBulletTree = TreeSearch.locNearestTree(TreeSearch.getNearbyBulletTrees());
-                MapLocation nearestLowTree = TreeSearch.locNearestTree(TreeSearch.getNearbyLowTrees());
-                // Direction dirNearestBulletTree = rc.getLocation().directionTo(nearestBulletTree);
-                Direction dirNearestLowTree = rc.getLocation().directionTo(nearestLowTree);
                 
-                
-                // Generate a random direction
                 Direction dir = Move.randomDirection();
-
+                
                 // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
                 if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
                     rc.buildRobot(RobotType.SOLDIER, dir);
@@ -44,13 +38,21 @@ public class GardenerBot extends GlobalVars {
                      * Must assert that there are not too many scouts in service at this moment in time
                      */
                 } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
-                        rc.buildRobot(RobotType.SCOUT, dir);
+                    rc.buildRobot(RobotType.SCOUT, dir);
                 } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
                     rc.plantTree(dir);
                 }
-
+                
+                ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
+                if (lowHealthTrees.size() > 0){
+                    // MapLocation nearestBulletTree = TreeSearch.locNearestTree(TreeSearch.getNearbyBulletTrees());
+                    MapLocation nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
+                    // Direction dirNearestBulletTree = rc.getLocation().directionTo(nearestBulletTree);
+                    dir = rc.getLocation().directionTo(nearestLowTree);
+                } 
+                
                 // Move randomly
-                Move.tryMove(dirNearestLowTree);
+                Move.tryMove(dir);
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
