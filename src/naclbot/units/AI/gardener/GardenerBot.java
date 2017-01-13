@@ -52,6 +52,8 @@ public class GardenerBot extends GlobalVars {
             	} 
 	            //planter,waterer    
 	            else if (role == 1) {
+	            	System.out.println("I'm a planter!");
+	            	
 	            	//try to plant a tree
 	                if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
 	                    rc.plantTree(dir);
