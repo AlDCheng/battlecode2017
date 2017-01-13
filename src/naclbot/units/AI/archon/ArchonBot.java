@@ -90,7 +90,8 @@ public class ArchonBot extends ArchonVars {
                 MapLocation myLocation = rc.getLocation();
                 rc.broadcast(0,(int)myLocation.x);
                 rc.broadcast(1,(int)myLocation.y);
-
+                
+ 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -109,6 +110,13 @@ public class ArchonBot extends ArchonVars {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
+            	if(rc.getRoundNum() % 500 == 0) {
+            		int x = rc.readBroadcast(SCOUT_CHANNEL);
+            		if(x>0){
+            			rc.broadcast(SCOUT_CHANNEL, x-1);
+            		}
+            	}
             	// Check for all broadcasts
             	MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
             	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
