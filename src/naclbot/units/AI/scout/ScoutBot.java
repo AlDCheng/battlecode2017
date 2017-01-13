@@ -140,7 +140,7 @@ public class ScoutBot extends GlobalVars {
 		return enemies[index];	
 	}
 	
-	public static void moveTowards(RobotInfo quandary, MapLocation myLocation){
+	public static void moveTowards(RobotInfo quandary, MapLocation myLocation) throws GameActionException{
 		float gap = myLocation.distanceTo(quandary.location);
     	Direction dir = myLocation.directionTo(quandary.location);
     	Direction anti_dir = new Direction(dir.radians+PI);
@@ -196,7 +196,7 @@ public class ScoutBot extends GlobalVars {
 	}	
 	
 	// Get location of starting archon
-	public static MapLocation updateBase(){
+	public static MapLocation updateBase() throws GameActionException{
 		
 		MapLocation base = new MapLocation(rc.readBroadcast(ARCHON_CHANNEL), rc.readBroadcast(ARCHON_CHANNEL + 1));
 		return base;		
