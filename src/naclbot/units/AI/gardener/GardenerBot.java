@@ -27,7 +27,7 @@ public class GardenerBot extends GlobalVars {
                 // Check number of scouts currently in service
                 int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);
                 
-             // Generate a random direction
+                // Generate a random direction
                 Direction dir = Move.randomDirection();                
             
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
@@ -74,14 +74,14 @@ public class GardenerBot extends GlobalVars {
 		                	rc.water(nearestLowTree);
 		                }
 	                }
-	                else {
-	                	//Move in a random direction
-		                Move.tryMove(Move.randomDirection());
-	                }
+	            }
+                else {
+                	//Move in a random direction
+	                Move.tryMove(Move.randomDirection());
+                }
 	                
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
-	            }
             } catch (Exception e) {
                 System.out.println("Gardener Exception");
                 e.printStackTrace();
