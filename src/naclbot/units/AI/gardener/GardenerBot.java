@@ -1,6 +1,7 @@
 // AI for gardener under normal control
 package naclbot;
 import battlecode.common.*;
+import java.util.ArrayList;
 
 public class GardenerBot extends GlobalVars {
 	
@@ -24,8 +25,12 @@ public class GardenerBot extends GlobalVars {
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
 
                 // First see if there is a tree nearby and if you can do anything to it
-                System.out.println(TreeSearch.countNearbyTrees());
-
+                // MapLocation nearestBulletTree = TreeSearch.locNearestTree(TreeSearch.getNearbyBulletTrees());
+                MapLocation nearestLowTree = TreeSearch.locNearestTree(TreeSearch.getNearbyLowTrees());
+                // Direction dirNearestBulletTree = rc.getLocation().directionTo(nearestBulletTree);
+                Direction dirNearestLowTree = rc.getLocation().directionTo(nearestLowTree);
+                
+                
                 // Generate a random direction
                 Direction dir = Move.randomDirection();
 
@@ -45,7 +50,7 @@ public class GardenerBot extends GlobalVars {
                 }
 
                 // Move randomly
-                Move.tryMove(Move.randomDirection());
+                Move.tryMove(dirNearestLowTree);
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
