@@ -36,9 +36,7 @@ public strictfp class RobotPlayer extends GlobalVars{
                 break;
             case SCOUT:
             	ScoutBot.entry();
-
             	break;
-
         }
 	}
 }
