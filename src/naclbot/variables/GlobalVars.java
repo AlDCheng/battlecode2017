@@ -12,8 +12,7 @@ public class GlobalVars {
 	public static int SCOUT_MESSAGE_OFFSET;
 	public static int SCOUT_LIMIT;
 	public static int SCOUT_UPDATE_FREQUENCY;
-	public static float PI;
-	
+
 	
 	public static void globalInit(RobotController _RC) {
 		rc = _RC;
@@ -31,7 +30,7 @@ public class GlobalVars {
 		
 		SCOUT_LIMIT = 3;
 		SCOUT_UPDATE_FREQUENCY = 4;
-		PI = (float)3.14159265;
+
 	}
 	
 	
