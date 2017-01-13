@@ -12,8 +12,13 @@ public class ArchonBot extends ArchonVars {
 		// Initialize unit count
 		archonVarInit();
 		
+
+		// Initialize enemylocation
+
+
 		MapLocation treeLoc = null;
 		ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
+
 
         // Starting phase loop
         while (true) {
