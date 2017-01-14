@@ -37,12 +37,11 @@ public class GardenerBot extends GlobalVars {
                 int yPos = rc.readBroadcast(1);                
    
                 // Check number of scouts currently in service
-                int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);
-                
-                // Generate a random direction
-                Direction dir = Move.randomDirection();                
+                int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);                
             
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
+                
+                Direction dir = Move.randomDirection();
                 
                 //unit builder
                 if (role == 0) {
@@ -64,12 +63,6 @@ public class GardenerBot extends GlobalVars {
             	} 
 	            //planter,waterer    
 	            else if (role == 1) {
-	            	
-	            	Move.tryMove(dir);
-	            	//try to plant a tree
-	                if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
-	                    rc.plantTree(dir);
-	                }
 	                
 	                // First see if there is a tree nearby and if you can do anything to it
 	                ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
@@ -77,20 +70,19 @@ public class GardenerBot extends GlobalVars {
 	                if (lowHealthTrees.size() > 0){
 	                    nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
 	                    dir = rc.getLocation().directionTo(nearestLowTree);
-	                    
-	                    // Move toward trees that need to be watered
-		                //Move.tryMove(dir);
 		                
 		                //try to water a tree
-		                if (rc.canWater(nearestLowTree)) {
+		                if (!rc.canWater(nearestLowTree)) {
+		                	Move.tryMove(dir);
+		                } else {
 		                	rc.water(nearestLowTree);
 		                }
+	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
+		                rc.plantTree(dir);    
+	                } else {
+	                	Move.tryMove(dir);
 	                }
 	            }
-                else {
-                	//Move in a random direction
-	                Move.tryMove(Move.randomDirection());
-                }
 	                
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
