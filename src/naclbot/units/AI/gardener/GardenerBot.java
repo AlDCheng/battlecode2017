@@ -47,7 +47,7 @@ public class GardenerBot extends GlobalVars {
                 //unit builder
                 if (role == 0) {
 	                //Move in a random direction
-	                //Move.tryMove(Move.randomDirection());
+	                Move.tryMove(Move.randomDirection());
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
 	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
