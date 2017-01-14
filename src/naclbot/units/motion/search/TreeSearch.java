@@ -22,8 +22,14 @@ public class TreeSearch extends GlobalVars {
 	}
 	
 	// Counts the number of nearby trees
-	public static int countNearbyTrees() {
-		return rc.senseNearbyTrees().length;
+	public static int countOwnNearbyTrees() {
+		int count = 0;
+		for (TreeInfo tree: rc.senseNearbyTrees()) {
+			if (tree.getTeam() == rc.getTeam()) {
+				count++;
+			}
+		}
+		return count;
 	}
 	
 	// Returns tree locations containing bullets
@@ -45,8 +51,9 @@ public class TreeSearch extends GlobalVars {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		ArrayList<MapLocation> waterList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length; i++) {
-			float percentageHealth = treeList[i].health/treeList[i].maxHealth;
-			if (percentageHealth < 0.6 && treeList[i].team == rc.getTeam()) {
+			//float percentageHealth = treeList[i].health/treeList[i].maxHealth;
+			
+			if (treeList[i].health <= treeList[i].maxHealth - GameConstants.WATER_HEALTH_REGEN_RATE && treeList[i].team == rc.getTeam()) {
 				waterList.add(treeList[i].location);
 				//System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
