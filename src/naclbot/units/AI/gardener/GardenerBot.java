@@ -7,19 +7,29 @@ public class GardenerBot extends GlobalVars {
 	
 	public static void entry() throws GameActionException {
 		System.out.println("I'm a gardener!");
-		//determines whether gardener is planter and waterer or unit builder 
+		// determines whether gardener is planter and waterer or unit builder 
 		int role;
-		if (Math.random() < 0.5) {
-			System.out.println("this is 0");
+		double randNum = Math.random();
+		
+		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
+		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
+		int prevNumBuilder = rc.readBroadcast(GARDENER_BUILDER_CHANNEL);
+		int prevNumWaterer = rc.readBroadcast(GARDENER_WATERER_CHANNEL);
+		
+		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
+		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
+		if ((prevNumWaterer > 3) && ((3*prevNumBuilder) < prevNumWaterer)) {
+			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
-			System.out.println("this is 1");
+			System.out.println("Planter/Waterer; rand: " + randNum);
+			rc.broadcast(GARDENER_WATERER_CHANNEL, prevNumWaterer + 1);
 			role = 1; //planter and waterer
 		}
 		
         // The code you want your robot to perform every round should be in this loop
         while (true) {
-        	System.out.println(role);
+        	//System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	// Listen for home archon's location

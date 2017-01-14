@@ -12,6 +12,9 @@ public class ArchonBot extends ArchonVars {
 		// Initialize unit count
 		archonVarInit();
 		
+		rc.broadcast(GARDENER_BUILDER_CHANNEL, 0);
+		rc.broadcast(GARDENER_WATERER_CHANNEL, 0);
+		
 		MapLocation treeLoc = null;
 		ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
 
@@ -35,7 +38,9 @@ public class ArchonBot extends ArchonVars {
             	
             	// Get number of gardeners
             	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
-            	rc.broadcast(GARDENER_CHANNEL, 0);
+            	//rc.broadcast(GARDENER_CHANNEL, 0);
+            	
+            	//System.out.println("Number of gardeners: " + prevNumGard);
 
                 // Spam gardeners at random positions if possible
                 if (rc.canHireGardener(dir)) {
@@ -44,7 +49,7 @@ public class ArchonBot extends ArchonVars {
                 }
                 
                 // Move to tree (Algorithm is very stupid. Replace with Dijkstra's or something 
-                System.out.println(treeLoc);
+                //System.out.println(treeLoc);
     		    if (treeLoc != null) {
     		    	try {
     		        	if(rc.isLocationOccupiedByTree(treeLoc)) {
@@ -62,7 +67,7 @@ public class ArchonBot extends ArchonVars {
     		        		treeLoc = null;
     		        	}
     		    	} catch (GameActionException e) {
-    		    		System.out.println("OOR");
+    		    		//System.out.println("OOR");
     		    		Move.tryMove(rc.getLocation().directionTo(treeLoc));
     		    	}
     		    }

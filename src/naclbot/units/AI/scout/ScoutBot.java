@@ -44,13 +44,10 @@ public class ScoutBot extends GlobalVars {
         // Array to store number of enemies tracked to date
         int[] no_track = new int[3];
         int tracked_total = -1;
-        
-   
-        
+
         // initial starting movement away from Archon
         Direction last_direction = new Direction(myLocation.directionTo(base).radians + (float) Math.PI);
  
-        
         rc.broadcast(SCOUT_CHANNEL, scout_number);
 
         // The code you want your robot to perform every round should be in this loop
@@ -67,7 +64,7 @@ public class ScoutBot extends GlobalVars {
             	RobotInfo[] robots = NearbyEnemies(enemy);
             	
             	// Once in a while broadcast to base new information
-            	
+            	// (editor's note: Rem = round num)
         		if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 1){
         			base = updateBase();
         			if (robots.length>0){
@@ -82,18 +79,12 @@ public class ScoutBot extends GlobalVars {
                     	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 1);
                     	hasBroadcasted = true;
         			}
-        			
-        			
-     
-
-   
         		}
         		
         		// On every offset 2, broadcast the locations of two trees that you have not yet broadcasted before....
         		// Should also check the broadcasts of other scouts to see if they have sent out info about that tree too
         		else if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 2){
-        			
-        			
+
         			// Update Tree storage and broadcast any unsent trees
         			TreeInfo[] newTrees = addTrees();
         			for(int i = 0; i < newTrees.length; i++){
@@ -106,8 +97,6 @@ public class ScoutBot extends GlobalVars {
         				}
         				
         			}
-        			
-        
         			
         			// Update trees that have been sent
         			int[] updatedSent = retrieveTrees();
@@ -122,14 +111,16 @@ public class ScoutBot extends GlobalVars {
         			int sentThisTurn = 0;
         			TreeInfo[] toSend = new TreeInfo[2];
         			for (int i = sent_index % 100; i < 100; i++){
-        				if (!Arrays.asList(sent_TreesID).contains(seen_TreesID[i])){
-        					toSend[sentThisTurn] = seen_Trees[i];
-        					sent_TreesID[sent_total % 100] = seen_TreesID[i];
-        					sent_total += 1;
-        					sentThisTurn += 1;     							      					
+        				if ((!Arrays.asList(sent_TreesID).contains(seen_TreesID[i])) && (sentThisTurn < 2)){
+        					System.out.println("i: " + i + ", sentThisTurn: " + sentThisTurn + ", seen_Trees: " + seen_Trees[i]);
+        					if(seen_Trees[i] != null) {
+	        					toSend[sentThisTurn] = seen_Trees[i]; //Error here?
+	        					sent_TreesID[sent_total % 100] = seen_TreesID[i];
+	        					sent_total += 1;
+	        					sentThisTurn += 1;
+        					}
         				}
-        				
-        					
+
         			}
         			
         			if (sentThisTurn > 0){
@@ -154,6 +145,7 @@ public class ScoutBot extends GlobalVars {
                 	hasBroadcasted = true;
         			
         		}
+        		
         		// Regular broadcast
         		if (!hasBroadcasted){
         			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
@@ -196,9 +188,6 @@ public class ScoutBot extends GlobalVars {
                     	
                     	tracked_total+=1;
                     	currently_tracked = 0;
-            
-                  
-                    	
                 	} else{
                 		if (rc.canMove(last_direction)){
                 			rc.move(last_direction, (float)2.5);

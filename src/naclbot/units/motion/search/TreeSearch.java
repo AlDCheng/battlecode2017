@@ -9,9 +9,9 @@ public class TreeSearch extends GlobalVars {
 	public static MapLocation locNearestTree(ArrayList<MapLocation> treeLoc) {
 		float eucDist = rc.getLocation().distanceTo(treeLoc.get(0));
 		MapLocation optimumLocation = treeLoc.get(0);
-		System.out.println("Len NT: " + treeLoc.size());
+		//System.out.println("Len NT: " + treeLoc.size());
 		for (int i = 0; i < treeLoc.size(); i++) {
-			System.out.println("Tree: " + treeLoc.get(0));
+			//System.out.println("Tree: " + treeLoc.get(0));
 			float curDist = rc.getLocation().distanceTo(treeLoc.get(0));
 			if (curDist < eucDist) {
 				optimumLocation = treeLoc.get(0);
@@ -33,10 +33,10 @@ public class TreeSearch extends GlobalVars {
 		for (int i = 0; i < treeList.length; i++) {
 			if ((treeList[i].containedBullets > 0) && (treeList[i].getTeam() != rc.getTeam().opponent())) {
 				viableList.add(treeList[i].location);
-				System.out.println("Tree index " + i + ": " + treeList[i].location);
+				//System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
 		}
-		System.out.println("Len ML: " + viableList.size());
+		//System.out.println("Len ML: " + viableList.size());
 		return viableList;
 	}
 	
@@ -48,10 +48,10 @@ public class TreeSearch extends GlobalVars {
 			float percentageHealth = treeList[i].health/treeList[i].maxHealth;
 			if (percentageHealth < 0.6 && treeList[i].team == rc.getTeam()) {
 				waterList.add(treeList[i].location);
-				System.out.println("Tree index " + i + ": " + treeList[i].location);
+				//System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
 		}
-		System.out.println("Len ML: " + waterList.size());
+		//System.out.println("Len ML: " + waterList.size());
 		return waterList;
 	}
 	

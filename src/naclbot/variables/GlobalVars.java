@@ -1,5 +1,6 @@
 package naclbot;
 import battlecode.common.*;
+import java.util.ArrayList;
 
 public class GlobalVars {
 	public static RobotController rc;
@@ -8,6 +9,8 @@ public class GlobalVars {
 	public static int ARCHON_LIMIT;
 	
 	public static int GARDENER_CHANNEL;
+	public static int GARDENER_BUILDER_CHANNEL;
+	public static int GARDENER_WATERER_CHANNEL;
 	
 	public static int LUMBERJACK_CHANNEL;	
 	
@@ -23,12 +26,26 @@ public class GlobalVars {
 	public static int TREE_OFFSET;
 	public static int GROUP_CHANNEL;
 	public static int GROUP_CHANNEL_OFFSET;
-
+	
+	// Internal map variables
+	public static ArrayList<ArrayList<Integer>> internalMap = new ArrayList<ArrayList<Integer>>();
+	public static RobotType unitType;
+	public static float robotRadius;
+	public static MapLocation centerCoords;
+	public static int offsetX, offsetY;
 	
 	public static void globalInit(RobotController _RC) {
-		
-		
 		rc = _RC;
+		
+		/* --------------------------------------------------------------------
+		 * -------------------------- Internal Map ----------------------------
+		-------------------------------------------------------------------- */
+		unitType = rc.getType();
+		robotRadius = unitType.bodyRadius;
+		
+		centerCoords = rc.getLocation();
+		offsetX = 0;
+		offsetY = 0;
 		
 		/* --------------------------------------------------------------------
 		 * --------- Broadcast Channel Setup and Unit Organisation -----------
@@ -43,11 +60,11 @@ public class GlobalVars {
 		// OFfset 2: Current Y Position
 		
 		ARCHON_LIMIT = 3;
-		
-		
-		
+
 		// Gardeners 		
 		GARDENER_CHANNEL = 20; // Carries number of living Gardeners
+		GARDENER_BUILDER_CHANNEL = 21; // Carries number of living Gardeners designed as unit builders
+		GARDENER_WATERER_CHANNEL = 22; // Carries number of living Gardeners designed as waterers
 		
 		// Scouts
 		SCOUT_CHANNEL = 45; // Carries number of scouts
@@ -69,15 +86,11 @@ public class GlobalVars {
 
 		SCOUT_UPDATE_FREQUENCY = 4; // How often Scouts regularly display that they are alive
 		
-		
-		
 		LUMBERJACK_CHANNEL = 100;
 		
 		/* Scout Channel is the placeholding value foir all scout channels. 
 		 * The broadcasts at this number contain only the number of scouts currently available to the team		
 		*/
-
-		
 		TANK_CHANNEL = 115;
 		
 		GROUP_CHANNEL = 150;
@@ -89,11 +102,15 @@ public class GlobalVars {
 		//Offset 2: Tree X Position
 		//Offset 3: Tree Y Position
 		//Offset 4:  Something Else
-		
-	
-
 	}
 	
-	
+	// Updates map for trees
+	public static void updateMapTrees(MapLocation[] coords) {
+		for (int i = 0; i < coords.length-1; i++) {
+			float newObjOffsetX = coords[i].x - centerCoords.x;
+			float newObjOffsetY = coords[i].y - centerCoords.y;
+			
+		}
+	}
 
 }
