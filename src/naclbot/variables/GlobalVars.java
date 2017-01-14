@@ -40,6 +40,10 @@ public class GlobalVars {
 		/* --------------------------------------------------------------------
 		 * -------------------------- Internal Map ----------------------------
 		-------------------------------------------------------------------- */
+		ArrayList<Integer> zeroList = new ArrayList<Integer>();
+		zeroList.add(0);
+		internalMap.add(zeroList);
+		
 		unitType = rc.getType();
 		robotRadius = unitType.bodyRadius;
 		
@@ -105,11 +109,94 @@ public class GlobalVars {
 	}
 	
 	// Updates map for trees
-	public static void updateMapTrees(MapLocation[] coords) {
-		for (int i = 0; i < coords.length-1; i++) {
-			float newObjOffsetX = coords[i].x - centerCoords.x;
-			float newObjOffsetY = coords[i].y - centerCoords.y;
-			
+	// 0 = empty
+	// 1 = tree
+	// 2 = friendly unit
+	// 3 = enemy unit
+	public static void updateMapTrees(int[] treeID) {
+		
+		// Get offset of object position to origin (centerCoords)
+		for (int k = 0; k < treeID.length-1; k++) {
+			// Get tree properties from ID
+			try {
+				TreeInfo treeSpecs = rc.senseTree(treeID[k]);
+				
+				// Calculate displacement from origin
+				float newObjOffsetX = treeSpecs.location.x - centerCoords.x;
+				float newObjOffsetY = treeSpecs.location.y - centerCoords.y;
+				
+				// Convert raw offset to tiles
+				// Each tile is the same width as the unit creating this map
+				int tileOffsetX = (int)(newObjOffsetX/robotRadius);
+				int tileOffsetY = (int)(newObjOffsetY/robotRadius);
+				
+				// Insert tree in map by dynamically resizing it
+				// i = row; j = col
+				// Case 1: X position (extend ArrayList)
+				// - Condition 1: left of origin (-offset_x)
+				if ((tileOffsetX-offsetX) < 0) {
+					// Pad 0s to map for each row
+					for (int i = 0; i < internalMap.size()-1; i++) {
+						for (int j = 0; j < (-1*tileOffsetY); j++) {
+							internalMap.get(i).add(0, 0);
+						}
+					}
+					// Set offset from original origin
+					// i.e. offsetX = -2 means (0 - (-2))=2 gets location of origin
+					offsetX -= (tileOffsetX-offsetX);
+				}
+				// - Condition 2: right of internal map boundaries
+				// Pad 0s to map for each row
+				else if ((tileOffsetX-offsetX) > internalMap.size()-1) {
+					for (int i = 0; i < internalMap.size()-1; i++) {
+						for (int j = 0; j < (-1*tileOffsetY); j++) {
+							internalMap.get(i).add(0);
+						}
+					}
+				}
+				
+				// Case 2: Y position (create new ArrayList)
+				// - Condition 1: above the origin (-offset_y)
+				ArrayList<Integer> newRow = new ArrayList<Integer>();
+				if ((tileOffsetY-offsetY) < 0) {
+					// Pad 0s until point
+					for (int j = 0; j < internalMap.size()-1; j++) {
+						newRow.add(0);
+					}
+					for (int i = 0; i < (-1*(tileOffsetY-offsetY))-1; i++) {
+						internalMap.add(0, newRow);
+					}
+					
+					//Add row
+					newRow.set((tileOffsetX-offsetX), 1);
+					internalMap.add(0, newRow);
+					
+					// Set offset from original origin
+					// i.e. offsetY = -2 means (0 - (-2))=2 gets location of origin
+					offsetY -= (tileOffsetY-offsetY);
+				}
+				// - Condition 2: below the internal map boundaries
+				else if ((tileOffsetY-offsetY) > internalMap.size()-1) {
+					// Pad 0s until point
+					for (int j = 0; j < internalMap.size()-1; j++) {
+						newRow.add(0);
+					}
+					for (int i = 0; i < (-1*(tileOffsetY-offsetY))-1; i++) {
+						internalMap.add(newRow);
+					}
+					
+					//Add row
+					newRow.set((tileOffsetX-offsetX), 1);
+					internalMap.add(newRow);
+				}
+				// - Condition 3: within internal map boundaries
+				else
+				{
+					internalMap.get(tileOffsetY-offsetY).set((tileOffsetX-offsetX), 1);
+				}
+			} catch(GameActionException e) {
+				System.out.println("InternalMapTreeAdd: TreeInfo returns error");
+			}
 		}
 	}
 
