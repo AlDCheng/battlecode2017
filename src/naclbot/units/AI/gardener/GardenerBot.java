@@ -10,14 +10,16 @@ public class GardenerBot extends GlobalVars {
 		//determines whether gardener is planter and waterer or unit builder 
 		int role;
 		if (Math.random() < 0.5) {
+			System.out.println("this is 0");
 			role = 0; //unit builder
 		} else {
+			System.out.println("this is 1");
 			role = 1; //planter and waterer
 		}
 		
         // The code you want your robot to perform every round should be in this loop
         while (true) {
-
+        	System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	// Listen for home archon's location
@@ -35,7 +37,7 @@ public class GardenerBot extends GlobalVars {
                 //unit builder
                 if (role == 0) {
 	                //Move in a random direction
-	                Move.tryMove(Move.randomDirection());
+	                //Move.tryMove(Move.randomDirection());
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
 	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
@@ -52,8 +54,8 @@ public class GardenerBot extends GlobalVars {
             	} 
 	            //planter,waterer    
 	            else if (role == 1) {
-	            	System.out.println("I'm a planter!");
 	            	
+	            	Move.tryMove(dir);
 	            	//try to plant a tree
 	                if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
 	                    rc.plantTree(dir);
@@ -67,7 +69,7 @@ public class GardenerBot extends GlobalVars {
 	                    dir = rc.getLocation().directionTo(nearestLowTree);
 	                    
 	                    // Move toward trees that need to be watered
-		                Move.tryMove(dir);
+		                //Move.tryMove(dir);
 		                
 		                //try to water a tree
 		                if (rc.canWater(nearestLowTree)) {
