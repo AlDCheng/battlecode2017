@@ -30,16 +30,20 @@ public class ScoutBot extends GlobalVars {
         MapLocation base = updateBase();  
         MapLocation myLocation = rc.getLocation();
         int currently_tracked = 0;
-        TreeInfo[] seen_Trees = new TreeInfo[100];
+        
+        
+     
+        // Variables related to the sending and releasing of trees
+        int memory_size = 50;
+        TreeInfo[] seen_Trees = new TreeInfo[memory_size];
     
-        int[] sent_TreesID = new int[100];
-        int[] seen_TreesID = new int[100];
-        int seen_notSent = 0;
- 
+        int[] sent_TreesID = new int[memory_size];
+        int[] seen_TreesID = new int[memory_size];
+        
         int seen_total = 0;
         int sent_total = 0;
+
         
-        int sent_index = 0;
         
         // Array to store number of enemies tracked to date
         int[] no_track = new int[3];
@@ -82,68 +86,13 @@ public class ScoutBot extends GlobalVars {
         		}
         		
         		// On every offset 2, broadcast the locations of two trees that you have not yet broadcasted before....
-        		// Should also check the broadcasts of other scouts to see if they have sent out info about that tree too
+
         		else if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 2){
-
-        			// Update Tree storage and broadcast any unsent trees
-        			TreeInfo[] newTrees = addTrees();
-        			for(int i = 0; i < newTrees.length; i++){
-        				
-        				// Check if the current tree has been seen before or no
-        				if(!Arrays.asList(seen_TreesID).contains(newTrees[i].ID)) {
-        					seen_TreesID[seen_total % 100] = newTrees[i].ID;
-        					seen_Trees[seen_total % 100] = newTrees[i];
-        					seen_total += 1;     					     					       					
-        				}
-        				
-        			}
         			
-        			// Update trees that have been sent
-        			int[] updatedSent = retrieveTrees();
-        			for(int i=0; i<updatedSent.length; i++){
-        				if (updatedSent[i] > 0 && !Arrays.asList(sent_TreesID).contains(updatedSent[i])){
-        					sent_TreesID[sent_total %100] = updatedSent[i];
-        					sent_total += 1;
-        					
-        				}
-        			}
-        			
-        			int sentThisTurn = 0;
-        			TreeInfo[] toSend = new TreeInfo[2];
-        			for (int i = sent_index % 100; i < 100; i++){
-        				if ((!Arrays.asList(sent_TreesID).contains(seen_TreesID[i])) && (sentThisTurn < 2)){
-        					System.out.println("i: " + i + ", sentThisTurn: " + sentThisTurn + ", seen_Trees: " + seen_Trees[i]);
-        					if(seen_Trees[i] != null) {
-	        					toSend[sentThisTurn] = seen_Trees[i]; //Error here?
-	        					sent_TreesID[sent_total % 100] = seen_TreesID[i];
-	        					sent_total += 1;
-	        					sentThisTurn += 1;
-        					}
-        				}
-
-        			}
-        			
-        			if (sentThisTurn > 0){
-        				
-        				rc.broadcast(3 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)toSend[0].ID);
-                    	rc.broadcast(4 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)toSend[0].location.x);
-                    	rc.broadcast(5 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)toSend[0].location.y);        				
-        			}
-        			
-        			if (sentThisTurn > 1){
-        				
-        				rc.broadcast(6 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)toSend[1].ID);
-                    	rc.broadcast(7 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)toSend[1].location.x);
-                    	rc.broadcast(8 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)toSend[1].location.y);        				
-        			}
-        			
-        			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
-                	rc.broadcast(2 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);              
-                	
-                   	rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
-                	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 3);
-                	hasBroadcasted = true;
-        			
+        			broadcastTree (seenTrees, sent_TreesID, seen_TreesID, seen_total, sent_total, memory_size, 2, SCOUT_CHANNEL, scoutnumber, SCOUT_MESSAGE_OFFSET);       			
+        	       	rc.broadcast(9 + type_channel + type_number * type_offset, id);
+        	    	rc.broadcast(10 + type_channel + type_number * type_offset, 3);
+        	    	hasBroadcasted = true;
         		}
         		
         		// Regular broadcast
@@ -373,19 +322,6 @@ public class ScoutBot extends GlobalVars {
 		return enemies[index].location;		
 	}
 	
-	public static int simpleDodge(MapLocation myLocation){
-		BulletInfo[] bullets = rc.senseNearbyBullets(-1);
-		
-		for (int i = 0; i < bullets.length; i++){
-			
-			if (myLocation.distanceTo(bullets[i].location) < 5)
-				;
-			
-						
-		}
-		return 1;
-	}	
-	
 	// Get location of starting archon
 	public static MapLocation updateBase() throws GameActionException{
 		
@@ -456,16 +392,66 @@ public class ScoutBot extends GlobalVars {
     	 	
     	    	
     }
-    public static int[] retrieveTrees() throws GameActionException{
-    	int[] receivedTreeIDs = new int [SCOUT_LIMIT*2];
-		Arrays.fill(receivedTreeIDs, -1);
-		for (int i = 0; i < SCOUT_LIMIT; i++){
-			if(rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 3){
-				receivedTreeIDs[2*i] = rc.readBroadcast(3 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-				receivedTreeIDs[2*i + 1] = rc.readBroadcast(6 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);			
+    public static void broadcastTree (TreeInfo[] seenTrees, int[] sent_TreesID, int[] seen_TreesID, int seen_total, int sent_total,  int memory_size, int broadcast_limit, int type_channel, int type_number, int type_offset) {
+    	
+    	// Update Tree storage and broadcast first two previously unsent trees
+    	
+    	// seenTrees is the TreeInfo array containing the TreeInfo for all of the trees stored in memory by this particular robot
+    	// sent_TreesID is the array/memory that the robot has of all the trees whos info IT has sent
+    	// seen_TreesID is the array/memory that the robot has of all the trees that it has seen - acts like a dictionary key system for the seenTrees array
+    	// memory_size is the number of entries that the robot stores for each of the datatypes above. For a scout this value is 50
+    	// broadcast_limit is the number of trees that this robot can broadcast within its offest limit. This is either one or two
+    	// int type_channel, type_number and type_offset are the initial channel for this type of robot,  the number of the type that this robot is and the offset that this type of robot has.
+    	
+    	// Update trees that are able to be sensed
+		TreeInfo[] newTrees = addTrees();
+		for(int i = 0; i < newTrees.length; i++){
+			
+			// Check if the current tree has been seen before or no
+			if(!Arrays.asList(seen_TreesID).contains(newTrees[i].ID)) {
+				
+				// Add new tree ID to list of stored IDs of seen trees
+				seen_TreesID[seen_total % memory_size] = newTrees[i].ID;
+				seen_Trees[seen_total % memory_size] = newTrees[i];
+				seen_total += 1;     					     					       					
+			}			
+		}
+		
+		// Decide the trees to be sent and send
+		int sentThisTurn = 0;
+		TreeInfo[] toSend = new TreeInfo[broadcast_limit];
+		while (sentThisTurn < broadcast_limit){
+			for (int i = sent_index % memory_size; i < memory_size; i++){
+				if ((!Arrays.asList(sent_TreesID).contains(seen_TreesID[i])) && (sentThisTurn < broadcast_limit)){
+					System.out.println("i: " + i + ", sentThisTurn: " + sentThisTurn + ", seen_Trees: " + seen_Trees[i]);
+					if(seen_Trees[i] != null) {
+						toSend[sentThisTurn] = seen_Trees[i]; //Error here?
+						sent_TreesID[sent_total % memory_size] = seen_TreesID[i];
+						sent_total += 1;
+						sentThisTurn += 1;
+					}
+				}
 			}
 		}
-		return receivedTreeIDs;    	
+		
+		// Information of first tree to be sent
+		if (sentThisTurn = 0){
+			
+			rc.broadcast(1 + type_channel + type_number * type_offset, (int)toSend[0].ID);
+        	rc.broadcast(2 + type_channel + type_number * type_offset, (int)toSend[0].location.x);
+        	rc.broadcast(3 + type_channel + type_number * type_offset, (int)toSend[0].location.y);
+        	rc.broadcast(4 + type_channel + type_number * type_offset, (int)toSend[0].radius);        		
+		}
+		
+		// Information of second tree to be sent
+		
+		if (sentThisTurn = 1){
+			rc.broadcast(5 + type_channel + type_number * type_offset, (int)toSend[1].ID);
+			rc.broadcast(6 + type_channel + type_number * type_offset, (int)toSend[1].location.x);
+        	rc.broadcast(7 + type_channel + type_number * type_offset, (int)toSend[1].location.y);
+        	rc.broadcast(8 + type_channel + type_number * type_offset, (int)toSend[1].radius);        				
+		}
+		
     }
-
 }
+

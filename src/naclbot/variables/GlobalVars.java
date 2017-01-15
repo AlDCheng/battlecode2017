@@ -33,6 +33,7 @@ public class GlobalVars {
 	public static float robotRadius;
 	public static MapLocation centerCoords;
 	public static int offsetX, offsetY;
+	public static int SOLDIER_CHANNEL;
 	
 	public static void globalInit(RobotController _RC) {
 		rc = _RC;
@@ -96,6 +97,8 @@ public class GlobalVars {
 		 * The broadcasts at this number contain only the number of scouts currently available to the team		
 		*/
 		TANK_CHANNEL = 115;
+		
+		SOLDIER_CHANNEL = 130;
 		
 		GROUP_CHANNEL = 150;
 		GROUP_CHANNEL_OFFSET = 20;
