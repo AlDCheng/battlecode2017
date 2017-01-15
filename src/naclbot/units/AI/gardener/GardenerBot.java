@@ -19,7 +19,7 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if ((prevNumWaterer > 3) && ((2*prevNumBuilder) < prevNumWaterer)) {
+		if ((prevNumWaterer > 2) && ((2*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
@@ -86,7 +86,7 @@ public class GardenerBot extends GlobalVars {
 		                } else {
 		                	rc.water(nearestLowTree);
 		                }
-	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount <= 3 && distanceNearestTree > 2.0) {
+	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 2.0) {
 		                rc.plantTree(dir);
 		                treeCount++;
 	                } else {
