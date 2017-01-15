@@ -55,11 +55,12 @@ public class GardenerBot extends GlobalVars {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
 	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
 	                    rc.buildRobot(RobotType.LUMBERJACK, dir);
-	                    
-	                    /* Check to build scout
+	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && Math.random() < .01 && rc.isBuildReady()) {
+	                    rc.buildRobot(RobotType.TANK, dir);    
+	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
+	                	/* Check to build scout
 	                     * Must assert that there are not too many scouts in service at this moment in time
 	                     */
-	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
 	                    rc.buildRobot(RobotType.SCOUT, dir);
 	                }
             	} 
