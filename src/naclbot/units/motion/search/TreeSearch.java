@@ -62,4 +62,15 @@ public class TreeSearch extends GlobalVars {
 		return waterList;
 	}
 	
+	public static ArrayList<MapLocation> getNearbyTrees() {
+		TreeInfo[] treeList = rc.senseNearbyTrees();
+		ArrayList<MapLocation> nearList = new ArrayList<MapLocation>();
+		for (int i = 0; i < treeList.length; i++) {
+			nearList.add(treeList[i].getLocation());
+			}
+		return nearList;
+	}
+	
+	
+	
 }
