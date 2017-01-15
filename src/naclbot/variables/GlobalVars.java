@@ -76,7 +76,7 @@ public class GlobalVars {
 		SCOUT_CHANNEL = 45; // Carries number of scouts
 				
 		SCOUT_MESSAGE_OFFSET = 10;
-		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_MESSAGE_OFFSET * SCOUT_LIMIT;
+		SCOUT_TRACKING = 96;
 		// Offset 1:  Current X Position
 		// Offset 2:  Current Y Position
 		// Offset 3-8:  Message bits
@@ -89,7 +89,7 @@ public class GlobalVars {
 			// Type 4: Update of tracked object
 			// ...
 		
-		SCOUT_LIMIT=5; // Limit to number of Scouts
+		SCOUT_LIMIT= 5; // Limit to number of Scouts
 
 		SCOUT_UPDATE_FREQUENCY = 4; // How often Scouts regularly display that they are alive
 		
@@ -235,5 +235,319 @@ public static void updateMapTrees(float[][] treeSpecs) {
 		return false;
 	}			
 	
+	
+	// Heap useful for finding the maximum for minimum negate all input values
+	public static class MaxHeap{
+		
+	    private int[] Heap;
+	    private int size;
+	    private int maxsize;
+	 
+	    private static final int root = 1;
+	 
+	    // data is the intial data to be put in;
+	    // maxsize is the maximum desired size of this Heap
+	    MaxHeap(int[] data, int maxsize){	    	
+	
+	        this.maxsize = maxsize;
+	        this.size = 0;
+	        
+	        Heap = new int[this.maxsize + 1];
+	        for (int i = 0; i < data.length; i++){
+	        	Heap[i+1] = data[i];
+	        	size += 1;
+	        }
+	        
+	        for (int j = data.length/2; j>0; j--){
+	        	maxHeapify(j);
+	        }
+	        
+	    }
+	 
+	    private int parent(int child) {
+	    	if (child == 1){
+	    		return -1;
+	    	} else{	    
+	    		return child / 2;
+	    	}
+	    }
+	 
+	    private int leftChild(int parent) {
+	       if (2*parent <= size){
+	    	   return 2 * parent;
+	       } else{
+	    	   return -1;
+	       }
+	    }
+	 
+	    private int rightChild(int parent) {
+	        if (2 * parent + 1 <= size){
+		    	   return 2 * parent + 1;
+		       } else{
+		    	   return -1;
+		       }
+	    }
+	 
+	    // Checks if the current index is the index of a leaf of the heap
+	    private boolean isLeaf(int index) {
+	        if (index >=  (size / 2)  &&  index <= size) {
+	            return true;
+	        }
+	        return false;
+	    }
+	    
+	    private void increaseKey(int index, int key){
+	    	Heap[index] = key;
+	    	while (index > 1 && Heap[parent(index)] < Heap[index]){
+	    		swap(index, parent(index));
+	    		index = parent(index);
+	    	}
+	    }
+	    
+	    // swaps to heap entries
+	    private void swap(int initial,int fin){
+	        int temp = Heap[initial];
+	        Heap[initial] = Heap[fin];
+	        Heap[fin] = temp;
+	    }
+	 
+	    private void maxHeapify(int index) {
+	    	int largest = Integer.MIN_VALUE;
+	        if (!isLeaf(index)) { 	        	
+	            if (Heap[index] < Heap[leftChild(index)]){
+	            	largest = leftChild(index);
+	            } else{
+	            	largest = index;
+	            }
+	            if (Heap[largest] < Heap[rightChild(index)]){
+	            	largest = rightChild(index);
+	            }
+	            if (largest != index){
+	            	swap(index,largest);
+	            	maxHeapify(largest);
+	            }
+	        }
+	    }
+	    
 
+	 
+	    public void insert(int key) {
+	    	size += 1;
+	        Heap[size] = Integer.MIN_VALUE;
+	        increaseKey(size, key);
+	    }	
+	 
+	    public void print() {
+	        for (int i = 1; i <= size / 2; i++ )
+	        {
+	            System.out.print(" Parent : " + Heap[i] + " Left Child : " + Heap[2*i]
+	                  + " Right Child :" + Heap[2 * i  + 1]);
+	            System.out.println();
+	        }
+	    }
+	 
+
+	    public int extractMax() {
+	        int value = Heap[root];
+	        Heap[root] = Heap[size]; 
+	        size -= 1;
+	        maxHeapify(root);
+	        return value;
+	    }    
+	}
+	
+	
+public static class basicTreeInfo{
+	public int ID;
+	public int x;
+	public int y;
+	public int radius;
+	basicTreeInfo(int identifier, int xpos, int ypos, int fatness){
+		this.ID = identifier;
+		this.x = xpos;
+		this.y = ypos;
+		this.radius = fatness;
+	}
 }
+public static class Node{
+		public int key;
+		public basicTreeInfo data;
+		public Node leftChild = null;
+		public Node rightChild = null;
+		public Node parent = null;
+		
+		Node(int value, basicTreeInfo newdata, Node leftC, Node rightC, Node ryoushin){
+			this.key = value;
+			this.data = newdata;
+			this.leftChild = leftC;
+			this.rightChild = rightC;
+			this.parent = ryoushin;
+		}
+}
+
+
+
+// Only for positive values!
+public static class BinarySearchTree{
+	    public Node tree_root;
+	    public int size;
+
+	 
+	    private static final int root = 1;
+	 
+	    // data is the intial data to be put in;
+	    // maxsize is the maximum desired size of this Heap
+	    BinarySearchTree(basicTreeInfo[] data){	    	
+	
+	        this.tree_root = new Node(data[0].ID, data[0], null, null, null);
+	        System.out.print("tree_root_ID: " + tree_root.key);
+	        for (int i = 1; i < data.length; i++){
+	        	insert(data[i], tree_root);
+	        }
+	        
+	 
+	    }
+	    
+	    // returns a node if the value is there; 
+	    private Node search(int key, Node root){
+	    	Node done = null;
+	    	if (key == root.key){
+	    		return root;
+	    	} else if (key < root.key){
+	    		if (root.leftChild == null){	    
+	    		} else{
+	    			done = search(key, root.leftChild);
+	    		}
+	    	} else {
+	    		if (root.rightChild == null){
+	    		} else{
+	    			done = search(key, root.rightChild);
+	    		}	    		
+	    	}
+	    	return done;
+	    }
+	    
+	    public void insert(basicTreeInfo data, Node root){
+	    	int key = data.ID;
+	    	 System.out.print("inserting: " + data.ID);
+	    	
+	    	if(search(key, root) == null){
+	    		if (key > root.key){
+	    			if (root.rightChild != null){
+	    				insert(data, root.rightChild);
+	    				
+	    			} else{
+	    				root.rightChild = new Node(key, data, null, null, root);
+	
+	    				size +=1;
+	    			}
+	    		}
+	    		else if (key < root.key){
+	    			if (root.leftChild != null){
+	    				insert(data, root.leftChild);
+	    				
+	    			} else{
+	    				root.leftChild = new Node(key, data, null, null, root);
+
+	    				size +=1;
+	    			}		
+    			
+	    		}
+	    	}
+
+	    }
+	    
+	    private Node findMin(Node root){
+	    	while (root.leftChild != null){
+	    		root = root.leftChild;
+	    	}
+	    	return root;
+	    }
+	    
+	    private Node findMax(Node root){
+	    	while (root.rightChild != null){
+	    		root = root.rightChild;
+	    	}
+	    	return root;
+	    }
+	    
+	    
+	    //pops element out of tree and returns it
+	    public basicTreeInfo delete(int key, Node root){
+
+	    	Node found = search(key, root);
+
+	    	
+	    	if (found != null){
+	    		if (found.leftChild == null){
+	    			
+	    			// If node has no children
+	    			if (found.rightChild == null){
+	    				if (found.key < found.parent.key){
+	    					found.parent.leftChild = null;
+	    				} else{
+	    					found.parent.rightChild = null;
+	    				}
+	    				return found.data;
+	    			}
+	    			// If only node's right Child is present
+	    			else{
+	    				if (found.key < found.parent.key){
+	    					found.parent.leftChild = found.rightChild;
+	    					found.rightChild.parent = found.parent;
+	    	
+	    				} else{
+	    					found.parent.rightChild = found.rightChild;
+	    					found.rightChild.parent = found.parent;
+	    					
+	    				}
+	    				return found.data;
+	    			}
+	    		}
+	    			// If only left child is present
+    			if(found.rightChild == null){
+    				if (found.key < found.parent.key){
+    					found.parent.leftChild = found.leftChild;
+    					found.leftChild.parent = found.parent;
+  
+    				} else{
+    					found.parent.rightChild = found.leftChild;
+    					found.leftChild.parent = found.parent;
+    		
+    				}
+    				return found.data;
+    			}
+    			 // If both children are present
+    			else{
+    				Node right = found.rightChild;
+    				Node move = findMin(right);
+    				basicTreeInfo temp = move.data;
+    				basicTreeInfo store = found.data;
+    				delete(move.key, root);
+    				
+    				
+    				found.key = temp.ID;
+    				found.data = temp;
+    				
+    				return store;		   				  					    			
+	    		}    		
+	      	}
+	    	else{
+	    		return null;
+	    	}
+	    }
+	 
+	 
+	 
+	    public void printInOrder(Node root){
+	    	if (root!=null){
+	    		printInOrder(root.leftChild);
+	    		System.out.print("Node: " + root.key + "Data_x: " + root.data.x + "Data_y: " + root.data.y + "Radius: " + root.data.radius);
+		        System.out.println();
+		        printInOrder(root.rightChild);	    		
+	    	}
+	    }
+	}
+}
+
+

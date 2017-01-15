@@ -19,12 +19,12 @@ import battlecode.common.*;
 
 public class ScoutBot extends GlobalVars {
 	public static void entry() throws GameActionException {
-		System.out.println("I'm a scout!");
-		
+		System.out.println("I'm a scout!");	
+				
         // Important parameters for self
         Team enemy = rc.getTeam().opponent();
         int id = rc.getID();
-        int scout_number = rc.readBroadcast(SCOUT_CHANNEL) + 1;
+        int scout_number = rc.readBroadcast(SCOUT_CHANNEL);
         int Rem_is_better = rc.getRoundNum();
         int track_id = -1;
         MapLocation base = updateBase();  
@@ -56,7 +56,7 @@ public class ScoutBot extends GlobalVars {
         // initial starting movement away from Archon
         Direction last_direction = new Direction(myLocation.directionTo(base).radians + (float) Math.PI);
  
-        rc.broadcast(SCOUT_CHANNEL, scout_number);
+        rc.broadcast(SCOUT_CHANNEL, scout_number + 1);
 
         // The code you want your robot to perform every round should be in this loop
         while (true) {
@@ -96,14 +96,17 @@ public class ScoutBot extends GlobalVars {
         		else if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 2){
         			
         			broadcastTree (seen_Trees, sent_TreesID, seen_TreesID, seen_total, sent_total, sent_index, memory_size, 2, SCOUT_CHANNEL, scout_number, SCOUT_MESSAGE_OFFSET);       			
-        			rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
+
                 	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 3);
+                
         	    	hasBroadcasted = true;
         		}
         		
         		// Regular broadcast
         		if (!hasBroadcasted){
         			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
+        			System.out.println("FUCK SUBARU ");
+        			
         			rc.broadcast(2 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);
                 	rc.broadcast(SCOUT_TRACKING + scout_number,  track_id);                	           	
         			rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
@@ -112,7 +115,7 @@ public class ScoutBot extends GlobalVars {
         		
         		
         		// Too many enemies nearby will commit sudoku
-        		if (robots.length > 5){
+        		if (robots.length > 7){
                 	System.out.println(" OMG WHY DO THEY LIKE EMILIA SO MUCH FUCKING KILL ME");
         			
     				base = updateBase();        			
@@ -144,6 +147,7 @@ public class ScoutBot extends GlobalVars {
                         track_id = quandary.ID;
                     	last_direction = moveTowards(quandary, myLocation);
                     	rc.broadcast(SCOUT_TRACKING + scout_number,  track_id);
+                		System.out.println("I am now tracking an enemy robot with ID: " + track_id);
                     	
                     	
                     	tracked_total+=1;
@@ -171,7 +175,7 @@ public class ScoutBot extends GlobalVars {
                 	
                 	// If the robot to be tracked is visible - move towards visible location to within 5 units
                 	if (rc.canSenseRobot(track_id) && currently_tracked < 10){
-                		System.out.println("i am tracking: " + track_id + ", for: " + currently_tracked + "turns");
+                		
                     	RobotInfo quandary = rc.senseRobot(track_id);
                     	// if the robot's current location is far from the 
                     	last_direction = moveTowards(quandary, myLocation);
@@ -182,7 +186,7 @@ public class ScoutBot extends GlobalVars {
                 		
                 		
                 	} else if (currently_tracked >= 10){
-                		System.out.println("Switching Tragets");
+                		System.out.println("Switching Targets");
                     	no_track[tracked_total % 3] = track_id;
         				System.out.println(tracked_total);
         				Direction asdf = Move.randomDirection();
@@ -219,7 +223,7 @@ public class ScoutBot extends GlobalVars {
                 }
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Rem_is_better += 1;
-                System.out.println("Finishes");
+
                 Clock.yield();
 
             } catch (Exception e) {
@@ -236,7 +240,7 @@ public class ScoutBot extends GlobalVars {
 		
 		
 		// Smallest distance to another robot
-		float minimum = 1000;
+		float minimum = 1;
 				
 		// Index of the closest robot defaults to the first					
 		int index = -1;
@@ -359,7 +363,7 @@ public class ScoutBot extends GlobalVars {
 		Arrays.fill(tracked, -1);
 		
 		for (int i = 0; i < SCOUT_LIMIT; i++){
-			tracked[i] = rc.readBroadcast(SCOUT_TRACKING + i + 1);		
+			tracked[i] = rc.readBroadcast(SCOUT_TRACKING + i);		
 			
 		}
 		return tracked;
@@ -460,9 +464,12 @@ public class ScoutBot extends GlobalVars {
 		}
 		
 		// Information of first tree to be sent
-		if (sentThisTurn == 0){
+		if (sentThisTurn > 0){
+			System.out.println("THERE IS DEFINITELY A TREE HERE AND REM IS OBVIOUSLY BEST GIRL: " + toSend[0].ID);
+			rc.broadcast(1 + type_channel + type_number * type_offset, toSend[0].ID);
+			int asdfg =  (1 + type_channel + type_number * type_offset);
+			System.out.println("I am broadcasting on this channel: " + asdfg + "data: "+ toSend[0].ID );
 			
-			rc.broadcast(1 + type_channel + type_number * type_offset, (int)toSend[0].ID);
         	rc.broadcast(2 + type_channel + type_number * type_offset, (int)toSend[0].location.x);
         	rc.broadcast(3 + type_channel + type_number * type_offset, (int)toSend[0].location.y);
         	rc.broadcast(4 + type_channel + type_number * type_offset, (int)toSend[0].radius);        		
@@ -470,12 +477,15 @@ public class ScoutBot extends GlobalVars {
 		
 		// Information of second tree to be sent
 		
-		if (sentThisTurn == 1){
-			rc.broadcast(5 + type_channel + type_number * type_offset, (int)toSend[1].ID);
+		if (sentThisTurn > 1){
+			System.out.println("FELIS IS ALSO BEST GIRL: " + toSend[1].ID);
+			rc.broadcast(5 + type_channel + type_number * type_offset, toSend[1].ID);
 			rc.broadcast(6 + type_channel + type_number * type_offset, (int)toSend[1].location.x);
         	rc.broadcast(7 + type_channel + type_number * type_offset, (int)toSend[1].location.y);
         	rc.broadcast(8 + type_channel + type_number * type_offset, (int)toSend[1].radius);        				
 		}
+	
+		rc.broadcast(9 + type_channel + type_number * type_offset, sentThisTurn);
 		
     }
 }
