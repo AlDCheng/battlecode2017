@@ -23,7 +23,8 @@ public class LumberjackBot extends GlobalVars {
                     // No close robots, so search for robots within sight radius
                     robots = rc.senseNearbyRobots(-1,enemy);
                     ArrayList<MapLocation> nearbyBulletTrees = TreeSearch.getNearbyBulletTrees();
-
+                    ArrayList<MapLocation> nearbyNeutralTrees = TreeSearch.getNearbyNeutralTrees();
+                    
                     if (robots.length > 0) { // If there is a robot, move towards it
                         MapLocation myLocation = rc.getLocation();
                         MapLocation enemyLocation = robots[0].getLocation();
@@ -36,6 +37,14 @@ public class LumberjackBot extends GlobalVars {
                     	} else { // If not close enough, walk towards it
 	                        Direction toBulletTree = rc.getLocation().directionTo(nearestBulletTree);
 	                        Move.tryMove(toBulletTree);
+                    	}
+                    } else if (nearbyNeutralTrees.size() > 0) { // If there is instead a neutral tree that can be chopped
+                    	MapLocation nearestNeutralTree = TreeSearch.locNearestTree(nearbyNeutralTrees);
+                    	if (rc.canChop(nearestNeutralTree)) {
+                    		rc.chop(nearestNeutralTree);
+                    	} else {
+                    		Direction toNeutralTree = rc.getLocation().directionTo(nearestNeutralTree);
+                    		Move.tryMove(toNeutralTree);
                     	}
                     } else {
                         // Move Randomly

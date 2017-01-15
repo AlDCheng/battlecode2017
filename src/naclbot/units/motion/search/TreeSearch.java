@@ -46,13 +46,11 @@ public class TreeSearch extends GlobalVars {
 		return viableList;
 	}
 	
-	//Returns tree locations below 60% health
+	//Returns tree locations that have less health so gardeners can water
 	public static ArrayList<MapLocation> getNearbyLowTrees() {
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		ArrayList<MapLocation> waterList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length; i++) {
-			//float percentageHealth = treeList[i].health/treeList[i].maxHealth;
-			
 			if (treeList[i].health <= treeList[i].maxHealth - GameConstants.WATER_HEALTH_REGEN_RATE && treeList[i].team == rc.getTeam()) {
 				waterList.add(treeList[i].location);
 				//System.out.println("Tree index " + i + ": " + treeList[i].location);
@@ -71,6 +69,16 @@ public class TreeSearch extends GlobalVars {
 		return nearList;
 	}
 	
-	
+	public static ArrayList<MapLocation> getNearbyNeutralTrees() {
+		TreeInfo[] treeList = rc.senseNearbyTrees();
+		ArrayList<MapLocation> neutralList = new ArrayList<MapLocation>();
+		for (int i = 0; i < treeList.length; i++) {
+			if (treeList[i].team == Team.NEUTRAL) {
+				neutralList.add(treeList[i].location);
+				//System.out.println("Tree index " + i + ": " + treeList[i].location);
+			}
+		}
+		return neutralList;
+	}	
 	
 }
