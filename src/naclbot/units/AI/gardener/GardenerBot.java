@@ -76,6 +76,7 @@ public class GardenerBot extends GlobalVars {
 	                } else {
 	                	distanceNearestTree = 100;
 	                }
+	                
 	                if (lowHealthTrees.size() > 0){
 	                    nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
 	                    dir = rc.getLocation().directionTo(nearestLowTree);
@@ -86,7 +87,7 @@ public class GardenerBot extends GlobalVars {
 		                } else {
 		                	rc.water(nearestLowTree);
 		                }
-	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 2.0) {
+	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 3.0) {
 		                rc.plantTree(dir);
 		                treeCount++;
 	                } else {
