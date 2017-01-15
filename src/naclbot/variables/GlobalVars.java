@@ -121,7 +121,7 @@ public class GlobalVars {
 	
 	// need radius
 	// treeSpec format [0] x; [1] y; [2]; r
-public static void updateMapTrees(float[][] treeSpecs) {
+	public static void updateMapTrees(float[][] treeSpecs) {
 		
 		// Get offset of object position to origin (centerCoords)
 		for (int k = 0; k < treeSpecs.length; k++) {
@@ -154,7 +154,7 @@ public static void updateMapTrees(float[][] treeSpecs) {
 						if ((tileOffsetX-offsetX) < 0) {
 							// Pad 0s to map for each row
 							for (int i = 0; i < internalMap.size(); i++) {
-								for (int j = 0; j < (-1*tileOffsetY); j++) {
+								for (int j = 0; j < (-1*tileOffsetX); j++) {
 									internalMap.get(i).add(0, 0);
 								}
 							}
@@ -164,9 +164,9 @@ public static void updateMapTrees(float[][] treeSpecs) {
 						}
 						// - Condition 2: right of internal map boundaries
 						// Pad 0s to map for each row
-						else if ((tileOffsetX-offsetX) > internalMap.size()) {
+						else if ((tileOffsetX-offsetX) > internalMap.get(0).size()-1) {
 							for (int i = 0; i < internalMap.size(); i++) {
-								for (int j = 0; j < (-1*tileOffsetY); j++) {
+								for (int j = 0; j < (tileOffsetX); j++) {
 									internalMap.get(i).add(0);
 								}
 							}
@@ -185,7 +185,7 @@ public static void updateMapTrees(float[][] treeSpecs) {
 								internalMap.add(0, newRowUnlinked);
 							}
 							
-							//Add row
+							// Add row
 							ArrayList<Integer> insertRow = new ArrayList<Integer>(newRow);
 							insertRow.set((tileOffsetX-offsetX), 1);
 							internalMap.add(0, insertRow);
