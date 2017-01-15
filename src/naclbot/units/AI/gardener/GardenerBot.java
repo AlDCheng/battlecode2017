@@ -106,7 +106,7 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static boolean canBuildScout(int count) {
-	    if (scoutCount < SCOUT_LIMIT){
+	    if (count < SCOUT_LIMIT){
 	    	return true;	        
         }
 	    return false;

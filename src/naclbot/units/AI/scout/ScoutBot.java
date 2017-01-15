@@ -42,6 +42,7 @@ public class ScoutBot extends GlobalVars {
         
         int seen_total = 0;
         int sent_total = 0;
+        int sent_index = 0;
 
         
         
@@ -89,9 +90,9 @@ public class ScoutBot extends GlobalVars {
 
         		else if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 2){
         			
-        			broadcastTree (seenTrees, sent_TreesID, seen_TreesID, seen_total, sent_total, memory_size, 2, SCOUT_CHANNEL, scoutnumber, SCOUT_MESSAGE_OFFSET);       			
-        	       	rc.broadcast(9 + type_channel + type_number * type_offset, id);
-        	    	rc.broadcast(10 + type_channel + type_number * type_offset, 3);
+        			broadcastTree (seen_Trees, sent_TreesID, seen_TreesID, seen_total, sent_total, sent_index, memory_size, 2, SCOUT_CHANNEL, scout_number, SCOUT_MESSAGE_OFFSET);       			
+        			rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
+                	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 3);
         	    	hasBroadcasted = true;
         		}
         		
@@ -392,7 +393,7 @@ public class ScoutBot extends GlobalVars {
     	 	
     	    	
     }
-    public static void broadcastTree (TreeInfo[] seenTrees, int[] sent_TreesID, int[] seen_TreesID, int seen_total, int sent_total,  int memory_size, int broadcast_limit, int type_channel, int type_number, int type_offset) {
+    public static void broadcastTree (TreeInfo[] seen_Trees, int[] sent_TreesID, int[] seen_TreesID, int seen_total, int sent_total,  int sent_index, int memory_size, int broadcast_limit, int type_channel, int type_number, int type_offset) {
     	
     	// Update Tree storage and broadcast first two previously unsent trees
     	
@@ -428,14 +429,16 @@ public class ScoutBot extends GlobalVars {
 						toSend[sentThisTurn] = seen_Trees[i]; //Error here?
 						sent_TreesID[sent_total % memory_size] = seen_TreesID[i];
 						sent_total += 1;
+				
 						sentThisTurn += 1;
 					}
 				}
+				sent_index += 1;
 			}
 		}
 		
 		// Information of first tree to be sent
-		if (sentThisTurn = 0){
+		if (sentThisTurn == 0){
 			
 			rc.broadcast(1 + type_channel + type_number * type_offset, (int)toSend[0].ID);
         	rc.broadcast(2 + type_channel + type_number * type_offset, (int)toSend[0].location.x);
@@ -445,7 +448,7 @@ public class ScoutBot extends GlobalVars {
 		
 		// Information of second tree to be sent
 		
-		if (sentThisTurn = 1){
+		if (sentThisTurn == 1){
 			rc.broadcast(5 + type_channel + type_number * type_offset, (int)toSend[1].ID);
 			rc.broadcast(6 + type_channel + type_number * type_offset, (int)toSend[1].location.x);
         	rc.broadcast(7 + type_channel + type_number * type_offset, (int)toSend[1].location.y);
