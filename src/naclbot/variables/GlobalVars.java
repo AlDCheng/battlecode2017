@@ -116,6 +116,8 @@ public class GlobalVars {
 	// 1 = tree
 	// 2 = friendly unit
 	// 3 = enemy unit
+	
+	// need radius
 	public static void updateMapTrees(int[] treeID) {
 		
 		// Get offset of object position to origin (centerCoords)

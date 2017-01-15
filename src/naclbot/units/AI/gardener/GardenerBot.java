@@ -19,7 +19,7 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if ((prevNumWaterer > 3) && ((2*prevNumBuilder) < prevNumWaterer)) {
+		if ((prevNumWaterer > 2) && ((2*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
@@ -55,11 +55,12 @@ public class GardenerBot extends GlobalVars {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
 	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
 	                    rc.buildRobot(RobotType.LUMBERJACK, dir);
-	                    
-	                    /* Check to build scout
+	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && Math.random() < .01 && rc.isBuildReady()) {
+	                    rc.buildRobot(RobotType.TANK, dir);    
+	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
+	                	/* Check to build scout
 	                     * Must assert that there are not too many scouts in service at this moment in time
 	                     */
-	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
 	                    rc.buildRobot(RobotType.SCOUT, dir);
 	                }
             	} 
@@ -76,6 +77,7 @@ public class GardenerBot extends GlobalVars {
 	                } else {
 	                	distanceNearestTree = 100;
 	                }
+	                
 	                if (lowHealthTrees.size() > 0){
 	                    nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
 	                    dir = rc.getLocation().directionTo(nearestLowTree);
@@ -86,7 +88,7 @@ public class GardenerBot extends GlobalVars {
 		                } else {
 		                	rc.water(nearestLowTree);
 		                }
-	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount <= 3 && distanceNearestTree > 2.0) {
+	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 3.0) {
 		                rc.plantTree(dir);
 		                treeCount++;
 	                } else {

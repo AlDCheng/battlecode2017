@@ -21,22 +21,25 @@ public strictfp class RobotPlayer extends GlobalVars{
         // Here, we've separated the controls into a different method for each RobotType.
         // You can add the missing ones or rewrite this into your own control structure.
         switch (rc.getType()) {
-            case ARCHON:
-                ArchonBot.entry();
-                ArchonBot.mainPhase(); // Move to main phase
-                break; 
-            case GARDENER:
-                GardenerBot.entry();
-                break;
-            case SOLDIER:
-                SoldierBot.entry();
-                break;
-            case LUMBERJACK:
-            	LumberjackBot.entry();
-                break;
-            case SCOUT:
-            	ScoutBot.entry();
-            	break;
+			case ARCHON:
+			    ArchonBot.entry();
+			    ArchonBot.mainPhase(); // Move to main phase
+			    break; 
+			case GARDENER:
+			    GardenerBot.entry();
+			    break;
+			case SOLDIER:
+			    SoldierBot.entry();
+			    break;
+			case TANK:
+			    TankBot.entry();
+			case LUMBERJACK:
+			    LumberjackBot.entry();
+			    break;
+			case SCOUT:
+			    ScoutBot.entry();
+			    break;
+	    
         }
-	}
+    }
 }

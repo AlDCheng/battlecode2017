@@ -1,11 +1,11 @@
-// AI for soldier under normal control
+// AI for tank under normal control
 package naclbot;
 import battlecode.common.*;
 import java.util.ArrayList;
 
-public class SoldierBot extends GlobalVars {
+public class TankBot extends GlobalVars {
     public static void entry() throws GameActionException {
-	System.out.println("I'm an soldier!");
+	System.out.println("I'm an tank!");
         Team enemy = rc.getTeam().opponent();
 
 	// Important variables
@@ -16,8 +16,8 @@ public class SoldierBot extends GlobalVars {
 	// Set role
 	int role;
 	boolean leaveArchon = false; // If we want to make it surround archon until later grouping
-		
-        // The code you want your robot to perform every round should be in this loop
+	
+	// The code you want your robot to perform every round should be in this loop
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
@@ -79,15 +79,15 @@ public class SoldierBot extends GlobalVars {
 		    }
 		}
 		
-		
+		/*
 		// TODO: Make it stay near archon
 		if (leaveArchon == false) {
 		    MapLocation archonLoc = new MapLocation(xPos,yPos);
 		    Direction dir = new Direction(myLocation,archonLoc);
 		    Move.tryMove(dir);
 		}
-
-		/*
+		*/
+		
 		// If hasn't found archon or is not of protectinc archon role
 		// Check if it hasn't moved
 		if (myLocation == prevLocation) {
@@ -108,12 +108,12 @@ public class SoldierBot extends GlobalVars {
 		    Move.tryMove(Move.randomDirection());
 		    notMoved = 0; // Reset counter
 		}
-		*/
+		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
             } catch (Exception e) {
-                System.out.println("Soldier Exception");
+                System.out.println("Tank Exception");
                 e.printStackTrace();
             }
         }

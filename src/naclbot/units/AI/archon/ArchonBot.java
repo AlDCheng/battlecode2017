@@ -106,6 +106,8 @@ public class ArchonBot extends ArchonVars {
 	static void mainPhase() throws GameActionException {
 		System.out.println("Archon transitioning to Main Phase");
 		
+		boolean hireGard = false;
+		
 		// loop for Main Phase
         while (true) {
 
@@ -130,10 +132,14 @@ public class ArchonBot extends ArchonVars {
             	rc.broadcast(GARDENER_CHANNEL, 0);
 
 
-                // Randomly attempt to build a gardener in this direction
-                if (rc.canHireGardener(dir) && Math.random() < .01) {
+                // Try to hire gardeners at 150 turn intervals
+            	if ((rc.getRoundNum() % 150 == 0)) {
+            		hireGard = false;
+            	}
+                if (rc.canHireGardener(dir) && !hireGard) {
                     rc.hireGardener(dir);
                     rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
+                    hireGard = true;
                 }
 
                 // Move randomly
