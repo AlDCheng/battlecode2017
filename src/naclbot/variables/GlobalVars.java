@@ -18,6 +18,7 @@ public class GlobalVars {
 	public static int SCOUT_MESSAGE_OFFSET;
 	public static int SCOUT_LIMIT;
 	public static int SCOUT_UPDATE_FREQUENCY;
+	public static int SCOUT_TRACKING;
 	
 	public static int TANK_CHANNEL;
 	
@@ -73,8 +74,9 @@ public class GlobalVars {
 		
 		// Scouts
 		SCOUT_CHANNEL = 45; // Carries number of scouts
-		
+				
 		SCOUT_MESSAGE_OFFSET = 10;
+		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_MESSAGE_OFFSET * SCOUT_LIMIT;
 		// Offset 1:  Current X Position
 		// Offset 2:  Current Y Position
 		// Offset 3-8:  Message bits
@@ -204,5 +206,15 @@ public class GlobalVars {
 			}
 		}
 	}
+	
+	public static boolean arrayContainsInt(int[] array, int value){
+		for (int i = 0; i < array.length; i ++){
+			 if (array[i] == value){
+				 return true;
+			 }
+		}
+		return false;
+	}			
+	
 
 }
