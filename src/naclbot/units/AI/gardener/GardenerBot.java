@@ -9,6 +9,7 @@ public class GardenerBot extends GlobalVars {
 		System.out.println("I'm a gardener!");
 		// determines whether gardener is planter and waterer or unit builder 
 		int role;
+		int treeCount = 0;
 		double randNum = Math.random();
 		
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
@@ -18,13 +19,14 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if ((prevNumWaterer > 3) && ((3*prevNumBuilder) < prevNumWaterer)) {
+		if ((prevNumWaterer > 3) && ((2*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
 			System.out.println("Planter/Waterer; rand: " + randNum);
 			rc.broadcast(GARDENER_WATERER_CHANNEL, prevNumWaterer + 1);
 			role = 1; //planter and waterer
+
 		}
 		
         // The code you want your robot to perform every round should be in this loop
@@ -63,10 +65,17 @@ public class GardenerBot extends GlobalVars {
             	} 
 	            //planter,waterer    
 	            else if (role == 1) {
-	                
 	                // First see if there is a tree nearby and if you can do anything to it
-	                ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
+	                
+	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
+	                ArrayList<MapLocation> nearbyTrees = TreeSearch.getNearbyTrees();
 	                MapLocation nearestLowTree;
+	                float distanceNearestTree;
+	                if (nearbyTrees.size() > 0) {
+	                	distanceNearestTree = rc.getLocation().distanceTo(TreeSearch.locNearestTree(nearbyTrees));
+	                } else {
+	                	distanceNearestTree = 100;
+	                }
 	                if (lowHealthTrees.size() > 0){
 	                    nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
 	                    dir = rc.getLocation().directionTo(nearestLowTree);
@@ -77,10 +86,11 @@ public class GardenerBot extends GlobalVars {
 		                } else {
 		                	rc.water(nearestLowTree);
 		                }
-	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() &&  Math.random() < .01) {
-		                rc.plantTree(dir);    
+	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount <= 3 && distanceNearestTree > 2.0) {
+		                rc.plantTree(dir);
+		                treeCount++;
 	                } else {
-	                	Move.tryMove(dir);
+	                	Move.tryMove(Move.randomDirection());
 	                }
 	            }
 	                
