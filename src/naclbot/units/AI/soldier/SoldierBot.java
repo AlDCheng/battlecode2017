@@ -8,31 +8,22 @@ public class SoldierBot extends GlobalVars {
 	System.out.println("I'm an soldier!");
         Team enemy = rc.getTeam().opponent();
 
+	// Important variables
 	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
 	int notMoved = 0;
 	MapLocation prevLocation = rc.getLocation();
 
+	// Set role
 	int role;
-	boolean foundArchon = false;
-	if (Math.random() < 0.5) {
-	    System.out.println("this is 0");
-	    role = 0; //unit surround archon
-	} else {
-	    System.out.println("this is 1");
-	    role = 1; //unit surround other allied units
-	}
-	
+	boolean leaveArchon = false; // If we want to make it surround archon until later grouping
+		
         // The code you want your robot to perform every round should be in this loop
         while (true) {
-	    System.out.println(role);
-            // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
+	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
 		// Listen for home archon's location
-		int xPos = rc.readBroadcast(0);
-		int yPos = rc.readBroadcast(1);
-
-		// Check number of scouts currently in service
-		int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);
+		int xPos = rc.readBroadcast(ARCHON_CHANNEL);
+		int yPos = rc.readBroadcast(ARCHON_CHANNEL+1);
 
                 MapLocation myLocation = rc.getLocation(); // Current location
 
@@ -79,33 +70,45 @@ public class SoldierBot extends GlobalVars {
 		    enemyToShoot.add(r);
 		}
 
-		// unit archon
-		if (role == 0 && foundArchon == true) {
-		    // TODO: Make it stay near archon
-		    Move.tryMove(Move.randomDirection());
-
-		} else {
-		    // If hasn't found archon or is not of protectinc archon role
-		    // Check if it hasn't moved
-		    if (myLocation == prevLocation) {
-			notMoved += 1;
-		    }
-		    
-		    // Move to other allies 
-		    if (currentAllies.length > 0 && notMoved < 5) {
-			MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
-			if (locAlly == rc.getLocation()) {
-			    Move.tryMove(Move.randomDirection());
-			    notMoved += 1;
-			} else {
-			    Direction dir = rc.getLocation().directionTo(locAlly);
-			    Move.tryMove(dir);
-			}
-		    } else {
-			Move.tryMove(Move.randomDirection());
-			notMoved = 0; // Reset counter
+		// MOVEMENT 
+		BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+		for (BulletInfo bullet: nearbyBullets) {
+		    boolean willCollide = BulletDodge.willCollideWithMe(bullet);
+		    if (willCollide = true) {
+			System.out.println("OMGWILLCOLLIDE");
 		    }
 		}
+		
+		
+		// TODO: Make it stay near archon
+		if (leaveArchon == false) {
+		    MapLocation archonLoc = new MapLocation(xPos,yPos);
+		    Direction dir = new Direction(myLocation,archonLoc);
+		    Move.tryMove(dir);
+		}
+
+		/*
+		// If hasn't found archon or is not of protectinc archon role
+		// Check if it hasn't moved
+		if (myLocation == prevLocation) {
+		    notMoved += 1;
+		}
+		
+		// Move to other allies 
+		if (currentAllies.length > 0 && notMoved < 5) {
+		    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
+		    if (locAlly == rc.getLocation()) {
+			Move.tryMove(Move.randomDirection());
+			notMoved += 1;
+		    } else {
+			Direction dir = rc.getLocation().directionTo(locAlly);
+			Move.tryMove(dir);
+		    }
+		} else {
+		    Move.tryMove(Move.randomDirection());
+		    notMoved = 0; // Reset counter
+		}
+		*/
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
