@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class TankBot extends GlobalVars {
     public static void entry() throws GameActionException {
-	System.out.println("I'm an soldier!");
+	System.out.println("I'm an tank!");
         Team enemy = rc.getTeam().opponent();
 
 	// Important variables
@@ -79,15 +79,15 @@ public class TankBot extends GlobalVars {
 		    }
 		}
 		
-		/*
+		
 		// TODO: Make it stay near archon
 		if (leaveArchon == false) {
 		    MapLocation archonLoc = new MapLocation(xPos,yPos);
 		    Direction dir = new Direction(myLocation,archonLoc);
 		    Move.tryMove(dir);
 		}
-		*/
 		
+		/*
 		// If hasn't found archon or is not of protectinc archon role
 		// Check if it hasn't moved
 		if (myLocation == prevLocation) {
@@ -108,7 +108,7 @@ public class TankBot extends GlobalVars {
 		    Move.tryMove(Move.randomDirection());
 		    notMoved = 0; // Reset counter
 		}
-		
+		*/
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
