@@ -79,15 +79,15 @@ public class TankBot extends GlobalVars {
 		    }
 		}
 		
-		
+		/*
 		// TODO: Make it stay near archon
 		if (leaveArchon == false) {
 		    MapLocation archonLoc = new MapLocation(xPos,yPos);
 		    Direction dir = new Direction(myLocation,archonLoc);
 		    Move.tryMove(dir);
 		}
+		*/
 		
-		/*
 		// If hasn't found archon or is not of protectinc archon role
 		// Check if it hasn't moved
 		if (myLocation == prevLocation) {
@@ -108,12 +108,12 @@ public class TankBot extends GlobalVars {
 		    Move.tryMove(Move.randomDirection());
 		    notMoved = 0; // Reset counter
 		}
-		*/
+		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
             } catch (Exception e) {
-                System.out.println("Soldier Exception");
+                System.out.println("Tank Exception");
                 e.printStackTrace();
             }
         }
