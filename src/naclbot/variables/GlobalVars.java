@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class GlobalVars {
 	public static RobotController rc;
+	
 	public static int ARCHON_CHANNEL;
 	public static int ARCHON_OFFSET;
 	public static int ARCHON_LIMIT;
@@ -61,22 +62,22 @@ public class GlobalVars {
 		
 		ARCHON_CHANNEL = 0; // Carries number of living Archons
 		
-		ARCHON_OFFSET = 5;
+		ARCHON_OFFSET = 12;
 		// Offset 1: Current X Position
 		// OFfset 2: Current Y Position
 		
 		ARCHON_LIMIT = 3;
 
 		// Gardeners 		
-		GARDENER_CHANNEL = 20; // Carries number of living Gardeners
-		GARDENER_BUILDER_CHANNEL = 21; // Carries number of living Gardeners designed as unit builders
-		GARDENER_WATERER_CHANNEL = 22; // Carries number of living Gardeners designed as waterers
+		GARDENER_CHANNEL = 100; // Carries number of living Gardeners
+		GARDENER_BUILDER_CHANNEL = 101; // Carries number of living Gardeners designed as unit builders
+		GARDENER_WATERER_CHANNEL = 102; // Carries number of living Gardeners designed as waterers
 		
 		// Scouts
-		SCOUT_CHANNEL = 45; // Carries number of scouts
+		SCOUT_CHANNEL = 43; // Carries number of scouts
 				
-		SCOUT_MESSAGE_OFFSET = 10;
-		SCOUT_TRACKING = 96;
+		SCOUT_MESSAGE_OFFSET = 11;
+
 		// Offset 1:  Current X Position
 		// Offset 2:  Current Y Position
 		// Offset 3-8:  Message bits
@@ -93,14 +94,16 @@ public class GlobalVars {
 
 		SCOUT_UPDATE_FREQUENCY = 4; // How often Scouts regularly display that they are alive
 		
-		LUMBERJACK_CHANNEL = 100;
+		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_LIMIT * SCOUT_UPDATE_FREQUENCY + 1;
+		
+		LUMBERJACK_CHANNEL = 115;
 		
 		/* Scout Channel is the placeholding value foir all scout channels. 
 		 * The broadcasts at this number contain only the number of scouts currently available to the team		
 		*/
-		TANK_CHANNEL = 115;
+		TANK_CHANNEL = 130;
 		
-		SOLDIER_CHANNEL = 130;
+		SOLDIER_CHANNEL = 140;
 		
 		GROUP_CHANNEL = 150;
 		GROUP_CHANNEL_OFFSET = 20;
