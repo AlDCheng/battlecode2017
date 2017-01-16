@@ -1,6 +1,7 @@
 // This class makes a new data type for archons
-package naclbot;
+package naclbot.units.motion.search;
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
 
 public class ArchonInfoSearch extends GlobalVars {
     String bulletType;

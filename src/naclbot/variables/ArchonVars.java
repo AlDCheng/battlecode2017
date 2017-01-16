@@ -1,4 +1,4 @@
-package naclbot;
+package naclbot.variables;
 import battlecode.common.*;
 import java.util.ArrayList;
 

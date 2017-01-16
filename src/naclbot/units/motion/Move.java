@@ -1,13 +1,14 @@
 // General move function from example
-package naclbot;
+package naclbot.units.motion;
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
 
 public class Move extends GlobalVars {
 	/**
 	 * Returns a random Direction
 	 * @return a random Direction
 	 */
-	static Direction randomDirection() {
+	public static Direction randomDirection() {
 	    return new Direction((float)Math.random() * 2 * (float)Math.PI);
 	}
 	
@@ -18,7 +19,7 @@ public class Move extends GlobalVars {
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
-	static boolean tryMove(Direction dir) throws GameActionException {
+	public static boolean tryMove(Direction dir) throws GameActionException {
 	    return tryMove(dir,20,3);
 	}
 	
@@ -31,7 +32,7 @@ public class Move extends GlobalVars {
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
-	static boolean tryMove(Direction dir, float degreeOffset, int checksPerSide) throws GameActionException {
+	public static boolean tryMove(Direction dir, float degreeOffset, int checksPerSide) throws GameActionException {
 	
 	    // First, try intended direction
 	    if (rc.canMove(dir)) {
@@ -40,7 +41,6 @@ public class Move extends GlobalVars {
 	    }
 	
 	    // Now try a bunch of similar angles
-	    boolean moved = false;
 	    int currentCheck = 1;
 	
 	    while(currentCheck<=checksPerSide) {

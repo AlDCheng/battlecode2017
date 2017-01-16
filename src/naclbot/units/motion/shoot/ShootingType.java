@@ -1,6 +1,7 @@
 // This class makes a new data type for archons
-package naclbot;
+package naclbot.units.motion.shoot;
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
 
 public class ShootingType extends GlobalVars {
     String bulletType;

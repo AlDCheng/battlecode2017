@@ -1,5 +1,7 @@
 package naclbot;
 import battlecode.common.*;
+import naclbot.units.AI.archon.ArchonBot;
+import naclbot.variables.GlobalVars;
 
 public strictfp class RobotPlayer extends GlobalVars{
     static RobotController rc;

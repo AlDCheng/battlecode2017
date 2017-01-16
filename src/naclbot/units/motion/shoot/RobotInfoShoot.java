@@ -1,6 +1,7 @@
 // This class makes a new data type for robots that is not RobotInfo
-package naclbot;
+package naclbot.units.motion.shoot;
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
 
 public class RobotInfoShoot extends GlobalVars {
     int robotID;

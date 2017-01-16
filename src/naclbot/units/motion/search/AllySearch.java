@@ -1,7 +1,7 @@
 // This class deals with interactions between units and allied units
-package naclbot;
+package naclbot.units.motion.search;
 import battlecode.common.*;
-import java.util.ArrayList;
+import naclbot.variables.GlobalVars;
 
 public class AllySearch extends GlobalVars {
     // Returns the location of allies that are not archons

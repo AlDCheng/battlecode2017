@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import battlecode.common.*;
 
+
 /* Values to define
  * 
  * SCOUT_CHANNEL offset 0 -> channel for number of scouts
@@ -18,23 +19,45 @@ import battlecode.common.*;
  */
 
 public class ScoutBot extends GlobalVars {
+	
+	public static int Rem_is_better;
+	public static int id;
+	public static int scout_number;
+	public static Team enemy;
+	public static int memory_size = 15;
+	public static boolean runAway = false;
+	public static RobotInfo[] enemyArchons= new RobotInfo[3];
+	public static int[] enemyArchonIDs = new int[3];
+	
+	
 	public static void entry() throws GameActionException {
 		System.out.println("I'm a scout!");	
 				
         // Important parameters for self
-        Team enemy = rc.getTeam().opponent();
-        int id = rc.getID();
-        int scout_number = rc.readBroadcast(SCOUT_CHANNEL);
-        int Rem_is_better = rc.getRoundNum();
-        int track_id = -1;
+        enemy = rc.getTeam().opponent();
+        id = rc.getID();
+        scout_number = rc.readBroadcast(SCOUT_CHANNEL);
+        memory_size = 15;        
+        Rem_is_better = rc.getRoundNum();
+        Arrays.fill(enemyArchonIDs, -1);
+        
         MapLocation base = updateBase();  
-        MapLocation myLocation = rc.getLocation();
+        MapLocation myLocation = rc.getLocation();        
+        
+        int track_id = -1;              
         int currently_tracked = 0;
+        
+        // Array to store number of enemies tracked to date
+        int[] no_track = new int[3];
+        Arrays.fill(no_track, -1);
+        int tracked_total = -1;
+        
+        
         
 		System.out.println("My scout_id is: " + scout_number);
      
         // Variables related to the sending and releasing of trees
-        int memory_size = 15;
+ 
         TreeInfo[] seen_Trees = new TreeInfo[memory_size];
     
         int[] sent_TreesID = new int[memory_size];
@@ -44,15 +67,8 @@ public class ScoutBot extends GlobalVars {
         
         int seen_total = 0;
         int sent_total = 0;
-        int sent_index = 0;
-
+        int sent_index = 0;     
         
-        
-        // Array to store number of enemies tracked to date
-        int[] no_track = new int[3];
-        Arrays.fill(no_track, -1);
-        int tracked_total = -1;
-
         // initial starting movement away from Archon
         Direction last_direction = new Direction(myLocation.directionTo(base).radians + (float) Math.PI);
  
@@ -63,7 +79,9 @@ public class ScoutBot extends GlobalVars {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	boolean sighted = false;
             	boolean hasBroadcasted = false;
+            	int index = -1;
             	
             	// Update Location
             	myLocation = rc.getLocation();         
@@ -71,12 +89,19 @@ public class ScoutBot extends GlobalVars {
             	// Get nearby enemies            	
             	RobotInfo[] robots = NearbyEnemies(enemy);
             	
+            	
+             	/***********************************************************************************
+            	 * *************************** Code for Broadcasting *********************
+            	 **********************************************************************************/
+            	
+            	
+            	
             	// Once in a while broadcast to base new information
             	// (editor's note: Rem = round num)
         		if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 1){
         			base = updateBase();
         			if (robots.length>0){
-        				MapLocation nearest = getNearestEnemytoBase(base, robots);
+        				MapLocation nearest = getNearestEnemytoBase(base, robots, enemyArchons, enemyArchonIDs, sighted, index, true);
                  
                     	rc.broadcast(3 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)nearest.x);
                     	rc.broadcast(4 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)nearest.y);
@@ -86,7 +111,19 @@ public class ScoutBot extends GlobalVars {
             			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
             			rc.broadcast(2 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);   
                      	rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
-                    	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 1);
+                     	System.out.println( "index" + index);
+                     	if (index != -1){
+                     		rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 5);
+                     		
+                     		rc.broadcast(5 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)enemyArchonIDs[index]);
+                        	rc.broadcast(6 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)enemyArchons[index].location.x);
+                        	rc.broadcast(7 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)enemyArchons[index].location.y);
+                        	System.out.println("I TOLD U WHERE THE NORMIE IS PLS KILL HIS ID IS: " + enemyArchonIDs[index] + "xPos: " + enemyArchons[index].location.x + "yPos: "+ enemyArchons[index].location.y);
+                     	}
+                     	else{
+                     		
+                     		rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 1);
+                     	}
                     	hasBroadcasted = true;
         			}
         		}
@@ -95,11 +132,13 @@ public class ScoutBot extends GlobalVars {
 
         		else if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 2){
         			
-        			broadcastTree (seen_Trees, sent_TreesID, seen_TreesID, seen_total, sent_total, sent_index, memory_size, 2, SCOUT_CHANNEL, scout_number, SCOUT_MESSAGE_OFFSET);       			
-
-                	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 3);
+        			broadcastTree (seen_Trees, sent_TreesID, seen_TreesID, seen_total, sent_total, sent_index, memory_size, 2, SCOUT_CHANNEL, scout_number, SCOUT_MESSAGE_OFFSET, hasBroadcasted);       			
+        			if (hasBroadcasted){
+        				rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 3);
+        			}
+                	
                 
-        	    	hasBroadcasted = true;
+        	    	
         		}
         		
         		// Regular broadcast
@@ -115,11 +154,11 @@ public class ScoutBot extends GlobalVars {
         		
         		
         		// Too many enemies nearby will commit sudoku
-        		if (robots.length > 7){
+        		if (robots.length > 3){
                 	System.out.println(" OMG WHY DO THEY LIKE EMILIA SO MUCH FUCKING KILL ME");
         			
     				base = updateBase();        			
-        			MapLocation nearest = getNearestEnemytoBase(base, robots);
+        			MapLocation nearest = getNearestEnemytoBase(base, robots, enemyArchons, enemyArchonIDs, sighted, index, false);
         			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
                 	rc.broadcast(2 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);              
                 	rc.broadcast(3 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)nearest.x);
@@ -128,14 +167,47 @@ public class ScoutBot extends GlobalVars {
                 	          	
                 	rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
                 	rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 2);
+                	
+                	/***********************************************************************************
+                	 * *************************** Code for Movement for next turn *********************
+                	 **********************************************************************************/
+                	
+                	
+                	
     			
+                	/* Editing out the kms
         			int x = rc.readBroadcast(SCOUT_CHANNEL);
         			rc.broadcast(SCOUT_CHANNEL, x-1);
         			rc.disintegrate();
+        			*/ 
+                	if (!runAway){	
+                		Direction asdf = Move.randomDirection();
+                		tryMoveScout(asdf);
+                		last_direction = asdf;
+                		runAway = true;
+                		
+                	}
+                	else{
+	                	if (rc.canMove(last_direction)){
+	            			rc.move(last_direction, (float)2.5);
+	            		
+	            			
+	            		}
+	            		else{
+	            			Direction asdf = Move.randomDirection();
+	            			tryMoveScout(asdf);
+	            			last_direction = asdf;
+            		
+	            		}
+        			track_id = -1;
+                	currently_tracked = 0;
+                	}
         		}
             	
                 // If there is no current enemy being tracked
-                if (track_id == -1){
+        		else if (track_id == -1){
+        			
+        			runAway = false;
                 	
                 	int[] already_tracked = getOtherTracked();
                 	
@@ -152,26 +224,25 @@ public class ScoutBot extends GlobalVars {
                     	
                     	tracked_total+=1;
                     	currently_tracked = 0;
+                    	
                 	} else{
+                		
                 		rc.broadcast(SCOUT_TRACKING + scout_number,  -1);
                 		if (rc.canMove(last_direction)){
-                			rc.move(last_direction, (float)2.5);
-                		
-                			
+                			rc.move(last_direction, (float)2.5);               		
                 		}
+                		
                 		else{
                 			Direction asdf = Move.randomDirection();
                 			tryMoveScout(asdf);
-                			last_direction = asdf;
-                		
+                			last_direction = asdf;                		
                 		}
                 	}
                
                 	
                 // Otherwise if already tracking 
            
-                } else{
-                	
+                } else{                	
                 	
                 	// If the robot to be tracked is visible - move towards visible location to within 5 units
                 	if (rc.canSenseRobot(track_id) && currently_tracked < 10){
@@ -179,24 +250,21 @@ public class ScoutBot extends GlobalVars {
                     	RobotInfo quandary = rc.senseRobot(track_id);
                     	// if the robot's current location is far from the 
                     	last_direction = moveTowards(quandary, myLocation);
-                    	currently_tracked +=1;                 	
-                    	
-                			
-                	
-                		
-                		
+                    	currently_tracked +=1;                	
+                          		
                 	} else if (currently_tracked >= 10){
+                		
                 		System.out.println("Switching Targets");
                     	no_track[tracked_total % 3] = track_id;
         				System.out.println(tracked_total);
+        				
+        				
         				Direction asdf = Move.randomDirection();
             			tryMoveScout(asdf);
             			last_direction = asdf;        			           		
                     	track_id = -1;
-                    	currently_tracked = 0;
-                		
-                		
-                		
+                    	currently_tracked = 0;               		
+                		                		
                 	} else{
                 		
                 		track_id = -1;
@@ -214,13 +282,25 @@ public class ScoutBot extends GlobalVars {
                      			tryMoveScout(adir);
                      			i+=1;
                      			last_direction = adir;
-                     		}
-                     		
-              
-                     	}
-                		
+                     		}                    		
+                   		}
                 	}             	
                 }
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
+        		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Rem_is_better += 1;
 
@@ -333,14 +413,31 @@ public class ScoutBot extends GlobalVars {
 		}
 	}
 	
-	public static MapLocation getNearestEnemytoBase(MapLocation baseLocation, RobotInfo[] enemies){
+	public static MapLocation getNearestEnemytoBase(MapLocation baseLocation, RobotInfo[] enemies, RobotInfo[] enemyArchons, int[] enemyArchonIDs, boolean sighted, int index3, boolean update){
 		
 		// Smallest distance to another robot
 		float minimum = 1000;
-						
+		boolean updated = true;			
 		// Index of the closest robot defaults to the first					
 		int index = 0;
 		for (int i = 0; i < enemies.length; i++){
+			
+			if (enemies[i].type == battlecode.common.RobotType.ARCHON && updated && update){
+				if (!arrayContainsInt(enemyArchonIDs, enemies[i].ID)){
+					for (int j = 0; j < enemyArchons.length; j++){
+						if (enemyArchons[j] == null && updated){
+							enemyArchons[j] = enemies[i];
+							enemyArchonIDs[j] = enemies[i].ID;
+							index3 = j;
+							sighted = true;
+							updated = false;
+							System.out.println("I SEE A NEW ARCHON OMG IT LIKES EMILIA PLZ KILL NORMIE PIECE OF SHIT PLS NAO: " + enemies[i].ID);
+							
+						}
+					}
+				}
+			}
+			
 			float dist = baseLocation.distanceTo(enemies[i].location);
 			if (dist > minimum){
 				minimum = dist;
@@ -420,7 +517,7 @@ public class ScoutBot extends GlobalVars {
     	 	
     	    	
     }
-    public static void broadcastTree (TreeInfo[] seen_Trees, int[] sent_TreesID, int[] seen_TreesID, int seen_total, int sent_total,  int sent_index, int memory_size, int broadcast_limit, int type_channel, int type_number, int type_offset) throws GameActionException {
+    public static void broadcastTree (TreeInfo[] seen_Trees, int[] sent_TreesID, int[] seen_TreesID, int seen_total, int sent_total,  int sent_index, int memory_size, int broadcast_limit, int type_channel, int type_number, int type_offset, boolean hasBroadcasted) throws GameActionException {
     	
     	// Update Tree storage and broadcast first two previously unsent trees
     	
@@ -465,6 +562,7 @@ public class ScoutBot extends GlobalVars {
 		
 		// Information of first tree to be sent
 		if (sentThisTurn > 0){
+			hasBroadcasted = true;
 			System.out.println("THERE IS DEFINITELY A TREE HERE AND REM IS OBVIOUSLY BEST GIRL: " + toSend[0].ID);
 			rc.broadcast(1 + type_channel + type_number * type_offset, toSend[0].ID);
 			int asdfg =  (1 + type_channel + type_number * type_offset);

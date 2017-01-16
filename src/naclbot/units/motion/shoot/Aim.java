@@ -1,6 +1,8 @@
 // This class deals with interactions between unit and neighboring trees
-package naclbot;
+package naclbot.units.motion.shoot;
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
+
 import java.util.ArrayList;
 import java.util.Random;
 

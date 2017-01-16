@@ -1,4 +1,5 @@
-package naclbot;
+package naclbot.variables;
+
 import battlecode.common.*;
 import java.util.ArrayList;
 
@@ -28,6 +29,12 @@ public class GlobalVars {
 	public static int TREE_OFFSET;
 	public static int GROUP_CHANNEL;
 	public static int GROUP_CHANNEL_OFFSET;
+	public static int GROUP_COMMUNICATE_OFFSET;
+	public static int GROUP_LEADER_START;
+	public static int GROUP_LEADER_OFFSET;
+	public static int GROUP_START;
+	public static int GROUP_OFFSET;
+	public static int GROUP_LIMIT;
 	
 	// Internal map variables
 	public static ArrayList<ArrayList<Integer>> internalMap = new ArrayList<ArrayList<Integer>>();
@@ -96,18 +103,25 @@ public class GlobalVars {
 		
 		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_LIMIT * SCOUT_UPDATE_FREQUENCY + 1;
 		
-		LUMBERJACK_CHANNEL = 115;
+		LUMBERJACK_CHANNEL = 140;
 		
 		/* Scout Channel is the placeholding value foir all scout channels. 
 		 * The broadcasts at this number contain only the number of scouts currently available to the team		
 		*/
-		TANK_CHANNEL = 130;
+		TANK_CHANNEL = 180;
 		
-		SOLDIER_CHANNEL = 140;
+		SOLDIER_CHANNEL = 160;
 		
-		GROUP_CHANNEL = 150;
+		GROUP_CHANNEL = 200;
+		GROUP_COMMUNICATE_OFFSET =2;
 		GROUP_CHANNEL_OFFSET = 20;
+		GROUP_LIMIT = 5;
 		
+		GROUP_LEADER_OFFSET = 2;
+		GROUP_LEADER_START = GROUP_CHANNEL + GROUP_COMMUNICATE_OFFSET * GROUP_LIMIT;
+		GROUP_START = GROUP_LEADER_START + GROUP_LEADER_OFFSET * GROUP_LIMIT;
+		GROUP_OFFSET = 20;
+
 		TREE_DATA_CHANNEL = 400; 
 		TREE_OFFSET = 4;
 		//Offset 0: Tree ID
@@ -124,7 +138,7 @@ public class GlobalVars {
 	
 	// need radius
 	// treeSpec format [0] x; [1] y; [2]; r
-public static void updateMapTrees(float[][] treeSpecs) {
+	public static void updateMapTrees(float[][] treeSpecs) {
 		
 		// Get offset of object position to origin (centerCoords)
 		for (int k = 0; k < treeSpecs.length; k++) {
@@ -141,7 +155,7 @@ public static void updateMapTrees(float[][] treeSpecs) {
 				int tileOffsetCenterY = (int)(newObjOffsetY/robotRadius);
 				
 				// Calculate radius of object in grid
-				// We will fill with square hitbox for now
+				// We will fill with square hit box for now
 				int tileRadius = (int)(treeSpecs[k][2]/robotRadius);
 				
 				// Loop to fill all tiles covered by radius
@@ -229,6 +243,8 @@ public static void updateMapTrees(float[][] treeSpecs) {
 		}
 	}
 	
+	
+	// Checks to see if an array of integers contains the integer value and outputs true if so; outputs false otherwise
 	public static boolean arrayContainsInt(int[] array, int value){
 		for (int i = 0; i < array.length; i ++){
 			 if (array[i] == value){
@@ -238,7 +254,16 @@ public static void updateMapTrees(float[][] treeSpecs) {
 		return false;
 	}			
 	
-	
+	// Checks to see if an array of integers contains the integer value and outputs the index of the value if it exists or -1 if it doesn't
+	public static int arrayContainsIndex(int[] array, int value){
+		int j = -1;
+		for (int i = 0; i < array.length; i ++){
+			 if (array[i] == value){
+				 j = i;
+			 }
+		}
+		return j;
+	}			
 	// Heap useful for finding the maximum for minimum negate all input values
 	public static class MaxHeap{
 		
@@ -360,19 +385,21 @@ public static void updateMapTrees(float[][] treeSpecs) {
 	}
 	
 	
-public static class basicTreeInfo{
+	public static class basicTreeInfo{
 	public int ID;
 	public int x;
 	public int y;
 	public int radius;
-	basicTreeInfo(int identifier, int xpos, int ypos, int fatness){
+	public basicTreeInfo(int identifier, int xpos, int ypos, int fatness){
 		this.ID = identifier;
 		this.x = xpos;
 		this.y = ypos;
 		this.radius = fatness;
 	}
 }
-public static class Node{
+
+
+	public static class Node{
 		public int key;
 		public basicTreeInfo data;
 		public Node leftChild = null;
@@ -389,18 +416,14 @@ public static class Node{
 }
 
 
-
 // Only for positive values!
-public static class BinarySearchTree{
+	public static class BinarySearchTree{
 	    public Node tree_root;
 	    public int size;
 
-	 
-	    private static final int root = 1;
-	 
-	    // data is the intial data to be put in;
+		 	    // data is the intial data to be put in;
 	    // maxsize is the maximum desired size of this Heap
-	    BinarySearchTree(basicTreeInfo[] data){	    	
+	    public BinarySearchTree(basicTreeInfo[] data){	    	
 	
 	        this.tree_root = new Node(data[0].ID, data[0], null, null, null);
 	        System.out.print("tree_root_ID: " + tree_root.key);
@@ -467,12 +490,7 @@ public static class BinarySearchTree{
 	    	return root;
 	    }
 	    
-	    private Node findMax(Node root){
-	    	while (root.rightChild != null){
-	    		root = root.rightChild;
-	    	}
-	    	return root;
-	    }
+
 	    
 	    
 	    //pops element out of tree and returns it
@@ -551,6 +569,25 @@ public static class BinarySearchTree{
 	    	}
 	    }
 	}
+	
+	
+	public class Tuple{ 
+		public final int X; 
+		public final int Y; 
+		public Tuple(int x, int y) { 
+			this.X = x; 
+		    this.Y = y; 
+		} 
+		public void printData(){
+			System.out.print( "X: "+ X + "Y: "+ Y);
+			System.out.println();
+			
+		}
+	} 
+
 }
+
+
+
 
 
