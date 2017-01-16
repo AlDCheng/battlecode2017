@@ -1,6 +1,14 @@
 // AI for soldier under normal control
-package naclbot;
+package naclbot.units.AI.soldier;
 import battlecode.common.*;
+import naclbot.units.motion.Move;
+import naclbot.units.motion.dodge.BulletDodge;
+import naclbot.units.motion.search.AllySearch;
+import naclbot.units.motion.shoot.Aim;
+import naclbot.units.motion.shoot.RobotInfoShoot;
+import naclbot.units.motion.shoot.ShootingType;
+import naclbot.variables.GlobalVars;
+
 import java.util.ArrayList;
 
 public class SoldierBot extends GlobalVars {

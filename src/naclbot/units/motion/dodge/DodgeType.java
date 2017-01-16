@@ -1,6 +1,7 @@
 // Managing dodging collisions with bullets
-package naclbot;
+package naclbot.units.motion.dodge;
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
 
 public class DodgeType extends GlobalVars {
     // Bullet attributes

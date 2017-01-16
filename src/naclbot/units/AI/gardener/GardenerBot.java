@@ -1,6 +1,10 @@
 // AI for gardener under normal control
-package naclbot;
+package naclbot.units.AI.gardener;
 import battlecode.common.*;
+import naclbot.units.motion.Move;
+import naclbot.units.motion.search.TreeSearch;
+import naclbot.variables.GlobalVars;
+
 import java.util.ArrayList;
 
 public class GardenerBot extends GlobalVars {

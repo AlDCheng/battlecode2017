@@ -1,10 +1,8 @@
 // AI for Archon
 package naclbot.units.AI.archon;
 import battlecode.common.*;
-
-
-
-import naclbot.variables.*;
+import naclbot.variables.ArchonVars;
+import naclbot.variables.DataVars.*;
 import naclbot.units.motion.*;
 import naclbot.units.motion.search.TreeSearch;
 
@@ -17,7 +15,8 @@ public class ArchonBot extends ArchonVars {
 	public static basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
 	public static basicTreeInfo[] dummyTreeInfo = {dummyTree};
 	
-	public static BinarySearchTree treeList = new BinarySearchTree(dummyTreeInfo);
+
+	public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
 	
 	public static int archonNumber;
 	public static int ID;
@@ -145,11 +144,14 @@ public class ArchonBot extends ArchonVars {
         	
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
             	current_round = rc.getRoundNum();
+            	
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
             		updateTrees(treeList);          
             	}
+            	
             	
             	detectEnemyGroup();
             	updateEnemyArchonLocations(archonLocations, archonIDs);
@@ -208,7 +210,8 @@ public class ArchonBot extends ArchonVars {
 	
 	// FUnction to gain information from scouts regarding the location of trees.
 	
-	private static void updateTrees(BinarySearchTree yahallo) throws GameActionException{
+	
+	private static void updateTrees(binarySearchTree yahallo) throws GameActionException{
 		for(int i = 0; i < SCOUT_LIMIT; i++){
 			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 3){
@@ -239,6 +242,7 @@ public class ArchonBot extends ArchonVars {
 			}
 		}
 	}
+	
 	private static Tuple[] detectEnemyGroup() throws GameActionException{
 		
 		Tuple[] coordinates = new Tuple[SCOUT_LIMIT];

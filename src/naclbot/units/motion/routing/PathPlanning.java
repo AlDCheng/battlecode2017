@@ -1,9 +1,10 @@
 // This hosts the path planning algorithm
-package naclbot;
+package naclbot.units.motion.routing;
 import java.util.Arrays;
 import java.util.ArrayList;
 
 import battlecode.common.*;
+import naclbot.variables.GlobalVars;
 
 // Some shitty path planning is here
 public class PathPlanning extends GlobalVars{

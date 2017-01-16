@@ -1,6 +1,15 @@
 // AI for tank under normal control
-package naclbot;
+package naclbot.units.AI.tank;
 import battlecode.common.*;
+
+import naclbot.units.motion.Move;
+import naclbot.units.motion.dodge.BulletDodge;
+import naclbot.units.motion.search.AllySearch;
+import naclbot.units.motion.shoot.Aim;
+import naclbot.units.motion.shoot.RobotInfoShoot;
+import naclbot.units.motion.shoot.ShootingType;
+import naclbot.variables.GlobalVars;
+
 import java.util.ArrayList;
 
 public class TankBot extends GlobalVars {

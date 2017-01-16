@@ -1,6 +1,11 @@
-// AI for lumberjack
-package naclbot;
+// AI for lumber jack
+
+package naclbot.units.AI.lumberjack;
 import battlecode.common.*;
+import naclbot.units.motion.Move;
+import naclbot.units.motion.search.TreeSearch;
+import naclbot.variables.GlobalVars;
+
 import java.util.ArrayList;
 
 public class LumberjackBot extends GlobalVars {

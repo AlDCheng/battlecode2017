@@ -1,8 +1,10 @@
 // AI for soldier under normal control
-package naclbot;
+package naclbot.units.AI.scout;
 import java.util.Arrays;
 
 import battlecode.common.*;
+import naclbot.units.motion.Move;
+import naclbot.variables.GlobalVars;
 
 
 /* Values to define
