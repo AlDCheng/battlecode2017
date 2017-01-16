@@ -116,6 +116,7 @@ public class TankBot extends GlobalVars {
 		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
+		hasMoved = false;
 
             } catch (Exception e) {
                 System.out.println("Tank Exception");

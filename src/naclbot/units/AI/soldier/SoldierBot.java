@@ -83,15 +83,15 @@ public class SoldierBot extends GlobalVars {
 			break;
 		    }
 		}
-				
+		/*		
 		// TODO: Make it stay near archon
 		if (leaveArchon == false && hasMoved == false) {
 		    MapLocation archonLoc = new MapLocation(xPos,yPos);
 		    Direction dir = new Direction(myLocation,archonLoc);
 		    Move.tryMove(dir);
 		}
-
-		/*
+		*/
+		
 		// If hasn't found archon or is not of protectinc archon role
 		// Check if it hasn't moved
 		if (myLocation == prevLocation) {
@@ -99,7 +99,7 @@ public class SoldierBot extends GlobalVars {
 		}
 		
 		// Move to other allies 
-		if (currentAllies.length > 0 && notMoved < 5) {
+		if (currentAllies.length > 0 && notMoved < 5 && hasMoved == false) {
 		    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
 		    if (locAlly == rc.getLocation()) {
 			Move.tryMove(Move.randomDirection());
@@ -108,11 +108,11 @@ public class SoldierBot extends GlobalVars {
 			Direction dir = rc.getLocation().directionTo(locAlly);
 			Move.tryMove(dir);
 		    }
-		} else {
+		} else if (hasMoved == false) {
 		    Move.tryMove(Move.randomDirection());
 		    notMoved = 0; // Reset counter
 		}
-		*/
+		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 		hasMoved = false;
