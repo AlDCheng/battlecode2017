@@ -8,6 +8,7 @@ public class GardenerBot extends GlobalVars {
 	public static void entry() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		// determines whether gardener is planter and waterer or unit builder 
+		// Hello
 		int role;
 		int treeCount = 0;
 		double randNum = Math.random();
