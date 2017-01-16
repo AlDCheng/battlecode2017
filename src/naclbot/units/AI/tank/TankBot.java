@@ -80,17 +80,14 @@ public class TankBot extends GlobalVars {
 		    enemyToShoot.add(r);
 		}
 
-		// MOVEMENT 
+		// MOVEMENT
 		BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
-		for (BulletInfo bullet: nearbyBullets) {
-		    Direction dodge = BulletDodge.whereToDodge(bullet);
-		    Direction noDodge = new Direction(-1);
-		    if (dodge != noDodge) {
-			System.out.println("OMGWILLCOLLIDE");
-			Move.tryMove(dodge);
-			hasMoved = true;
-			break;
-		    }
+		Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
+		Direction noDodge = new Direction(-1);
+		if (dodge != noDodge) {
+		    System.out.println("OMGWILLCOLLIDE");
+		    Move.tryMove(dodge);
+		    hasMoved = true;
 		}
 		
 		/*
@@ -126,6 +123,7 @@ public class TankBot extends GlobalVars {
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 		hasMoved = false;
+		System.out.println("TANK FINISHED");
 
             } catch (Exception e) {
                 System.out.println("Tank Exception");
