@@ -12,6 +12,7 @@ public class SoldierBot extends GlobalVars {
 	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
 	int notMoved = 0;
 	MapLocation prevLocation = rc.getLocation();
+	boolean hasMoved = false;
 
 	// Set role
 	int role;
@@ -73,21 +74,24 @@ public class SoldierBot extends GlobalVars {
 		// MOVEMENT 
 		BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 		for (BulletInfo bullet: nearbyBullets) {
-		    boolean willCollide = BulletDodge.willCollideWithMe(bullet);
-		    if (willCollide = true) {
+		    Direction dodge = BulletDodge.whereToDodge(bullet);
+		    Direction noDodge = new Direction(-1);
+		    if (dodge != noDodge) {
 			System.out.println("OMGWILLCOLLIDE");
+			Move.tryMove(dodge);
+			hasMoved = true;
+			break;
 		    }
 		}
-		
-		
+		/*		
 		// TODO: Make it stay near archon
-		if (leaveArchon == false) {
+		if (leaveArchon == false && hasMoved == false) {
 		    MapLocation archonLoc = new MapLocation(xPos,yPos);
 		    Direction dir = new Direction(myLocation,archonLoc);
 		    Move.tryMove(dir);
 		}
-
-		/*
+		*/
+		
 		// If hasn't found archon or is not of protectinc archon role
 		// Check if it hasn't moved
 		if (myLocation == prevLocation) {
@@ -95,7 +99,7 @@ public class SoldierBot extends GlobalVars {
 		}
 		
 		// Move to other allies 
-		if (currentAllies.length > 0 && notMoved < 5) {
+		if (currentAllies.length > 0 && notMoved < 5 && hasMoved == false) {
 		    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
 		    if (locAlly == rc.getLocation()) {
 			Move.tryMove(Move.randomDirection());
@@ -104,13 +108,14 @@ public class SoldierBot extends GlobalVars {
 			Direction dir = rc.getLocation().directionTo(locAlly);
 			Move.tryMove(dir);
 		    }
-		} else {
+		} else if (hasMoved == false) {
 		    Move.tryMove(Move.randomDirection());
 		    notMoved = 0; // Reset counter
 		}
-		*/
+		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
+		hasMoved = false;
 
             } catch (Exception e) {
                 System.out.println("Soldier Exception");
