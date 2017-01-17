@@ -7,105 +7,122 @@ import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 
 // Some shitty path planning is here
-public class PathPlanning extends GlobalVars{
+class PathPlanning extends GlobalVars{
 	// We on purposely switch start and end so that the ending path sequence
 	// is from start to end without flipping the order
 	public static ArrayList<MapLocation> findPath(MapLocation end, MapLocation start) {
-		// Convert start and end to cell coordinates
-		CellLocation startCell = new CellLocation();
-		CellLocation endCell = new CellLocation();
-		startCell.x = (int)((start.x - centerCoords.x)/robotRadius) - offsetX;
-		startCell.y = (int)((start.y - centerCoords.y)/robotRadius) - offsetY;
-
-		endCell.x = (int)((end.x - centerCoords.x)/robotRadius) - offsetX;
-		endCell.y = (int)((end.y - centerCoords.y)/robotRadius) - offsetY;
-		
-		// Define arrays
-		int maxX = internalMap.size();
-		int maxY = internalMap.get(0).size();
-		
-		float[][] dist = new float[maxX][maxY];
-		Arrays.fill(dist, Integer.MAX_VALUE);
-		
-		CellLocation[][] prev = new CellLocation[maxX][maxY];
-		//boolean[][] visited = new boolean[maxX][maxY];;
-		dist[startCell.x][startCell.y] = 0;
-		
-		// Define queue of cells
-		// Format [x][y][dist]
-		ArrayList<float[]> queueCells = new ArrayList<float[]>();
-		
-		CellLocation curCell = startCell;
-		
-		// Loop to find path
-		do {	
-			// Mark cell as visited
-			//visited[curCell.x][curCell.y] = true;
+		try {
+			System.out.println("Center: " + centerCoords.x + ", " + centerCoords.y);
+			System.out.println("Offset: " + offsetX + ", " + offsetY);
+				
+				
+			// Convert start and end to cell coordinates
+			CellLocation startCell = new CellLocation();
+			CellLocation endCell = new CellLocation();
+			startCell.x = (int)((start.x - centerCoords.x)/robotRadius) - offsetX;
+			startCell.y = (int)((start.y - centerCoords.y)/robotRadius) - offsetY;
+	
+			endCell.x = (int)((end.x - centerCoords.x)/robotRadius) - offsetX;
+			endCell.y = (int)((end.y - centerCoords.y)/robotRadius) - offsetY;
 			
-			// Check each neighbor
-			for (int i = -1; i < 2; i++) {
-				for (int j = -1; j < 2; j++) {
-					// Get coords
-					int neighborX = curCell.x+i;
-					int neighborY = curCell.y+j;
-					
-					// Check for OOB
-					if (((neighborX > 0) && (neighborX < maxX)) && ((neighborY > 0) && (neighborY < maxY))) {
-						// check for moveable path
-						//if (visited[neighborX][neighborY] != true) {
-						if (internalMap.get(neighborX).get(neighborY) == 0) {
-							float cost;
-							// Different costs of diagonals
-							if ((i == j) || (i == -1*j)) {
-								cost = (float)1.4;
-							} else {
-								cost = 1;
-							}
-							
-							// Add to additional cost
-							cost += dist[curCell.x][curCell.y];
-							
-							// Update dist
-							if (cost < dist[neighborX][neighborY]) {
-								dist[neighborX][neighborY] = cost;
-								
-								// Prev
-								prev[neighborX][neighborY] = curCell;
-										
-								// Add next cell to queue
-								float[] neighCellInfo = new float[3];
-								neighCellInfo[0] = neighborX;
-								neighCellInfo[1] = neighborY;
-								neighCellInfo[2] = cost;
-								queueCells.add(neighCellInfo);
-							}
+			// Define arrays
+			int maxY = internalMap.size();
+			int maxX = internalMap.get(0).size();
+			
+			System.out.println("maxX: " + maxX + ", maxY: " + maxY);
+			
+			float[][] dist = new float[maxY][maxX];
+			
+			for (float[] row: dist) {
+				Arrays.fill(row, Integer.MAX_VALUE);
+			}
+	
+			CellLocation[][] prev = new CellLocation[maxY][maxX];
+			
+			System.out.println("Start: " + startCell.x + ", " + startCell.y);
+			
+			dist[startCell.y][startCell.x] = 0;
+			
+			// Define queue of cells
+			// Format [x][y][dist]
+			ArrayList<float[]> queueCells = new ArrayList<float[]>();
+	
+			CellLocation curCell = startCell;
+			
+			// Loop to find path
+			do {	
+				// Mark cell as visited
+				//visited[curCell.x][curCell.y] = true;
+				
+				// Check each neighbor
+				for (int i = -1; i < 2; i++) {
+					for (int j = -1; j < 2; j++) {
+						// Get coords
+						int neighborX = curCell.x+i;
+						int neighborY = curCell.y+j;
 						
+						// Check for OOB
+						if (((neighborX >= 0) && (neighborX < maxX)) && ((neighborY >= 0) && (neighborY < maxY))) {
+							// check for moveable path
+							if (internalMap.get(neighborY).get(neighborX) == 0) {
+								float cost;
+								// Different costs of diagonals
+								if ((i == j) || (i == -1*j)) {
+									cost = (float)1.4;
+								} else {
+									cost = 1;
+								}
+								
+								// Add to additional cost
+								cost += dist[curCell.y][curCell.x];
+								
+								// Update dist
+								if (cost < dist[neighborY][neighborX]) {
+									dist[neighborY][neighborX] = cost;
+									
+									// Prev
+									prev[neighborY][neighborX] = curCell;
+											
+									// Add next cell to queue
+									float[] neighCellInfo = new float[3];
+									neighCellInfo[0] = neighborX;
+									neighCellInfo[1] = neighborY;
+									neighCellInfo[2] = cost;
+									queueCells.add(neighCellInfo);
+								}
+							
+							}
 						}
 					}
 				}
-			}
-			
-			// Get next cell
-			curCell = nextNode(queueCells);
-			
-			if (curCell == endCell) {
-				break;
-			}
-			
-		} while(queueCells.size() > 1);
-		
-		// Return path
-		ArrayList<MapLocation> path = new ArrayList<MapLocation>();
-		CellLocation cur = new CellLocation();
-		cur = endCell;
-		
-		while (prev[cur.x][cur.y] != null) {
-			cur = prev[cur.x][cur.y];
-			MapLocation pathLoc = new MapLocation(cur.x, cur.y);
-			path.add(pathLoc);
-		}
 				
-		return path;
+				// Get next cell
+				curCell = nextNode(queueCells);
+				
+				if (curCell == endCell) {
+					break;
+				}
+				
+			} while(queueCells.size() > 1);
+			
+			// Return path
+			ArrayList<MapLocation> path = new ArrayList<MapLocation>();
+			CellLocation cur = new CellLocation();
+			cur = endCell;
+			
+			while (prev[cur.y][cur.x] != null) {
+				cur = prev[cur.y][cur.x];
+				MapLocation pathLoc = new MapLocation(robotRadius * (cur.x + offsetX) + centerCoords.x,
+														robotRadius * (cur.y + offsetY) + centerCoords.y);
+				path.add(pathLoc);
+			}
+					
+			return path;
+		} catch (Exception e) {
+			System.out.println("Path planning error");
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	// Get next closet node in queue

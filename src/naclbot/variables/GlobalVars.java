@@ -155,7 +155,7 @@ public class GlobalVars {
 				int tileOffsetCenterY = (int)(newObjOffsetY/robotRadius);
 				
 				// Calculate radius of object in grid
-				// We will fill with square hit box for now
+				// We will fill with square hitbox for now
 				int tileRadius = (int)(treeSpecs[k][2]/robotRadius);
 				
 				// Loop to fill all tiles covered by radius
@@ -169,21 +169,22 @@ public class GlobalVars {
 						// Case 1: X position (extend ArrayList)
 						// - Condition 1: left of origin (-offset_x)
 						if ((tileOffsetX-offsetX) < 0) {
+							//System.out.println("Condition 1");
 							// Pad 0s to map for each row
 							for (int i = 0; i < internalMap.size(); i++) {
-								for (int j = 0; j < (-1*tileOffsetY); j++) {
+								for (int j = 0; j < (-1*(tileOffsetX-offsetX)); j++) {
 									internalMap.get(i).add(0, 0);
 								}
 							}
 							// Set offset from original origin
 							// i.e. offsetX = -2 means (0 - (-2))=2 gets location of origin
-							offsetX += tileOffsetX;
+							offsetX += tileOffsetX-offsetX;
 						}
 						// - Condition 2: right of internal map boundaries
 						// Pad 0s to map for each row
-						else if ((tileOffsetX-offsetX) > internalMap.size()) {
+						else if ((tileOffsetX-offsetX) > internalMap.get(0).size()-1) {
 							for (int i = 0; i < internalMap.size(); i++) {
-								for (int j = 0; j < (-1*tileOffsetY); j++) {
+								for (int j = 0; j < ((tileOffsetX-offsetX)); j++) {
 									internalMap.get(i).add(0);
 								}
 							}
@@ -217,8 +218,9 @@ public class GlobalVars {
 							for (int j = 0; j < internalMap.get(0).size(); j++) {
 								newRow.add(0);
 							}
-							for (int i = 0; i < (-1*(tileOffsetY-offsetY))-1; i++) {
-								internalMap.add(newRow);
+							for (int i = 0; i < ((tileOffsetY-offsetY))-1; i++) {
+								ArrayList<Integer> newRowUnlinked = new ArrayList<Integer>(newRow);
+								internalMap.add(newRowUnlinked);
 							}
 							
 							//Add row
