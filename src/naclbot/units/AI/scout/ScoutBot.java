@@ -3,7 +3,7 @@ package naclbot.units.AI.scout;
 import java.util.Arrays;
 
 import battlecode.common.*;
-import battlecode.instrumenter.inject.System;
+//import battlecode.instrumenter.inject.System;
 import naclbot.units.motion.Move;
 import naclbot.variables.GlobalVars;
 
