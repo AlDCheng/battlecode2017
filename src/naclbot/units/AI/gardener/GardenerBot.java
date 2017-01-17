@@ -15,7 +15,6 @@ public class GardenerBot extends GlobalVars {
 		// Hello
 		int role;
 		int treeCount = 0;
-		double randNum = Math.random();
 		
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
