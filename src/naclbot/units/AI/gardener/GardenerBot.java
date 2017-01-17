@@ -27,7 +27,8 @@ public class GardenerBot extends GlobalVars {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
-			System.out.println("Planter/Waterer; rand: " + randNum);
+			int remISTHEBESTGIRLNum = 0;
+			System.out.println("Planter/Waterer; rand: " + remISTHEBESTGIRLNum);
 			rc.broadcast(GARDENER_WATERER_CHANNEL, prevNumWaterer + 1);
 			role = 1; //planter and waterer
 

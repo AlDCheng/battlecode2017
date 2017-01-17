@@ -3,6 +3,7 @@ package naclbot.units.AI.scout;
 import java.util.Arrays;
 
 import battlecode.common.*;
+import battlecode.instrumenter.inject.System;
 import naclbot.units.motion.Move;
 import naclbot.variables.GlobalVars;
 
@@ -573,6 +574,7 @@ public class ScoutBot extends GlobalVars {
     	int[] update_data = new int [4];
     	Arrays.fill(update_data, -1);
 
+
     	
 		TreeInfo[] newTrees = addTrees();
 		for(int i = 0; i < newTrees.length; i++){
@@ -586,7 +588,7 @@ public class ScoutBot extends GlobalVars {
 				seenTotal += 1;     					     					       					
 			}			
 		}
-		
+
 		// Decide the trees to be sent and send
 		int sentThisTurn = 0;
 		TreeInfo[] toSend = new TreeInfo[broadcastLimit];
@@ -605,6 +607,7 @@ public class ScoutBot extends GlobalVars {
 			}
 		}
 		
+
 		// Information of first tree to be sent
 		if (sentThisTurn > 0){
 			hasBroadcasted = true;
