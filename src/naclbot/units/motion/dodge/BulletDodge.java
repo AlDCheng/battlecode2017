@@ -5,22 +5,26 @@ import naclbot.variables.GlobalVars;
 
 public class BulletDodge extends GlobalVars {
 
-    public static Direction whereToDodge(BulletInfo bullet) {
-    	
-		DodgeType dodgeInfo = new DodgeType(bullet);
-		 
-		boolean willCollide = dodgeInfo.willCollide();
-		
-		if (willCollide == true) {
-		    Direction toDodge = dodgeInfo.getDirectionToMove();
-		    return toDodge;
-		} else {
-		    Direction toDodge = new Direction(-1);
-		    return toDodge;
-		}
-		//return toDodge;
-	    }
+    public static Direction whereToDodge(BulletInfo[] bullets) {
+		    
+	for (BulletInfo bullet: bullets) {
+	    
+	    DodgeType dodgeInfo = new DodgeType(bullet);
+	    boolean willCollide = dodgeInfo.willCollide();
+	    float distance = dodgeInfo.getDistToRobot();
+	    	    
+	    if (willCollide == true) {
+		Direction dir = dodgeInfo.getDirectionToMove();
+		return dir;
+	    }	    
+	}
+	
+	Direction dir = new Direction(-1);
+	return dir;
+    }
+
     
+    /*
     public static class DodgeType{
     	public int xtype;
     	
@@ -38,7 +42,6 @@ public class BulletDodge extends GlobalVars {
 			return false;
 		}
     	
-    	
-    	
     }
+    */
 }

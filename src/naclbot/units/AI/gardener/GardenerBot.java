@@ -15,7 +15,6 @@ public class GardenerBot extends GlobalVars {
 		// Hello
 		int role;
 		int treeCount = 0;
-		double randNum = Math.random();
 		
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
@@ -45,7 +44,10 @@ public class GardenerBot extends GlobalVars {
    
                 // Check number of scouts currently in service
                 int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);                
-            
+                int soldierCount = rc.readBroadcast(SOLDIER_CHANNEL);
+                int lumberjackCount = rc.readBroadcast(LUMBERJACK_CHANNEL);
+                int tankCount = rc.readBroadcast(TANK_CHANNEL);
+                
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
                 
                 Direction dir = Move.randomDirection();
@@ -56,13 +58,16 @@ public class GardenerBot extends GlobalVars {
 	                Move.tryMove(Move.randomDirection());
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
-	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
+	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackCount) {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
-	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
+	                    rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
+	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackCount < soldierCount) {
 	                    rc.buildRobot(RobotType.LUMBERJACK, dir);
-	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && Math.random() < .01 && rc.isBuildReady()) {
-	                    rc.buildRobot(RobotType.TANK, dir);    
-	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
+	                    rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
+	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && tankCount*10 < soldierCount) {
+	                    rc.buildRobot(RobotType.TANK, dir);
+	                    rc.broadcast(TANK_CHANNEL, tankCount+1);
+	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && rc.isBuildReady() && canBuildScout(scoutCount)) {
 	                	/* Check to build scout
 	                     * Must assert that there are not too many scouts in service at this moment in time
 	                     */
@@ -72,10 +77,9 @@ public class GardenerBot extends GlobalVars {
 	            //planter,waterer    
 	            else if (role == 1) {
 	                // First see if there is a tree nearby and if you can do anything to it
-	                
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
 	                ArrayList<MapLocation> nearbyTrees = TreeSearch.getNearbyTrees();
-	                MapLocation nearestLowTree;
+	                Direction dirToNearestLow;
 	                float distanceNearestTree;
 	                if (nearbyTrees.size() > 0) {
 	                	distanceNearestTree = rc.getLocation().distanceTo(TreeSearch.locNearestTree(nearbyTrees));
@@ -84,14 +88,13 @@ public class GardenerBot extends GlobalVars {
 	                }
 	                
 	                if (lowHealthTrees.size() > 0){
-	                    nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
-	                    dir = rc.getLocation().directionTo(nearestLowTree);
+	                    dirToNearestLow = rc.getLocation().directionTo(lowHealthTrees.get(0));
 		                
-		                //try to water a tree
-		                if (!rc.canWater(nearestLowTree)) {
-		                	Move.tryMove(dir);
+		            //try to water a tree
+		                if (!rc.canWater(lowHealthTrees.get(0))) {
+		                	Move.tryMove(dirToNearestLow);
 		                } else {
-		                	rc.water(nearestLowTree);
+		                	rc.water(lowHealthTrees.get(0));
 		                }
 	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 3.0) {
 		                rc.plantTree(dir);

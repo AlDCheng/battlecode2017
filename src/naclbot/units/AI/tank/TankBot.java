@@ -23,8 +23,6 @@ public class TankBot extends GlobalVars {
 	MapLocation prevLocation = rc.getLocation();
 	boolean hasMoved = false;
 
-	// Set role
-	int role;
 	boolean leaveArchon = false; // If we want to make it surround archon until later grouping
 	
 	// The code you want your robot to perform every round should be in this loop
@@ -68,6 +66,8 @@ public class TankBot extends GlobalVars {
 			}
 		    }
 		}
+
+		System.out.println("TANK HAS TRIED SHOOTING");
 		// Resets the list to add new ones
 		enemyToShoot.clear();
 
@@ -80,18 +80,20 @@ public class TankBot extends GlobalVars {
 		    enemyToShoot.add(r);
 		}
 
-		// MOVEMENT 
+		System.out.println("TANK HAS TRIED REWRITING ENEMIES");
+
+		// MOVEMENT
 		BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
-		for (BulletInfo bullet: nearbyBullets) {
-		    Direction dodge = BulletDodge.whereToDodge(bullet);
+		if (nearbyBullets.length > 0) {
+		    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
 		    Direction noDodge = new Direction(-1);
 		    if (dodge != noDodge) {
 			System.out.println("OMGWILLCOLLIDE");
 			Move.tryMove(dodge);
 			hasMoved = true;
-			break;
 		    }
 		}
+		System.out.println("TANK HAS TRIED TO SHOOT");
 		
 		/*
 		// TODO: Make it stay near archon
@@ -122,10 +124,13 @@ public class TankBot extends GlobalVars {
 		    Move.tryMove(Move.randomDirection());
 		    notMoved = 0; // Reset counter
 		}
+
+		System.out.println("TANK HAS TRIED TO MOVE");
 		
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 		hasMoved = false;
+		System.out.println("TANK FINISHED");
 
             } catch (Exception e) {
                 System.out.println("Tank Exception");
