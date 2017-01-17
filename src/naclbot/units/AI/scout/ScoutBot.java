@@ -3,7 +3,7 @@ package naclbot.units.AI.scout;
 import java.util.Arrays;
 
 import battlecode.common.*;
-//import battlecode.instrumenter.inject.System;
+
 import naclbot.units.motion.Move;
 import naclbot.variables.GlobalVars;
 
@@ -156,7 +156,7 @@ public class ScoutBot extends GlobalVars {
             			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
             			rc.broadcast(2 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.y);   
                      	rc.broadcast(9 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, id);
-                     	System.out.println("index" + index);
+                    
                      	if (index != -1){
                      		rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 5);
                      		
@@ -202,7 +202,7 @@ public class ScoutBot extends GlobalVars {
         		
         		
         		// Too many enemies nearby will commit sudoku
-        		if (enemyRobots.length > 3){
+        		if (enemyRobots.length > 5){
                 	System.out.println(" OMG WHY DO THEY LIKE EMILIA SO MUCH FUCKING KILL ME");
         			
     				base = updateBase();        			
@@ -253,8 +253,7 @@ public class ScoutBot extends GlobalVars {
         			track(enemyRobots, noTrack);       			
         		}
         		
-        		System.out.println("Kitty says hi");
-            	      		
+        	            	      		
         		                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Rem_is_better += 1;
 
@@ -363,7 +362,7 @@ public class ScoutBot extends GlobalVars {
 	
 	// Get Nearest trackable enemy
 	private static RobotInfo getNearestEnemy(MapLocation myLocation, RobotInfo[] enemies, int[] ikenai, int[] shinai){
-		System.out.println("Checking");		
+
 		// Smallest distance to another robot
 		float minimum = Integer.MAX_VALUE;
 				
@@ -461,7 +460,7 @@ public class ScoutBot extends GlobalVars {
 	}
 	
 	// Get the nearest enemy to the last known location of the archon
-	private static MapLocation getNearestEnemytoBase(RobotInfo[] enemies,boolean update){
+	private static MapLocation getNearestEnemytoBase(RobotInfo[] enemies, boolean update){
 		
 		// Smallest distance to another robot
 		float minimum = Integer.MAX_VALUE;
@@ -473,13 +472,11 @@ public class ScoutBot extends GlobalVars {
 			if (enemies[i].type == battlecode.common.RobotType.ARCHON && !updated && update){
 				if (!arrayContainsInt(enemyArchonIDs, enemies[i].ID)){
 					for (int j = 0; j < enemyArchons.length; j++){
-						if (enemyArchons[j] == null && updated){
+						if (enemyArchons[j] == null && !updated){
 							enemyArchons[j] = enemies[i];
 							enemyArchonIDs[j] = enemies[i].ID;
 							index = (int) j;
-							updated = true;
-							System.out.println("I SEE A NEW ARCHON OMG IT LIKES EMILIA PLZ KILL NORMIE PIECE OF SHIT PLS NAO: " + enemies[i].ID + "sighted:" + index);
-							
+							updated = true;									
 						}
 					}
 				}
@@ -573,8 +570,6 @@ public class ScoutBot extends GlobalVars {
     	// Update trees that are able to be sensed
     	int[] update_data = new int [4];
     	Arrays.fill(update_data, -1);
-
-
     	
 		TreeInfo[] newTrees = addTrees();
 		for(int i = 0; i < newTrees.length; i++){
@@ -592,7 +587,8 @@ public class ScoutBot extends GlobalVars {
 		// Decide the trees to be sent and send
 		int sentThisTurn = 0;
 		TreeInfo[] toSend = new TreeInfo[broadcastLimit];
-		while (sentThisTurn < broadcastLimit){
+		boolean done = false;
+		while (sentThisTurn < broadcastLimit && !done){
 			for (int i = sentIndex % memorySize; i < memorySize; i++){
 				if (!arrayContainsInt(sentTreesIDs, seenTreesIDs[i]) && (sentThisTurn < broadcastLimit)){
 					if(seenTrees[i] != null) {
@@ -605,8 +601,8 @@ public class ScoutBot extends GlobalVars {
 				}
 				sentIndex += 1;
 			}
+			done = true;
 		}
-		
 
 		// Information of first tree to be sent
 		if (sentThisTurn > 0){
@@ -628,10 +624,7 @@ public class ScoutBot extends GlobalVars {
         	rc.broadcast(8 + typeChannel + typeNumber * typeOffset, (int)toSend[1].radius);        				
 		}
 	
-		rc.broadcast(9 + typeChannel + typeNumber * typeOffset, sentThisTurn);		
-    
-      
-    
+		rc.broadcast(9 + typeChannel + typeNumber * typeOffset, sentThisTurn);		             
 
     }
 }
