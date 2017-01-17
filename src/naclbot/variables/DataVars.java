@@ -303,8 +303,9 @@ public class DataVars{
 	    public void printInOrder(Node root){
 	    	if (root!=null){
 	    		printInOrder(root.leftChild);
-	    		System.out.print("Node: " + root.key + "Data_x: " + root.data.x + "Data_y: " + root.data.y + "Radius: " + root.data.radius);
-		        System.out.println();
+	    		//System.out.print("Node: " + root.key + "Data_x: " + root.data.x + "Data_y: " + root.data.y + "Radius: " + root.data.radius);
+	    		System.out.println(root.key + "," + root.data.x + "," + root.data.y + "," + root.data.radius);
+		        //System.out.println();
 		        printInOrder(root.rightChild);	    		
 	    	}
 	    }
