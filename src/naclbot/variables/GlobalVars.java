@@ -143,16 +143,16 @@ public class GlobalVars {
 	
 	// need radius
 	// treeSpec format [0] x; [1] y; [2]; r
-	public static void updateMapTrees(float[][] treeSpecs) {
+	public static void updateMapTrees(ArrayList<float[]> treeSpecs) {
 		
 		// Get offset of object position to origin (centerCoords)
-		for (int k = 0; k < treeSpecs.length; k++) {
+		for (int k = 0; k < treeSpecs.size(); k++) {
 			// Get tree properties from ID
 			try {
 				
 				// Calculate displacement from origin
-				float newObjOffsetX = treeSpecs[k][0] - centerCoords.x;
-				float newObjOffsetY = treeSpecs[k][1] - centerCoords.y; 
+				float newObjOffsetX = treeSpecs.get(k)[0] - centerCoords.x;
+				float newObjOffsetY = treeSpecs.get(k)[1] - centerCoords.y; 
 				
 				// Convert raw offset to tiles
 				// Each tile is the same width as the unit creating this map
@@ -161,7 +161,7 @@ public class GlobalVars {
 				
 				// Calculate radius of object in grid
 				// We will fill with square hitbox for now
-				int tileRadius = (int)(treeSpecs[k][2]/robotRadius);
+				int tileRadius = (int)(treeSpecs.get(k)[2]/robotRadius);
 				
 				// Loop to fill all tiles covered by radius
 				for (int tileOffsetX = tileOffsetCenterX-tileRadius; 

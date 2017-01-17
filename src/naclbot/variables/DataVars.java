@@ -2,8 +2,11 @@ package naclbot.variables;
 
 import battlecode.common.GameActionException;
 import naclbot.variables.GlobalVars;
+import java.util.ArrayList;
 
 public class DataVars extends GlobalVars{
+	public static ArrayList<float[]> treeMapFormat = new ArrayList<float[]>();
+	
 	// Get number of units originating from given Archon
 	public static class MaxHeap{
 			
@@ -313,6 +316,8 @@ public class DataVars extends GlobalVars{
 
 
 	public static void updateTrees(binarySearchTree yahallo) throws GameActionException{
+		// Reset trees to add
+		treeMapFormat = new ArrayList<float[]>();
 		for(int i = 0; i < SCOUT_LIMIT; i++){
 			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 3){
@@ -328,6 +333,13 @@ public class DataVars extends GlobalVars{
 					
 					
 					yahallo.insert(tree1, yahallo.tree_root);
+					
+					// Add to list of treees
+					float[] dataRow = new float[3];
+					dataRow[0] = x_1;
+					dataRow[1] = y_1;
+					dataRow[2] = radius_1;
+					treeMapFormat.add(dataRow);
 				}
 				if (sent_number > 1){
 					int ID_2 = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
@@ -337,6 +349,13 @@ public class DataVars extends GlobalVars{
 					basicTreeInfo tree2 = new basicTreeInfo(ID_2, x_2, y_2, radius_2);
 					
 					yahallo.insert(tree2, yahallo.tree_root);
+					
+					// Add to list of treees
+					float[] dataRow = new float[3];
+					dataRow[0] = x_2;
+					dataRow[1] = y_2;
+					dataRow[2] = radius_2;
+					treeMapFormat.add(dataRow);
 				}
 			
 	

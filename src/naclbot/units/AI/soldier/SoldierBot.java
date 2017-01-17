@@ -64,7 +64,9 @@ public class SoldierBot extends GlobalVars {
 		
 		while (true){
 			try{
-				DataVars.updateTrees(treeList);							
+				DataVars.updateTrees(treeList);
+				updateMapTrees(DataVars.treeMapFormat);
+				
 				int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
 				int targetY = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 4);
 				int targetID = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 2);
