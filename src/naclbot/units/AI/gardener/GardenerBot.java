@@ -78,10 +78,9 @@ public class GardenerBot extends GlobalVars {
 	            //planter,waterer    
 	            else if (role == 1) {
 	                // First see if there is a tree nearby and if you can do anything to it
-	                
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
 	                ArrayList<MapLocation> nearbyTrees = TreeSearch.getNearbyTrees();
-	                MapLocation nearestLowTree;
+	                Direction dirToNearestLow;
 	                float distanceNearestTree;
 	                if (nearbyTrees.size() > 0) {
 	                	distanceNearestTree = rc.getLocation().distanceTo(TreeSearch.locNearestTree(nearbyTrees));
@@ -90,14 +89,13 @@ public class GardenerBot extends GlobalVars {
 	                }
 	                
 	                if (lowHealthTrees.size() > 0){
-	                    nearestLowTree = TreeSearch.locNearestTree(lowHealthTrees);
-	                    dir = rc.getLocation().directionTo(nearestLowTree);
+	                    dirToNearestLow = rc.getLocation().directionTo(lowHealthTrees.get(0));
 		                
-		                //try to water a tree
-		                if (!rc.canWater(nearestLowTree)) {
-		                	Move.tryMove(dir);
+		            //try to water a tree
+		                if (!rc.canWater(lowHealthTrees.get(0))) {
+		                	Move.tryMove(dirToNearestLow);
 		                } else {
-		                	rc.water(nearestLowTree);
+		                	rc.water(lowHealthTrees.get(0));
 		                }
 	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 3.0) {
 		                rc.plantTree(dir);
