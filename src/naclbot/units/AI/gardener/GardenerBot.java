@@ -45,7 +45,10 @@ public class GardenerBot extends GlobalVars {
    
                 // Check number of scouts currently in service
                 int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);                
-            
+                int soldierCount = rc.readBroadcast(SOLDIER_CHANNEL);
+                int lumberjackCount = rc.readBroadcast(LUMBERJACK_CHANNEL);
+                int tankCount = rc.readBroadcast(TANK_CHANNEL);
+                
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
                 
                 Direction dir = Move.randomDirection();
@@ -56,13 +59,16 @@ public class GardenerBot extends GlobalVars {
 	                Move.tryMove(Move.randomDirection());
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
-	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
+	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackCount) {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
-	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
+	                    rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
+	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackCount < soldierCount) {
 	                    rc.buildRobot(RobotType.LUMBERJACK, dir);
-	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && Math.random() < .01 && rc.isBuildReady()) {
-	                    rc.buildRobot(RobotType.TANK, dir);    
-	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && Math.random() < .01 && rc.isBuildReady() && canBuildScout(scoutCount)) {
+	                    rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
+	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && tankCount*10 < soldierCount) {
+	                    rc.buildRobot(RobotType.TANK, dir);
+	                    rc.broadcast(TANK_CHANNEL, tankCount+1);
+	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && rc.isBuildReady() && canBuildScout(scoutCount)) {
 	                	/* Check to build scout
 	                     * Must assert that there are not too many scouts in service at this moment in time
 	                     */
