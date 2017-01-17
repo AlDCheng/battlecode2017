@@ -87,6 +87,10 @@ public class ScoutBot extends GlobalVars {
         Rem_is_better = rc.getRoundNum();
         initRound = Rem_is_better;
         
+        int archonCount = rc.readBroadcast(ARCHON_CHANNEL);
+        homeArchon = (int) (Math.random() *archonCount);
+
+        
         // Iniitalize default array values
         Arrays.fill(enemyArchonIDs, -1);        
         Arrays.fill(seenTreesIDs, -1);
@@ -410,7 +414,7 @@ public class ScoutBot extends GlobalVars {
 
 		if  (gap > 7.5){
 			// Move towards target]
-			if (rc.canMove(dir) || rc.isLocationOccupiedByTree(myLocation.add(dir, (float)2.5))){							
+			if (rc.canMove(dir)){							
 				rc.move(dir);
 				return dir;
 			}
@@ -421,7 +425,7 @@ public class ScoutBot extends GlobalVars {
 			
 		} else if (gap < 2.5) {
 			// Move away from target
-			if (rc.canMove(anti_dir) || rc.isLocationOccupiedByTree(myLocation.add(anti_dir, (float)2.5))){							
+			if (rc.canMove(anti_dir)){							
 				rc.move(anti_dir);
 				return dir;
 			}
@@ -434,10 +438,10 @@ public class ScoutBot extends GlobalVars {
 			float nani = (float) Math.random();
 			float keikaku =  (float) Math.random() + (float) 1.5;
 			if (nani>0.5){
-				if (rc.canMove(perp)|| rc.isLocationOccupiedByTree(myLocation.add(perp, (float)2.5))){							
+				if (rc.canMove(perp)){							
 					rc.move(perp, keikaku);
 					return perp;
-				} else if (rc.canMove(anti_perp)|| rc.isLocationOccupiedByTree(myLocation.add(anti_perp, (float)2.5))){							
+				} else if (rc.canMove(anti_perp)){							
 					rc.move(anti_perp,keikaku);
 					return anti_perp;
 				} else{Direction dir2 = Move.randomDirection();
@@ -446,10 +450,10 @@ public class ScoutBot extends GlobalVars {
 				}
 			}   else{
 				
-				if (rc.canMove(anti_perp)|| rc.isLocationOccupiedByTree(myLocation.add(anti_perp, (float)2.5))){							
+				if (rc.canMove(anti_perp)){							
 					rc.move(anti_perp, keikaku);
 					return anti_perp;
-				} else if (rc.canMove(perp)|| rc.isLocationOccupiedByTree(myLocation.add(perp, (float)2.5))){							
+				} else if (rc.canMove(perp)){							
 					rc.move(perp, keikaku);
 					return perp;
 				} else{Direction dir2 = Move.randomDirection();
@@ -632,5 +636,7 @@ public class ScoutBot extends GlobalVars {
 		rc.broadcast(9 + typeChannel + typeNumber * typeOffset, sentThisTurn);		             
 
     }
+    
+    
 }
 

@@ -27,6 +27,8 @@ public class GlobalVars {
 	
 	public static int TREE_DATA_CHANNEL;
 	public static int TREE_OFFSET;
+	
+	public static int GROUP_NUMBER_CHANNEL;
 	public static int GROUP_CHANNEL;
 	public static int GROUP_CHANNEL_OFFSET;
 	public static int GROUP_COMMUNICATE_OFFSET;
@@ -35,6 +37,7 @@ public class GlobalVars {
 	public static int GROUP_START;
 	public static int GROUP_OFFSET;
 	public static int GROUP_LIMIT;
+	public static int GROUP_SIZE_LIMIT;
 	
 	// Internal map variables
 	public static ArrayList<ArrayList<Integer>> internalMap = new ArrayList<ArrayList<Integer>>();
@@ -111,11 +114,12 @@ public class GlobalVars {
 		TANK_CHANNEL = 180;
 		
 		SOLDIER_CHANNEL = 160;
-		
-		GROUP_CHANNEL = 200;
+		GROUP_NUMBER_CHANNEL = 200;
+		GROUP_CHANNEL = 201;
 		GROUP_COMMUNICATE_OFFSET =2;
 		GROUP_CHANNEL_OFFSET = 20;
 		GROUP_LIMIT = 5;
+		GROUP_SIZE_LIMIT = 12;
 		
 		GROUP_LEADER_OFFSET = 2;
 		GROUP_LEADER_START = GROUP_CHANNEL + GROUP_COMMUNICATE_OFFSET * GROUP_LIMIT;
@@ -129,6 +133,7 @@ public class GlobalVars {
 		//Offset 3: Tree Y Position
 		//Offset 4:  Something Else
 	}
+	
 	
 	// Updates map for trees
 	// 0 = empty

@@ -18,16 +18,28 @@ public class SoldierBot extends GlobalVars {
 	public static int initRound;
 	public static int homeArchon;
 	public static Team enemy;
+	public static int currentRound;
 	
 	public static void init() throws GameActionException{
 		System.out.println("I'm an soldier!");
         enemy = rc.getTeam().opponent();
+        currentRound = rc.getRoundNum();
+        initRound = currentRound;
+        
+        int archonCount = rc.readBroadcast(ARCHON_CHANNEL);
+        homeArchon = (int) (Math.random() *archonCount);
 		
         main();
 	}
 	
-    public static void main() throws GameActionException {
+	public static void attack() throws GameActionException{
+		
+	
 
+	}
+	
+    public static void main() throws GameActionException {
+    	int command = 0;
 
 	// Important variables
 	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
@@ -38,7 +50,7 @@ public class SoldierBot extends GlobalVars {
 	boolean leaveArchon = false; // If we want to make it surround archon until later grouping
 		
         // The code you want your robot to perform every round should be in this loop
-        while (true) {
+        while (command == 0) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
 		// Listen for home archon's location

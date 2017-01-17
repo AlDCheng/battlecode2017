@@ -20,9 +20,11 @@ public class ArchonBot extends ArchonVars {
 	public static int archonNumber;
 	public static int ID;
 	public static Team enemy;
+	public static Team allies;
 	
 	public static Tuple[] archonLocations = new Tuple[5];
 	public static int[] archonIDs = new int[5];
+	public static int lastAttackArchon;
 	
 	public static MapLocation treeLoc;
 	public static ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
@@ -46,12 +48,16 @@ public class ArchonBot extends ArchonVars {
 		// Receive archonNumber from the channel and update
 		archonNumber = rc.readBroadcast(ARCHON_CHANNEL);
 		rc.broadcast(ARCHON_CHANNEL, archonNumber + 1);
+		System.out.println("my Archon number is: " + archonNumber);
 		
 		ID = rc.getID();
 		enemy = rc.getTeam().opponent();
+		allies = rc.getTeam();
 		
 		Arrays.fill(archonIDs, -1);
-		start();
+		lastAttackArchon = 0;
+		
+		start();		
 	}
 	
 	public static void start() throws GameActionException {		
@@ -70,8 +76,9 @@ public class ArchonBot extends ArchonVars {
             	}            	
             	// Check for all broadcasts
             	
-            	ArrayList broadcastingEnemyUnits = getEnemyBroadcastLocations();
+            	ArrayList<MapLocation> broadcastingEnemyUnits = getEnemyBroadcastLocations();
             	
+
             	// Generate a random direction
                 Direction dir = Move.randomDirection();
             	
@@ -122,12 +129,27 @@ public class ArchonBot extends ArchonVars {
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
             		updateTrees(treeList);  
-            		treeList.printInOrder(treeList.tree_root);
+          
             	}
             	
             	
             	detectEnemyGroup();
-            	updateEnemyArchonLocations(archonLocations, archonIDs);            	
+            	// Notify & Create Group
+            	if(updateEnemyArchonLocations(archonLocations, archonIDs)){
+            		System.out.println("archonIDs updated");  
+            		if (lastAttackArchon >= 150){
+            			generateCommand(0,archonLocations[0], archonIDs[0]);
+                		lastAttackArchon = 0;        
+            			
+            		}
+            	if (lastAttackArchon >= 300){
+            		generateCommand(0,archonLocations[0], archonIDs[0]);
+            		lastAttackArchon = 0;      
+            	}
+                        		
+            		            		
+            	}
+            	
             
             	
             	
@@ -144,15 +166,7 @@ public class ArchonBot extends ArchonVars {
 	            // Get number of gardeners
             	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
             	rc.broadcast(GARDENER_CHANNEL, 0);
-
-	            /* -------------------------------------------------------
-	             * ------------ Tree Data Storage and Shit ---------------
-	             --------------------------------------------------------*/
-            	
-
-            
-            	
-            	
+	          	                        	            	
                 // Try to hire gardeners at 150 turn intervals
             	if ((rc.getRoundNum() % 150 == 0)) {
             		hireGard = false;
@@ -167,10 +181,8 @@ public class ArchonBot extends ArchonVars {
                 Move.tryMove(Move.randomDirection());
 
                 // Broadcast archon's location for other robots on the team to know
-                MapLocation myLocation = rc.getLocation();
-                rc.broadcast(0,(int)myLocation.x);
-                rc.broadcast(1,(int)myLocation.y);
-
+                broadcastLocation();
+                lastAttackArchon += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -182,7 +194,79 @@ public class ArchonBot extends ArchonVars {
 		
 	}
 	
-	// FUnction to gain information from scouts regarding the location of trees.
+	private static RobotInfo[] senseAlliedUnits(){
+		return rc.senseNearbyRobots(-1, allies);		
+	}	
+	
+
+	private static boolean generateCommand(int kata, Tuple targetLocation, int targetID) throws GameActionException{
+		
+		// Generates a variety of different group actions
+		// kata issues the type of command to be issued
+		
+		
+		// Attack command - gathers nearby armed units to generate a group to attack a target location
+		if (kata == 0){
+			System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
+			
+			// to store all members that it wants to call to the group
+			int[] groupIDs = new int[GROUP_SIZE_LIMIT];
+			int groupCount = 0;
+			
+			int decidedGroup = -1;
+			
+			for (int i = 0; i < GROUP_LIMIT; i++){
+				if (rc.readBroadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET) == 0){
+					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET, 1);
+					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET + 1, rc.getRoundNum());
+					
+					// Tell which channel the group is in
+					rc.broadcast(GROUP_NUMBER_CHANNEL, i);
+					decidedGroup = i;			
+					
+					// Overwrite group if the group is older than 500 turns
+				} else if (rc.readBroadcast(GROUP_CHANNEL) + i * GROUP_COMMUNICATE_OFFSET + 1 > rc.getRoundNum() + 500)
+					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET, 1);
+					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET + 1, rc.getRoundNum());
+					
+					// Tell which channel the group is in
+					rc.broadcast(GROUP_NUMBER_CHANNEL, i);
+					decidedGroup = i;		
+			}
+				// If there is a free group slot
+			if (decidedGroup >= 0){
+				
+			
+				RobotInfo[] shounin = senseAlliedUnits();
+				for (int j = 0; j < shounin.length; j++){
+					if (shounin[j].type == battlecode.common.RobotType.SOLDIER){
+						if (groupCount < GROUP_SIZE_LIMIT){
+							System.out.println("Archon " + archonNumber + "would like the following soldier to join group " + decidedGroup);;
+							System.out.println(shounin[j].ID);
+							
+							rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 4, shounin[j].ID);
+							
+							groupIDs[groupCount] = shounin[j].ID;
+							groupCount += 1;								
+						}
+					}						
+				}				
+			}
+			// if a number of soldiers was actually picked
+			if(groupCount > 0){
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 1, targetID);
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 2, (int)targetLocation.X);
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 3, (int)targetLocation.Y);
+				System.out.println("Group succesfully created");
+				
+				return true;
+				
+			}
+		}
+		return false;
+			
+	}
+	
 	
 	
 	private static void broadcastLocation() throws GameActionException{
@@ -237,7 +321,7 @@ public class ArchonBot extends ArchonVars {
 	}
 	
 	
-	private static ArrayList getEnemyBroadcastLocations(){
+	private static ArrayList<MapLocation> getEnemyBroadcastLocations(){
 		
 		MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
     	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
@@ -279,23 +363,27 @@ public class ArchonBot extends ArchonVars {
 	private static Tuple[] detectEnemyGroup() throws GameActionException{
 		
 		Tuple[] coordinates = new Tuple[SCOUT_LIMIT];
-		System.out.println("received message of OMG");
+	
 		
 		for(int i = 0; i < SCOUT_LIMIT; i++){			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 2){
 				Tuple coords = new Tuple(rc.readBroadcast(3 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(4 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
 				coords.printData();	
 				coordinates[i] = coords;
+				System.out.println("received message of OMG");
 			}
 			
 		}
 		return coordinates;	
 	}
-	private static void updateEnemyArchonLocations(Tuple[] archonLocations, int[] archonIDs) throws GameActionException{			
-
+	
+	
+	private static boolean updateEnemyArchonLocations(Tuple[] archonLocations, int[] archonIDs) throws GameActionException{			
+		
+		boolean newUpdate = false;
 		for(int i = 0; i < SCOUT_LIMIT; i++){			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 5){
-				Tuple coords = new Tuple(rc.readBroadcast(6 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(47 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
+				Tuple coords = new Tuple(rc.readBroadcast(6 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(7 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
 				int foundArchonID = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
 				System.out.println("Recognized that Archon has been found with ID: " + foundArchonID);
 				coords.printData();	
@@ -305,6 +393,7 @@ public class ArchonBot extends ArchonVars {
 					archonLocations[x] = coords;
 				}
 				else{
+					System.out.println("Oh shit it's a new normie Emilia-loving piece of shit");
 					boolean fill = true;
 					for(int j =0; j < archonIDs.length; j++){
 						if (archonIDs[j] == -1 && fill){
@@ -314,9 +403,11 @@ public class ArchonBot extends ArchonVars {
 						}
 					}
 				}
+				newUpdate = true;
 			}
 			
 		}
+		return newUpdate;
 		
 	}
 }

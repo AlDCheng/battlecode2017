@@ -165,8 +165,6 @@ public class DataVars{
 	
 	        this.tree_root = new Node(data[0].ID, data[0], null, null, null);
 	        
-	        System.out.print("tree_root_ID: " + tree_root.key);
-	        
 	        for (int i = 1; i < data.length; i++){
 	        	insert(data[i], tree_root);
 	        }
@@ -195,8 +193,7 @@ public class DataVars{
 	    
 	    public void insert(basicTreeInfo data, Node root){
 	    	int key = data.ID;
-	    	 System.out.print("inserting: " + data.ID);
-	    	
+
 	    	if(search(key, root) == null){
 	    		if (key > root.key){
 	    			if (root.rightChild != null){
