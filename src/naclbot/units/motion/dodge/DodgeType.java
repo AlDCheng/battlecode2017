@@ -39,6 +39,11 @@ public class DodgeType extends GlobalVars {
 	theta = propagationDirection.radiansBetween(directionToRobot);
     }
 
+    // Returns distance to robot
+    public float getDistToRobot() {
+	return distToRobot;
+    }
+
     // Calculates willCollide variable and returns it, calculates perpendicularDist as well
     public boolean willCollide() {
         if (Math.abs(theta) > Math.PI/2) {
