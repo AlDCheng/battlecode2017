@@ -66,6 +66,7 @@ public class ScoutBot extends GlobalVars {
 		while (true){
 			try{
 				
+				Clock.yield();
 			}
 			catch (Exception e) {
                 System.out.println("Scout Exception");
@@ -185,11 +186,9 @@ public class ScoutBot extends GlobalVars {
         		// On every offset 2, broadcast the locations of two trees that you have not yet broadcasted before....
 
         		else if (Rem_is_better % SCOUT_UPDATE_FREQUENCY == 2){
-        			System.out.println(" Broadcast Tree");
-        			
-        			broadcastTree (2, SCOUT_CHANNEL, scout_number, SCOUT_MESSAGE_OFFSET);      
-        			System.out.println(" Broadcast Tree");
-        
+        		        			
+        			broadcastTree (2, SCOUT_CHANNEL, scout_number, SCOUT_MESSAGE_OFFSET);     
+        		        
         			if (hasBroadcasted){
         				
         				rc.broadcast(10 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, 3);

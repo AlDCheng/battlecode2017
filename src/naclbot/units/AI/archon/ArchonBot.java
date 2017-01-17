@@ -69,6 +69,10 @@ public class ArchonBot extends ArchonVars {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
+    		    
+		        // Broadcast archon's location for other robots on the team to know
+			    broadcastLocation();
             	// Check for condition to exit Starting Phase
             	current_round = rc.getRoundNum();
             	if(current_round > 100) {
@@ -95,9 +99,7 @@ public class ArchonBot extends ArchonVars {
                     rc.hireGardener(dir);
                     rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
                 }               
-            		    
-                // Broadcast archon's location for other robots on the team to know
-    		    broadcastLocation();
+
                 
  
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -126,6 +128,7 @@ public class ArchonBot extends ArchonVars {
             	
             	current_round = rc.getRoundNum();
             	
+                broadcastLocation();
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
             		updateTrees(treeList);  
@@ -137,14 +140,17 @@ public class ArchonBot extends ArchonVars {
             	// Notify & Create Group
             	if(updateEnemyArchonLocations(archonLocations, archonIDs)){
             		System.out.println("archonIDs updated");  
-            		if (lastAttackArchon >= 150){
-            			generateCommand(0,archonLocations[0], archonIDs[0]);
-                		lastAttackArchon = 0;        
-            			
+            		if (lastAttackArchon >= 50){
+            			boolean made = generateCommand(1,archonLocations[0], archonIDs[0]);
+            			if (made){
+            				lastAttackArchon = 0;        
+            			}
             		}
             	if (lastAttackArchon >= 300){
-            		generateCommand(0,archonLocations[0], archonIDs[0]);
-            		lastAttackArchon = 0;      
+            		boolean made = generateCommand(1,archonLocations[0], archonIDs[0]);
+            		if (made){
+        				lastAttackArchon = 0;        
+        			}   
             	}
                         		
             		            		
@@ -181,7 +187,7 @@ public class ArchonBot extends ArchonVars {
                 Move.tryMove(Move.randomDirection());
 
                 // Broadcast archon's location for other robots on the team to know
-                broadcastLocation();
+            
                 lastAttackArchon += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -206,7 +212,7 @@ public class ArchonBot extends ArchonVars {
 		
 		
 		// Attack command - gathers nearby armed units to generate a group to attack a target location
-		if (kata == 0){
+		if (kata == 1){
 			System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
 			
 			// to store all members that it wants to call to the group
@@ -222,7 +228,9 @@ public class ArchonBot extends ArchonVars {
 					
 					// Tell which channel the group is in
 					rc.broadcast(GROUP_NUMBER_CHANNEL, i);
-					decidedGroup = i;			
+					decidedGroup = i;
+					rc.broadcast(3 + archonNumber * ARCHON_OFFSET, 1);
+			        rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 1);
 					
 					// Overwrite group if the group is older than 500 turns
 				} else if (rc.readBroadcast(GROUP_CHANNEL) + i * GROUP_COMMUNICATE_OFFSET + 1 > rc.getRoundNum() + 500)
@@ -239,12 +247,12 @@ public class ArchonBot extends ArchonVars {
 			
 				RobotInfo[] shounin = senseAlliedUnits();
 				for (int j = 0; j < shounin.length; j++){
-					if (shounin[j].type == battlecode.common.RobotType.SOLDIER){
+					if (shounin[j].type == battlecode.common.RobotType.SOLDIER || shounin[j].type == battlecode.common.RobotType.TANK || shounin[j].type == battlecode.common.RobotType.LUMBERJACK){
 						if (groupCount < GROUP_SIZE_LIMIT){
-							System.out.println("Archon " + archonNumber + "would like the following soldier to join group " + decidedGroup);;
+							System.out.println("Archon " + archonNumber + "would like the following unit to join group " + decidedGroup);;
 							System.out.println(shounin[j].ID);
 							
-							rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 4, shounin[j].ID);
+							rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 5, shounin[j].ID);
 							
 							groupIDs[groupCount] = shounin[j].ID;
 							groupCount += 1;								
@@ -254,9 +262,10 @@ public class ArchonBot extends ArchonVars {
 			}
 			// if a number of soldiers was actually picked
 			if(groupCount > 0){
-				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 1, targetID);
-				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 2, (int)targetLocation.X);
-				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 3, (int)targetLocation.Y);
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 1, kata);
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 2, targetID);
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 3, (int)targetLocation.X);
+				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 4, (int)targetLocation.Y);
 				System.out.println("Group succesfully created");
 				
 				return true;
@@ -367,7 +376,7 @@ public class ArchonBot extends ArchonVars {
 		
 		for(int i = 0; i < SCOUT_LIMIT; i++){			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 2){
-				Tuple coords = new Tuple(rc.readBroadcast(3 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(4 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
+				Tuple coords = new Tuple(rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(2 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
 				coords.printData();	
 				coordinates[i] = coords;
 				System.out.println("received message of OMG");
