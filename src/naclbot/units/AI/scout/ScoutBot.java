@@ -56,6 +56,10 @@ public class ScoutBot extends GlobalVars {
 	
 	public static boolean hasBroadcasted;
 	public static int index;
+	
+	public static int homeArchon;
+	public static int initRound;
+	
 	  
  
 	public static void idle()throws GameActionException{
@@ -81,6 +85,7 @@ public class ScoutBot extends GlobalVars {
         // Get round number
  
         Rem_is_better = rc.getRoundNum();
+        initRound = Rem_is_better;
         
         // Iniitalize default array values
         Arrays.fill(enemyArchonIDs, -1);        

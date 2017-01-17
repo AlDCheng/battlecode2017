@@ -29,14 +29,13 @@ public strictfp class RobotPlayer extends GlobalVars{
         // You can add the missing ones or rewrite this into your own control structure.
         switch (rc.getType()) {
 			case ARCHON:
-			    ArchonBot.entry();
-			    ArchonBot.mainPhase(); // Move to main phase
+			    ArchonBot.init();			
 			    break; 
 			case GARDENER:
 			    GardenerBot.entry();
 			    break;
 			case SOLDIER:
-			    SoldierBot.entry();
+			    SoldierBot.init();
 			    break;
 			case TANK:
 			    TankBot.entry();

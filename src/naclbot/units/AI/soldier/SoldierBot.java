@@ -12,9 +12,22 @@ import naclbot.variables.GlobalVars;
 import java.util.ArrayList;
 
 public class SoldierBot extends GlobalVars {
-    public static void entry() throws GameActionException {
-	System.out.println("I'm an soldier!");
-        Team enemy = rc.getTeam().opponent();
+	
+	public static int ID;
+	public static int myLocation;
+	public static int initRound;
+	public static int homeArchon;
+	public static Team enemy;
+	
+	public static void init() throws GameActionException{
+		System.out.println("I'm an soldier!");
+        enemy = rc.getTeam().opponent();
+		
+        main();
+	}
+	
+    public static void main() throws GameActionException {
+
 
 	// Important variables
 	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
@@ -83,7 +96,7 @@ public class SoldierBot extends GlobalVars {
 		    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
 		    Direction noDodge = new Direction(-1);
 		    if (dodge != noDodge) {
-			System.out.println("OMGWILLCOLLIDE");
+
 			Move.tryMove(dodge);
 			hasMoved = true;
 		    }
@@ -122,7 +135,6 @@ public class SoldierBot extends GlobalVars {
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 		hasMoved = false;
-		System.out.println("Finished!");
 
             } catch (Exception e) {
                 System.out.println("Soldier Exception");

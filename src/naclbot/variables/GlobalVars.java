@@ -69,11 +69,11 @@ public class GlobalVars {
 		
 		ARCHON_CHANNEL = 0; // Carries number of living Archons
 		
-		ARCHON_OFFSET = 12;
+		ARCHON_OFFSET = 8;
 		// Offset 1: Current X Position
 		// OFfset 2: Current Y Position
 		
-		ARCHON_LIMIT = 3;
+		ARCHON_LIMIT = 5;
 
 		// Gardeners 		
 		GARDENER_CHANNEL = 100; // Carries number of living Gardeners

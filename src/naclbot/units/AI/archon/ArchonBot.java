@@ -12,9 +12,8 @@ import java.util.Arrays;
 public class ArchonBot extends ArchonVars {
 	public static int current_round = 0;
 
-	public static basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
-	public static basicTreeInfo[] dummyTreeInfo = {dummyTree};
-	
+	public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
+	public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
 
 	public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
 	
@@ -22,14 +21,17 @@ public class ArchonBot extends ArchonVars {
 	public static int ID;
 	public static Team enemy;
 	
-	public static Tuple[] archonLocations = new Tuple[3];
-	public static int[] archonIDs = new int[3];
+	public static Tuple[] archonLocations = new Tuple[5];
+	public static int[] archonIDs = new int[5];
+	
+	public static MapLocation treeLoc;
+	public static ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
+	
+	public static MapLocation myLocation;
 	
 	// Starting game phase
 	
-	
-	public static void entry() throws GameActionException {
-		
+	public static void init() throws GameActionException {
 		System.out.println("Archon initialized!");
 		
 		// Initialize unit count
@@ -38,8 +40,8 @@ public class ArchonBot extends ArchonVars {
 		rc.broadcast(GARDENER_BUILDER_CHANNEL, 0);
 		rc.broadcast(GARDENER_WATERER_CHANNEL, 0);
 		
-		MapLocation treeLoc = null;
-		ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
+
+		
 		
 		// Receive archonNumber from the channel and update
 		archonNumber = rc.readBroadcast(ARCHON_CHANNEL);
@@ -49,26 +51,32 @@ public class ArchonBot extends ArchonVars {
 		enemy = rc.getTeam().opponent();
 		
 		Arrays.fill(archonIDs, -1);
+		start();
+	}
+	
+	public static void start() throws GameActionException {		
 		
+		boolean checkStatus = true;
 		
         // Starting phase loop
-        while (true) {
+        while (checkStatus) {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	// Check for condition to exit Starting Phase
             	current_round = rc.getRoundNum();
             	if(current_round > 100) {
-            		break;
-            	}
-            	
+            		checkStatus = false;
+            	}            	
             	// Check for all broadcasts
-            	MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
-            	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
+            	
+            	ArrayList broadcastingEnemyUnits = getEnemyBroadcastLocations();
             	
             	// Generate a random direction
                 Direction dir = Move.randomDirection();
             	
+                moveToTree();
+                
             	// Get number of gardeners
             	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
             	//rc.broadcast(GARDENER_CHANNEL, 0);
@@ -79,51 +87,10 @@ public class ArchonBot extends ArchonVars {
                 if (rc.canHireGardener(dir)) {
                     rc.hireGardener(dir);
                     rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
-                }
-                
-                // Move to tree (Algorithm is very stupid. Replace with Dijkstra's or something 
-                //System.out.println(treeLoc);
-    		    if (treeLoc != null) {
-    		    	try {
-    		        	if(rc.isLocationOccupiedByTree(treeLoc)) {
-    		        		if(rc.senseTreeAtLocation(treeLoc).containedBullets > 0) {
-    		        			Move.tryMove(rc.getLocation().directionTo(treeLoc));
-    		                	if(rc.canShake(treeLoc)) {
-    		                		rc.shake(treeLoc);
-    		                	}
-    		        		}
-    		        		else {
-    		        			treeLoc = null;
-    		        		}
-    		        	}
-    		        	else {
-    		        		treeLoc = null;
-    		        	}
-    		    	} catch (GameActionException e) {
-    		    		//System.out.println("OOR");
-    		    		Move.tryMove(rc.getLocation().directionTo(treeLoc));
-    		    	}
-    		    }
-    		    
-    		    if (treeLoc == null) {
-    		    	bulletTreeList = TreeSearch.getNearbyBulletTrees();
-    		    	if (bulletTreeList.size() > 1) {
-    		        	treeLoc = TreeSearch.locNearestTree(bulletTreeList);
-    		        	Move.tryMove(rc.getLocation().directionTo(treeLoc));
-    		        	if(rc.canShake(treeLoc)) {
-    		        		rc.shake(treeLoc);
-    		        	}
-    		    	}
-    		    	else {
-    		        	// Move randomly
-    		            Move.tryMove(Move.randomDirection());
-    		        }
-    		    }
-
+                }               
+            		    
                 // Broadcast archon's location for other robots on the team to know
-                MapLocation myLocation = rc.getLocation();
-                rc.broadcast(0,(int)myLocation.x);
-                rc.broadcast(1,(int)myLocation.y);
+    		    broadcastLocation();
                 
  
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -134,6 +101,9 @@ public class ArchonBot extends ArchonVars {
                 e.printStackTrace();
             }
         }
+        
+        // Move to the mainPhase of operations
+        mainPhase();
     }
 	
 	public static void mainPhase() throws GameActionException {
@@ -157,7 +127,8 @@ public class ArchonBot extends ArchonVars {
             	
             	
             	detectEnemyGroup();
-            	updateEnemyArchonLocations(archonLocations, archonIDs);
+            	updateEnemyArchonLocations(archonLocations, archonIDs);            	
+            
             	
             	
             	// Check for all broadcasts - EDIT PLEASE GIVE THIS TO SOMEBODY ELSE TO DO.....
@@ -204,7 +175,7 @@ public class ArchonBot extends ArchonVars {
                 Clock.yield();
 
             } catch (Exception e) {
-                System.out.println("Archon Exception in Main Phase");
+                
                 e.printStackTrace();
             }
         }
@@ -213,6 +184,65 @@ public class ArchonBot extends ArchonVars {
 	
 	// FUnction to gain information from scouts regarding the location of trees.
 	
+	
+	private static void broadcastLocation() throws GameActionException{
+		// Regular message
+		 myLocation = rc.getLocation();
+         rc.broadcast(1 + archonNumber * ARCHON_OFFSET ,(int)myLocation.x);
+         rc.broadcast(2 + archonNumber * ARCHON_OFFSET,(int)myLocation.y);
+         rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 0);
+	}
+	
+	private static void moveToTree() throws GameActionException{
+		
+        // Move to tree (Algorithm is very stupid. Replace with Dijkstra's or something 
+        //System.out.println(treeLoc);
+	    if (treeLoc != null) {
+	    	try {
+	        	if(rc.isLocationOccupiedByTree(treeLoc)) {
+	        		if(rc.senseTreeAtLocation(treeLoc).containedBullets > 0) {
+	        			Move.tryMove(rc.getLocation().directionTo(treeLoc));
+	                	if(rc.canShake(treeLoc)) {
+	                		rc.shake(treeLoc);
+	                	}
+	        		}
+	        		else {
+	        			treeLoc = null;
+	        		}
+	        	}
+	        	else {
+	        		treeLoc = null;
+	        	}
+	    	} catch (GameActionException e) {
+	    		//System.out.println("OOR");
+	    		Move.tryMove(rc.getLocation().directionTo(treeLoc));
+	    	}
+	    }
+	    
+	    else {
+	    	bulletTreeList = TreeSearch.getNearbyBulletTrees();
+	    	if (bulletTreeList.size() > 1) {
+	        	treeLoc = TreeSearch.locNearestTree(bulletTreeList);
+	        	Move.tryMove(rc.getLocation().directionTo(treeLoc));
+	        	if(rc.canShake(treeLoc)) {
+	        		rc.shake(treeLoc);
+	        	}
+	    	}
+	    	else {
+	        	// Move randomly
+	            Move.tryMove(Move.randomDirection());
+	        }
+	    }
+		
+	}
+	
+	
+	private static ArrayList getEnemyBroadcastLocations(){
+		
+		MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
+    	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
+    	return broadcastingEnemyUnits;
+	}
 	
 	private static void updateTrees(binarySearchTree yahallo) throws GameActionException{
 		for(int i = 0; i < SCOUT_LIMIT; i++){
@@ -249,6 +279,7 @@ public class ArchonBot extends ArchonVars {
 	private static Tuple[] detectEnemyGroup() throws GameActionException{
 		
 		Tuple[] coordinates = new Tuple[SCOUT_LIMIT];
+		System.out.println("received message of OMG");
 		
 		for(int i = 0; i < SCOUT_LIMIT; i++){			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 2){
@@ -261,16 +292,16 @@ public class ArchonBot extends ArchonVars {
 		return coordinates;	
 	}
 	private static void updateEnemyArchonLocations(Tuple[] archonLocations, int[] archonIDs) throws GameActionException{			
-		
+
 		for(int i = 0; i < SCOUT_LIMIT; i++){			
-			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 6){
+			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 5){
 				Tuple coords = new Tuple(rc.readBroadcast(6 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(47 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
 				int foundArchonID = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
 				System.out.println("Recognized that Archon has been found with ID: " + foundArchonID);
 				coords.printData();	
 				
 				int x = arrayContainsIndex(archonIDs, foundArchonID);
-				if (x > 0){
+				if (x >= 0){
 					archonLocations[x] = coords;
 				}
 				else{
