@@ -1,6 +1,7 @@
 // AI for Archon
 package naclbot.units.AI.archon;
 import battlecode.common.*;
+
 import naclbot.variables.ArchonVars;
 import naclbot.variables.DataVars;
 import naclbot.variables.DataVars.*;
@@ -222,9 +223,11 @@ public class ArchonBot extends ArchonVars {
 			int groupCount = 0;
 			
 			int decidedGroup = -1;
+			boolean decided = false;
 			
 			for (int i = 0; i < GROUP_LIMIT; i++){
-				if (rc.readBroadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET) == 0 && decidedGroup == -1){
+			
+				if (rc.readBroadcast(GROUP_CHANNEL+ i * GROUP_COMMUNICATE_OFFSET) == 0 && !decided){
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET, 1);
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET + 1, rc.getRoundNum());
 					
@@ -233,9 +236,10 @@ public class ArchonBot extends ArchonVars {
 					decidedGroup = i;
 					rc.broadcast(3 + archonNumber * ARCHON_OFFSET, 1);
 			        rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 1);
+			        decided = true;
 					
 					// Overwrite group if the group is older than 500 turns
-				} else if (rc.readBroadcast(GROUP_CHANNEL) + i * GROUP_COMMUNICATE_OFFSET + 1 > rc.getRoundNum() + 500 && decidedGroup == -1)
+				} else if (rc.readBroadcast(GROUP_CHANNEL) + i * GROUP_COMMUNICATE_OFFSET + 1 > rc.getRoundNum() + 500 && !decided){
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET, 1);
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET + 1, rc.getRoundNum());
 					
@@ -244,8 +248,14 @@ public class ArchonBot extends ArchonVars {
 					
 					// Tell which channel the group is in
 					rc.broadcast(GROUP_NUMBER_CHANNEL, i);
-					decidedGroup = i;		
+					decidedGroup = i;	
+					decided = true;
+				} else{
+					System.out.println("The following group is already occupied: " + decidedGroup);
+						
+				}
 			}
+			
 				// If there is a free group slot
 			if (decidedGroup >= 0){
 				
