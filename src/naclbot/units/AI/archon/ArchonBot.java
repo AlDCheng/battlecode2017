@@ -26,6 +26,8 @@ public class ArchonBot extends ArchonVars {
 	public static int[] archonIDs = new int[3];
 	
 	// Starting game phase
+	
+	
 	public static void entry() throws GameActionException {
 		
 		System.out.println("Archon initialized!");
@@ -149,7 +151,8 @@ public class ArchonBot extends ArchonVars {
             	
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
-            		updateTrees(treeList);          
+            		updateTrees(treeList);  
+            		treeList.printInOrder(treeList.tree_root);
             	}
             	
             	
