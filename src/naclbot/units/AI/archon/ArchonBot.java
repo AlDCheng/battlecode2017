@@ -2,6 +2,7 @@
 package naclbot.units.AI.archon;
 import battlecode.common.*;
 import naclbot.variables.ArchonVars;
+import naclbot.variables.DataVars;
 import naclbot.variables.DataVars.*;
 import naclbot.units.motion.*;
 import naclbot.units.motion.search.TreeSearch;
@@ -30,6 +31,7 @@ public class ArchonBot extends ArchonVars {
 	public static ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
 	
 	public static MapLocation myLocation;
+	public static int lastClumpAlert;
 	
 	// Starting game phase
 	
@@ -131,7 +133,7 @@ public class ArchonBot extends ArchonVars {
                 broadcastLocation();
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
-            		updateTrees(treeList);  
+            		DataVars.updateTrees(treeList);  
           
             	}
             	
@@ -222,7 +224,7 @@ public class ArchonBot extends ArchonVars {
 			int decidedGroup = -1;
 			
 			for (int i = 0; i < GROUP_LIMIT; i++){
-				if (rc.readBroadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET) == 0){
+				if (rc.readBroadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET) == 0 && decidedGroup == -1){
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET, 1);
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET + 1, rc.getRoundNum());
 					
@@ -233,9 +235,12 @@ public class ArchonBot extends ArchonVars {
 			        rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 1);
 					
 					// Overwrite group if the group is older than 500 turns
-				} else if (rc.readBroadcast(GROUP_CHANNEL) + i * GROUP_COMMUNICATE_OFFSET + 1 > rc.getRoundNum() + 500)
+				} else if (rc.readBroadcast(GROUP_CHANNEL) + i * GROUP_COMMUNICATE_OFFSET + 1 > rc.getRoundNum() + 500 && decidedGroup == -1)
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET, 1);
 					rc.broadcast(GROUP_CHANNEL+i * GROUP_COMMUNICATE_OFFSET + 1, rc.getRoundNum());
+					
+					rc.broadcast(3 + archonNumber * ARCHON_OFFSET, 1);
+			        rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 1);
 					
 					// Tell which channel the group is in
 					rc.broadcast(GROUP_NUMBER_CHANNEL, i);
@@ -337,37 +342,7 @@ public class ArchonBot extends ArchonVars {
     	return broadcastingEnemyUnits;
 	}
 	
-	private static void updateTrees(binarySearchTree yahallo) throws GameActionException{
-		for(int i = 0; i < SCOUT_LIMIT; i++){
-			
-			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 3){
-				int sent_number = rc.readBroadcast(9 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-		
-				if (sent_number > 0){
-					int ID_1 = rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					
-					int x_1 = rc.readBroadcast(2 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int y_1 = rc.readBroadcast(3 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int radius_1 = rc.readBroadcast(4 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					basicTreeInfo tree1 = new basicTreeInfo(ID_1, x_1, y_1, radius_1);
-					
-					
-					yahallo.insert(tree1, yahallo.tree_root);
-				}
-				if (sent_number > 1){
-					int ID_2 = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int x_2 = rc.readBroadcast(6+ SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int y_2 = rc.readBroadcast(7 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int radius_2 = rc.readBroadcast(8 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					basicTreeInfo tree2 = new basicTreeInfo(ID_2, x_2, y_2, radius_2);
-					
-					yahallo.insert(tree2, yahallo.tree_root);
-				}
-			
 
-			}
-		}
-	}
 	
 	private static Tuple[] detectEnemyGroup() throws GameActionException{
 		

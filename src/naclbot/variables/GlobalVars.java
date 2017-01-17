@@ -86,7 +86,7 @@ public class GlobalVars {
 		// Scouts
 		SCOUT_CHANNEL = 43; // Carries number of scouts
 				
-		SCOUT_MESSAGE_OFFSET = 11;
+		SCOUT_MESSAGE_OFFSET = 10;
 
 		// Offset 1:  Current X Position
 		// Offset 2:  Current Y Position

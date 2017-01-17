@@ -7,7 +7,10 @@ import naclbot.units.motion.search.AllySearch;
 import naclbot.units.motion.shoot.Aim;
 import naclbot.units.motion.shoot.RobotInfoShoot;
 import naclbot.units.motion.shoot.ShootingType;
+import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
+import naclbot.variables.DataVars.basicTreeInfo;
+import naclbot.variables.DataVars.binarySearchTree;
 
 import java.util.ArrayList;
 
@@ -23,6 +26,12 @@ public class SoldierBot extends GlobalVars {
 	public static int currentGroup = -1;
 	public static int command;
 	public static boolean isLeader;
+	
+	public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
+	public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
+
+	public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
+		
 	
 	
 	public static void init() throws GameActionException{
@@ -55,7 +64,7 @@ public class SoldierBot extends GlobalVars {
 		
 		while (true){
 			try{
-							
+				DataVars.updateTrees(treeList);							
 				int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
 				int targetY = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 4);
 				int targetID = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 2);
@@ -95,7 +104,7 @@ public class SoldierBot extends GlobalVars {
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	
+            	DataVars.updateTrees(treeList);
             	checkGroupAssignments();
             	
             	// check if thee robot has entered a group or not
