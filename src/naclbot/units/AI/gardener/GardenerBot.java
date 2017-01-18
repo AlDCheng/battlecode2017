@@ -16,6 +16,8 @@ public class GardenerBot extends GlobalVars {
 		int role;
 		int treeCount = 0;
 		boolean canMove = true;
+		int lumberjackRatio = 3;
+		int tankRatio = 10;
 		
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
@@ -57,18 +59,22 @@ public class GardenerBot extends GlobalVars {
                 if (role == 0) {
 	                //Move in a random direction
 	                Move.tryMove(Move.randomDirection());
+	                System.out.println(soldierCount + " " + lumberjackCount + " " + tankCount);
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
-	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= 3*lumberjackCount) {
+	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackRatio*lumberjackCount && soldierCount <= tankRatio*tankCount) {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
 	                    rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
-	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackCount < soldierCount) {
+	                } 
+	                if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackRatio*lumberjackCount < soldierCount) {
 	                    rc.buildRobot(RobotType.LUMBERJACK, dir);
 	                    rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
-	                } else if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && tankCount*10 < soldierCount) {
+	                } 
+	                if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && tankRatio*tankCount < soldierCount) {
 	                    rc.buildRobot(RobotType.TANK, dir);
 	                    rc.broadcast(TANK_CHANNEL, tankCount+1);
-	                } else if (rc.canBuildRobot(RobotType.SCOUT, dir) && rc.isBuildReady() && canBuildScout(scoutCount)) {
+	                } 
+	                if (rc.canBuildRobot(RobotType.SCOUT, dir) && rc.isBuildReady() && canBuildScout(scoutCount)) {
 	                	/* Check to build scout
 	                     * Must assert that there are not too many scouts in service at this moment in time
 	                     */
