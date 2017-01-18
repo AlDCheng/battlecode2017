@@ -295,6 +295,7 @@ public class SoldierBot extends GlobalVars {
 
 		    // This means the bullet will hit the ally
 		    if (hitAlly) {
+			System.out.println("WILL HIT ALLY");
 			break;
 		    }
 		}
@@ -327,7 +328,8 @@ public class SoldierBot extends GlobalVars {
 
 	// If ally in front of enemy then if the radius thing complies it will hit ally 
 	if (enemyDist > allyDist) {
-	    if (allyDist * Math.sin(theta) <= frond.getRadius()) {
+	    //if (allyDist * Math.sin(theta) <= frond.getRadius() {
+	    if (allyDir == shootInfo.getDirection()) {
 		return true;
 	    } else {
 		return false;
