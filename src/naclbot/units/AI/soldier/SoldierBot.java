@@ -96,31 +96,28 @@ public class SoldierBot extends GlobalVars {
 				Clock.yield();
 			}
 			catch (Exception e) {
-                System.out.println("Soldier Exception");
-                e.printStackTrace();
+			    System.out.println("Soldier Exception");
+			    e.printStackTrace();
 			}		
 		}
 	}
 	
 	
-	//TODO make soldiers patrol around a certain location
-	public static void patrol(MapLocation targetLocation) throws GameActionException{
-		
-	}
+    //TODO make soldiers patrol around a certain location
+    public static void patrol(MapLocation targetLocation) throws GameActionException{
+	
+    }
 	
     public static void main() throws GameActionException {
     	
-		// Important variables
-		ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
-		int notMoved = 0;
-		MapLocation prevLocation = rc.getLocation();
-		boolean hasMoved = false;
+	// Important variables
+	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
+	int notMoved = 0;
+	MapLocation prevLocation = rc.getLocation();
+		
+	myLocation = rc.getLocation(); // Current location
 	
-		myLocation = rc.getLocation(); // Current location
-		
-		boolean leaveArchon = false; // If we want to make it surround archon until later grouping
-		
-        // The code you want your robot to perform every round should be in this loop
+	// The code you want your robot to perform every round should be in this loop
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
@@ -160,30 +157,8 @@ public class SoldierBot extends GlobalVars {
 			RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
 	
 			// Shooting 
-			if (!enemyToShoot.isEmpty() && !rc.hasAttacked()) {
-			    //boolean canShoot = false;
-			    ShootingType shoot = Aim.toShoot(enemyToShoot, currentEnemies);
-	
-			    if (shoot.getBulletType() != "none") {
-				// No shooting if there is an ally in the way
-				for (RobotInfo ally: currentAllies) {
-				    MapLocation allyLoc = ally.getLocation();
-				    Direction allyDir = new Direction(myLocation, allyLoc);
-						    
-				    // TODO: implement radius location of ally
-				    if (allyDir != shoot.getDirection()) {
-					// Shoot
-					if (shoot.getBulletType() == "pentad") {
-					    rc.firePentadShot(shoot.getDirection());
-					} else if (shoot.getBulletType() == "triad") {
-					    rc.fireTriadShot(shoot.getDirection());
-					} else if (shoot.getBulletType() == "single") {
-					    rc.fireSingleShot(shoot.getDirection());
-					}
-				    }	    
-				}
-			    }
-			}
+			shootEnemies(currentEnemies,currentAllies,enemyToShoot);
+			
 			// Resets the list to add new ones
 			enemyToShoot.clear();
 	
@@ -268,8 +243,64 @@ public class SoldierBot extends GlobalVars {
     
     
     private static RobotInfo[] senseNearbyEnemies(Team enemy){
-		return rc.senseNearbyRobots(-1, enemy);
+	return rc.senseNearbyRobots(-1, enemy);
+    }
+
+    private static void shootEnemies(RobotInfo[] enemies, RobotInfo[] allies, ArrayList<RobotInfoShoot> pastEnemies) {
+	// Checks if there are enemies to trace
+	// Checks if the unit has attacked already
+	if (!pastEnemies.isEmpty() && !rc.hasAttacked()) {
+	    ShootingType shoot = Aim.toShoot(pastEnemies, enemies); // Returns details about shooting
+	    boolean canShoot = true;
+	    // ShootingType: bulletType, isArchon, direction
+	    // Checks if we should actually shoot (bulletType is none if we cannot shoot)
+	    if (shoot.getBulletType() != "none") {
+		// No shooting if there is an ally in the way
+		for (RobotInfo ally: allies) {
+		    // Takes into account if the bullet will hit ally
+		    // This only works for single shots because they go in that direction. Triad and pentad are not considered (because they fan out)
+		    MapLocation allyLoc = ally.getLocation();
+		    Direction allyDir = new Direction(myLocation, allyLoc);
+		    Direction shootDir = shoot.getDirection();
+		    float theta = allyDir.radiansBetween(shootDir);
+		    float allyDist = myLocation.distanceTo(allyLoc);
+
+		    // This means the bullet will hit the ally
+		    if ((allyDist * Math.sin(theta)) <= ally.getRadius()) {
+			canShoot = false;
+			break;
+		    }
+		}
+
+		if (canShoot) {
+		    // Shoot
+		    if (shoot.getBulletType() == "pentad" && !rc.hasAttacked()) {
+			try {
+			    rc.firePentadShot(shoot.getDirection());
+			} catch (Exception GameActionException) {
+			    System.out.println("Cannot pentad");
+			}
+		    } else if (shoot.getBulletType() == "triad" && !rc.hasAttacked()) {
+			try {
+			    rc.fireTriadShot(shoot.getDirection());
+			} catch (Exception GameActionException) {
+			    System.out.println("Cannot triad");
+			}
+		    } else if (shoot.getBulletType() == "single" && !rc.hasAttacked()) {
+			try {
+			    rc.fireSingleShot(shoot.getDirection());
+			} catch (Exception GameActionException) {
+			    System.out.println("Cannot single");
+			}
+		    }
+		}
+	    }
 	}
+    }
+
+
+
+    
 }
 
 
