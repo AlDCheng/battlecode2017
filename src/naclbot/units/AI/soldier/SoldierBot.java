@@ -160,7 +160,7 @@ public class SoldierBot extends GlobalVars {
 			RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
 	
 			// Shooting 
-			if (!enemyToShoot.isEmpty()) {
+			if (!enemyToShoot.isEmpty() && !rc.hasAttacked()) {
 			    //boolean canShoot = false;
 			    ShootingType shoot = Aim.toShoot(enemyToShoot, currentEnemies);
 	
@@ -202,29 +202,17 @@ public class SoldierBot extends GlobalVars {
 			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
 			    Direction noDodge = new Direction(-1);
 			    if (dodge != noDodge) {
-	
 				Move.tryMove(dodge);
-				hasMoved = true;
 			    }
 			}
 			
-			/*		
-			// TODO: Make it stay near archon
-			if (leaveArchon == false && hasMoved == false) {
-			    MapLocation archonLoc = new MapLocation(xPos,yPos);
-			    Direction dir = new Direction(myLocation,archonLoc);
-			    Move.tryMove(dir);
-			}
-			*/
-			
-			// If hasn't found archon or is not of protectinc archon role
 			// Check if it hasn't moved
 			if (myLocation == prevLocation) {
 			    notMoved += 1;
 			}
 			
 			// Move to other allies 
-			if (currentAllies.length > 0 && notMoved < 5 && hasMoved == false) {
+			if (currentAllies.length > 0 && notMoved < 5 && !rc.hasMoved()) {
 			    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
 			    if (locAlly == rc.getLocation()) {
 				Move.tryMove(Move.randomDirection());
@@ -235,14 +223,13 @@ public class SoldierBot extends GlobalVars {
 			    }
 			    
 			    
-			} else if (hasMoved == false) {
+			} else if (!rc.hasMoved()) {
 			    Move.tryMove(Move.randomDirection());
 			    notMoved = 0; // Reset counter
 			}
 			
 			
 	                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-			hasMoved = false;
 			Clock.yield();
 			
 
