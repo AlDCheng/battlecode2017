@@ -162,8 +162,10 @@ public class SoldierBot extends GlobalVars {
 		// Sense nearby enemy robots
 		RobotInfo[] currentEnemies = rc.senseNearbyRobots(-1, enemy);
 		RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
-		
-		// Shooting 
+
+		/* ---------------------------------- SHOOTING --------------------------------------*/
+		// Shoots enemies that have been tracked and takes care not to single shoot to ally
+		// TODO: implement no shoot for triad and pentad to ally (?)
 		shootEnemies(currentEnemies,currentAllies,enemyToShoot);
 		
 		// Resets the list to add new ones
@@ -178,7 +180,8 @@ public class SoldierBot extends GlobalVars {
 		    enemyToShoot.add(r);
 		}
 		
-		// MOVEMENT 
+		/* ---------------------------------- MOVEMENT --------------------------------------*/
+		// Dodge
 		BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 		if (nearbyBullets.length > 0) {
 		    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
@@ -203,7 +206,6 @@ public class SoldierBot extends GlobalVars {
 			Direction dir = rc.getLocation().directionTo(locAlly);
 			Move.tryMove(dir);
 		    }
-		    
 		    
 		} else if (!rc.hasMoved()) {
 		    Move.tryMove(Move.randomDirection());
