@@ -52,27 +52,27 @@ public class SoldierBot extends GlobalVars {
         homeArchon = (int) (Math.random() *archonCount);
 		
         main();
+    }
+    
+    public static void attack() throws GameActionException{
+	
+	
+	// Checks if robot is leader....	
+	
+	if (isLeader){
+	    System.out.println("I'm leader of this group WAT");
+	    rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
+	    rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
+	    rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 3, (int)myLocation.y);
 	}
 	
-	public static void attack() throws GameActionException{
+	while (true){
+	    try{
 		
- 
-		// Checks if robot is leader....	
-
-		if (isLeader){
-			System.out.println("I'm leader of this group WAT");
-			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
-			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
-			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 3, (int)myLocation.y);
-		}
+		binarySearchTree.combatUpdateTrees(treeList, 0);
+		updateMapTrees(DataVars.treeMapFormat);
 		
-		while (true){
-			try{
-
-				binarySearchTree.combatUpdateTrees(treeList, 0);
-				updateMapTrees(DataVars.treeMapFormat);
-	
-				
+		
 //				for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
 //					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
 //				}
@@ -89,32 +89,32 @@ public class SoldierBot extends GlobalVars {
 //					System.out.println();
 //				}
 //				
-				int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
-				int targetY = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 4);
-				int targetID = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 2);
-				
-				MapLocation targetLocation = new MapLocation(targetX, targetY);
-//				ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocation);
-				
-				System.out.println("Currently in attack for group: " + currentGroup);
-				
-				Clock.yield();
-			}
-			catch (Exception e) {
+		int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
+		int targetY = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 4);
+		int targetID = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 2);
+		
+		MapLocation targetLocation = new MapLocation(targetX, targetY);
+		//				ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocation);
+		
+		System.out.println("Currently in attack for group: " + currentGroup);
+		
+		Clock.yield();
+	    }
+	    catch (Exception e) {
                 System.out.println("Soldier Exception");
                 e.printStackTrace();
-			}		
-
-			// Checks if robot is leader....	
+	    }		
 	    
-		    if (isLeader){
-			System.out.println("I'm leader of this group WAT");
-			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
-			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
-			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 3, (int)myLocation.y);
-		    }		    
-		}
+	    // Checks if robot is leader....	
+	    
+	    if (isLeader){
+		System.out.println("I'm leader of this group WAT");
+		rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
+		rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
+		rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 3, (int)myLocation.y);
+	    }		    
 	}
+    }
     
     
     //TODO make soldiers patrol around a certain location
