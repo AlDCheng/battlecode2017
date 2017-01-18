@@ -264,7 +264,7 @@ public class SoldierBot extends GlobalVars {
 		// Checks if the unit has attacked already
 		if (!pastEnemies.isEmpty() && !rc.hasAttacked()) {
 		    ShootingType shoot = Aim.shootNearestEnemy(pastEnemies, enemies, false); // Returns details about shooting
-		    boolean hitAlly = true;
+		    boolean hitAlly = false;
 		    
 		    // ShootingType: bulletType, isArchon, direction
 		    // Checks if we should actually shoot (bulletType is none if we cannot shoot)
@@ -277,6 +277,7 @@ public class SoldierBot extends GlobalVars {
 		
 				    // This means the bullet will hit the ally
 				    if (hitAlly) {
+					System.out.println("WILL HIT ALLY");
 				    	break;
 				    }
 				}
