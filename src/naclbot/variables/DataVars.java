@@ -320,8 +320,7 @@ public class DataVars extends GlobalVars{
 
 	    public static void archonUpdateTrees(binarySearchTree yahallo) throws GameActionException{
 			// Reset trees to add
-			
-			System.out.println("currently the tree has size: " + yahallo.size);
+
 			treeMapFormat = new ArrayList<float[]>();
 			for(int i = 0; i < SCOUT_LIMIT; i++){
 				
@@ -375,7 +374,7 @@ public class DataVars extends GlobalVars{
 		public static void combatUpdateTrees(binarySearchTree yahallo, int homeArchon) throws GameActionException{
 			// Reset trees to add
 			
-			System.out.println("currently the tree has size: " + yahallo.size);
+
 			int numBroadcasted = 0;
 			if (yahallo.size == 0){
 				
