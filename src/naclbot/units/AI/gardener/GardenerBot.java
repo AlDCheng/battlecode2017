@@ -14,6 +14,7 @@ public class GardenerBot extends GlobalVars {
 		// determines whether gardener is planter and waterer or unit builder 
 		// Hello
 		int role;
+		int treeCount = 0;
 
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
@@ -22,11 +23,7 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if (prevNumPlanter == 0) {
-			role = 2;
-			rc.broadcast(GARDENER_PLANTER_CHANNEL,prevNumPlanter + 1);
-		}
-		else if ((prevNumWaterer > 2) && ((2*prevNumBuilder) < prevNumWaterer)) {
+		if ((prevNumWaterer > 3) && ((2*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
@@ -61,7 +58,7 @@ public class GardenerBot extends GlobalVars {
 	                Move.tryMove(Move.randomDirection());
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
-	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackCount) {
+	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= 3*lumberjackCount) {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
 	                    rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
 	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackCount < soldierCount) {
@@ -86,9 +83,23 @@ public class GardenerBot extends GlobalVars {
 	                    if (rc.canWater(lowHealthTrees.get(0))) {
 	                    	rc.water(lowHealthTrees.get(0));
 	                    }
-	                
-                
-	                
+ 
+	                } 
+	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+	                		rc.plantTree(Direction.getEast());
+			                treeCount++;
+	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.getNorth());
+		                treeCount++;
+	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.getSouth());
+		                treeCount++;
+	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.getWest());
+		                treeCount++;   
+	                }
+
+	            }    	
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
             } catch (Exception e) {
