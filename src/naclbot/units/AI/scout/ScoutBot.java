@@ -634,9 +634,11 @@ public class ScoutBot extends GlobalVars {
 		}
 	
 		rc.broadcast(9 + typeChannel + typeNumber * typeOffset, sentThisTurn);		             
-
-    }
+    }   
     
+ 	
     
 }
+
+
 
