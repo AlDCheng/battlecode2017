@@ -7,7 +7,7 @@ import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 
 // Some shitty path planning is here
-class PathPlanning extends GlobalVars{
+public class PathPlanning extends GlobalVars{
 	// We on purposely switch start and end so that the ending path sequence
 	// is from start to end without flipping the order
 	public static ArrayList<MapLocation> findPath(MapLocation end, MapLocation start) {

@@ -1,5 +1,6 @@
 package naclbot.variables;
 
+import battlecode.common.*;
 import battlecode.common.GameActionException;
 import naclbot.variables.GlobalVars;
 import java.util.ArrayList;
@@ -335,11 +336,13 @@ public class DataVars extends GlobalVars{
 					yahallo.insert(tree1, yahallo.tree_root);
 					
 					// Add to list of treees
-					float[] dataRow = new float[3];
-					dataRow[0] = x_1;
-					dataRow[1] = y_1;
-					dataRow[2] = radius_1;
-					treeMapFormat.add(dataRow);
+					if((radius_1 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_1 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
+						float[] dataRow = new float[3];
+						dataRow[0] = x_1;
+						dataRow[1] = y_1;
+						dataRow[2] = radius_1;
+						treeMapFormat.add(dataRow);
+					}
 				}
 				if (sent_number > 1){
 					int ID_2 = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
@@ -351,11 +354,13 @@ public class DataVars extends GlobalVars{
 					yahallo.insert(tree2, yahallo.tree_root);
 					
 					// Add to list of treees
-					float[] dataRow = new float[3];
-					dataRow[0] = x_2;
-					dataRow[1] = y_2;
-					dataRow[2] = radius_2;
-					treeMapFormat.add(dataRow);
+					if((radius_2 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_2 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
+						float[] dataRow = new float[3];
+						dataRow[0] = x_2;
+						dataRow[1] = y_2;
+						dataRow[2] = radius_2;
+						treeMapFormat.add(dataRow);
+					}
 				}
 			
 	

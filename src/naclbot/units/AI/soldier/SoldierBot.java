@@ -2,6 +2,7 @@
 package naclbot.units.AI.soldier;
 import battlecode.common.*;
 import naclbot.units.motion.Move;
+import naclbot.units.motion.routing.PathPlanning;
 import naclbot.units.motion.dodge.BulletDodge;
 import naclbot.units.motion.search.AllySearch;
 import naclbot.units.motion.shoot.Aim;
@@ -13,6 +14,7 @@ import naclbot.variables.DataVars.basicTreeInfo;
 import naclbot.variables.DataVars.binarySearchTree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class SoldierBot extends GlobalVars {
 	
@@ -65,13 +67,29 @@ public class SoldierBot extends GlobalVars {
 		while (true){
 			try{
 				DataVars.updateTrees(treeList);
-				updateMapTrees(DataVars.treeMapFormat);
 				
+//				for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
+//					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
+//				}
+//				
+//				if(DataVars.treeMapFormat.size() > 1) {
+//					updateMapTrees(DataVars.treeMapFormat);
+//					System.out.println(internalMap.size() + ", " + internalMap.get(0).size());
+//					for (int i = internalMap.size()-1; i > -1; i--) {
+//						for (int j = 0; j < internalMap.get(0).size(); j++) {
+//							System.out.print(internalMap.get(i).get(j));
+//						}
+//						System.out.print("\n");
+//					}
+//					System.out.println();
+//				}
+//				
 				int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
 				int targetY = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 4);
 				int targetID = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 2);
 				
-				MapLocation targetLocation = new MapLocation(targetX, targetY);				
+				MapLocation targetLocation = new MapLocation(targetX, targetY);
+//				ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocation);
 				
 				System.out.println("Currently in attack for group: " + currentGroup);
 				
@@ -107,6 +125,23 @@ public class SoldierBot extends GlobalVars {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	DataVars.updateTrees(treeList);
+            	
+//            	for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
+//					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
+//				}
+//            	
+//            	if(DataVars.treeMapFormat.size() > 1) {
+//					updateMapTrees(DataVars.treeMapFormat);
+//					System.out.println(internalMap.size() + ", " + internalMap.get(0).size());
+//					for (int i = internalMap.size()-1; i > -1; i--) {
+//						for (int j = 0; j < internalMap.get(0).size(); j++) {
+//							System.out.print(internalMap.get(i).get(j));
+//						}
+//						System.out.print("\n");
+//					}
+//					System.out.println();
+//				}
+				
             	checkGroupAssignments();
             	
             	// check if thee robot has entered a group or not
