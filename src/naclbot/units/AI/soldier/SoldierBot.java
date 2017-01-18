@@ -123,7 +123,7 @@ public class SoldierBot extends GlobalVars {
             try {
 
             	binarySearchTree.combatUpdateTrees(treeList, 0);
-            	treeList.printInOrder(treeList.tree_root);
+            	//treeList.printInOrder(treeList.tree_root);
           
             	checkGroupAssignments();
             	
@@ -196,7 +196,7 @@ public class SoldierBot extends GlobalVars {
 			    notMoved = 0; // Reset counter
 			}
 			
-			
+			System.out.println("End turn");
 			// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
 			Clock.yield();
 		
