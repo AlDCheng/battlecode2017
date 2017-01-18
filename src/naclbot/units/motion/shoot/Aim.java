@@ -62,41 +62,38 @@ public class Aim extends GlobalVars {
 	    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
 	    //If big units like archon or tank then try to fire as many bullets as possible
 	    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON) {
-		if (true) {
-		    if (rc.canFirePentadShot()) {
-			ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			return enemy;
-		    } else if (rc.canFireTriadShot()) {
+		if (rc.canFirePentadShot()) {
+		    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} else if (rc.canFireTriadShot()) {
+		    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} else if (rc.canFireSingleShot()) {
+		    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} 
+		
+	    } else {
+
+		// Sometimes fire triad and sometimes fire single
+		if (nearestEnemies > 1) {
+		    if (rc.canFireTriadShot()) {
 			ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
 			return enemy;
 		    } else if (rc.canFireSingleShot()) {
-			ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
 			return enemy;
 		    } 
 		    
+		    
 		} else {
-
-		    // Sometimes fire triad and sometimes fire single
-		    if (nearestEnemies > 1) {
-			if (rc.canFireTriadShot()) {
-			    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			    return enemy;
-			} else if (rc.canFireSingleShot()) {
-			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			    return enemy;
-			} 
-
-
-		    } else {
-			if (rc.canFireSingleShot()) {
-			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			    return enemy;
-			}
+		    if (rc.canFireSingleShot()) {
+			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			return enemy;
 		    }
 		}
 	    }
 	}
-	
 	return null;
     }
     
