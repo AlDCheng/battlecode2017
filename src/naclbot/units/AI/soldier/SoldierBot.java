@@ -128,6 +128,9 @@ public class SoldierBot extends GlobalVars {
 	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
 	int notMoved = 0;
 	MapLocation prevLocation = rc.getLocation();
+
+	// Tracking variables
+	//SoldierVictim currentlyTracking = null;
 		
 	myLocation = rc.getLocation(); // Current location
 	
@@ -174,12 +177,16 @@ public class SoldierBot extends GlobalVars {
 		RobotInfo[] currentEnemies = rc.senseNearbyRobots(-1, enemy);
 		RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
 
+		/* ---------------------------------- TRACKING --------------------------------------*/
+		trackingEnemies();
+		
+		
 		/* ---------------------------------- SHOOTING --------------------------------------*/
 		// Shoots enemies that have been tracked and takes care not to single shoot to ally
 		// TODO: implement no shoot for triad and pentad to ally (?)
-		shootingEnemies(currentEnemies,currentAllies,enemyToShoot);
+		shootingEnemies(currentEnemies,currentAllies,enemyToShoot); // SHOOTS TO NEAREST ENEMY
 		
-		// Resets the list to add new ones
+		// Resets the list of past enemies to add new ones
 		enemyToShoot.clear();
 		
 		// Adds the ones seen this turn
@@ -262,12 +269,16 @@ public class SoldierBot extends GlobalVars {
     	}     		   	
     }
     
+    private static void trackingEnemies() throws GameActionException {
+	
+
+    }
     
     private static RobotInfo[] senseNearbyEnemies(Team enemy){
 	return rc.senseNearbyRobots(-1, enemy);
     }
 
-    private static void shootingEnemies(RobotInfo[] enemies, RobotInfo[] allies, ArrayList<RobotInfoShoot> pastEnemies) throws GameActionException{
+    private static void shootingEnemies(RobotInfo[] enemies, RobotInfo[] allies, ArrayList<RobotInfoShoot> pastEnemies) throws GameActionException {
 	// Checks if there are enemies to trace
 	// Checks if the unit has attacked already
 	if (!pastEnemies.isEmpty() && !rc.hasAttacked()) {

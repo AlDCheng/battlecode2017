@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Aim extends GlobalVars {
+
     // Returns the direction of the nearest enemy single shot
     public static ShootingType shootNearestEnemy (ArrayList<RobotInfoShoot> pastEnemies, RobotInfo[] currentEnemies, boolean isTank) {
 	MapLocation myLoc = rc.getLocation();
