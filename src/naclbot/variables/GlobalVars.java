@@ -58,8 +58,9 @@ public class GlobalVars {
 		zeroList.add(0);
 		internalMap.add(zeroList);
 		
-		unitType = rc.getType();
-		robotRadius = unitType.bodyRadius;
+//		unitType = rc.getType();
+//		robotRadius = unitType.bodyRadius;
+		robotRadius = 1;
 		
 		centerCoords = rc.getLocation();
 		offsetX = 0;
@@ -176,7 +177,6 @@ public class GlobalVars {
 						// Case 1: X position (extend ArrayList)
 						// - Condition 1: left of origin (-offset_x)
 						if ((tileOffsetX-offsetX) < 0) {
-							//System.out.println("Condition 1");
 							// Pad 0s to map for each row
 							for (int i = 0; i < internalMap.size(); i++) {
 								for (int j = 0; j < (-1*(tileOffsetX-offsetX)); j++) {
@@ -190,13 +190,14 @@ public class GlobalVars {
 						// - Condition 2: right of internal map boundaries
 						// Pad 0s to map for each row
 						else if ((tileOffsetX-offsetX) > internalMap.get(0).size()-1) {
+							int initWidth = internalMap.get(0).size()-1;
 							for (int i = 0; i < internalMap.size(); i++) {
-								for (int j = 0; j < ((tileOffsetX-offsetX)); j++) {
+								for (int j = 0; j < ((tileOffsetX-offsetX)-initWidth); j++) {
 									internalMap.get(i).add(0);
 								}
 							}
 						}
-						
+
 						// Case 2: Y position (create new ArrayList)
 						// - Condition 1: above the origin (-offset_y)
 						ArrayList<Integer> newRow = new ArrayList<Integer>();
@@ -225,14 +226,14 @@ public class GlobalVars {
 							for (int j = 0; j < internalMap.get(0).size(); j++) {
 								newRow.add(0);
 							}
-							for (int i = 0; i < ((tileOffsetY-offsetY))-1; i++) {
+							for (int i = 0; i < ((tileOffsetY-offsetY)-(internalMap.size()-1))-1; i++) {
 								ArrayList<Integer> newRowUnlinked = new ArrayList<Integer>(newRow);
 								internalMap.add(newRowUnlinked);
 							}
 							
 							//Add row
 							ArrayList<Integer> insertRow = new ArrayList<Integer>(newRow);
-							insertRow.set((tileOffsetX-offsetX), 1);
+							insertRow.set(((tileOffsetY-offsetY)-(internalMap.size()-1)), 1);
 							internalMap.add(insertRow);
 						}
 						// - Condition 3: within internal map boundaries

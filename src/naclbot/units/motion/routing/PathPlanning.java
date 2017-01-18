@@ -7,7 +7,7 @@ import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 
 // Some shitty path planning is here
-class PathPlanning extends GlobalVars{
+public class PathPlanning extends GlobalVars{
 	// We on purposely switch start and end so that the ending path sequence
 	// is from start to end without flipping the order
 	public static ArrayList<MapLocation> findPath(MapLocation end, MapLocation start) {
@@ -24,6 +24,79 @@ class PathPlanning extends GlobalVars{
 	
 			endCell.x = (int)((end.x - centerCoords.x)/robotRadius) - offsetX;
 			endCell.y = (int)((end.y - centerCoords.y)/robotRadius) - offsetY;
+			
+			// Pad X
+			if(startCell.x < 0) {
+				for (int i = 0; i < internalMap.size(); i++) {
+					for (int j = 0; j < -1*startCell.x; j++) {
+						internalMap.get(i).add(0, 0);
+					}
+				}
+			}
+			else if(startCell.x > internalMap.get(0).size()-1) {
+				int initWidth = internalMap.get(0).size()-1;
+				for (int i = 0; i < internalMap.size(); i++) {
+					for (int j = 0; j < (startCell.x-initWidth); j++) {
+						internalMap.get(i).add(0);
+					}
+				}
+			}
+			
+			if(endCell.x < 0) {
+				for (int i = 0; i < internalMap.size(); i++) {
+					for (int j = 0; j < -1*endCell.x; j++) {
+						internalMap.get(i).add(0, 0);
+					}
+				}
+			}
+			else if(endCell.x > internalMap.get(0).size()-1) {
+				int initWidth = internalMap.get(0).size()-1;
+				for (int i = 0; i < internalMap.size(); i++) {
+					for (int j = 0; j < (endCell.x-initWidth); j++) {
+						internalMap.get(i).add(0);
+					}
+				}
+			}
+			
+			// Pad Y
+			ArrayList<Integer> newRow = new ArrayList<Integer>();
+			if(startCell.y < 0) {
+				for (int j = 0; j < internalMap.get(0).size(); j++) {
+					newRow.add(0);
+				}
+				for (int j = 0; j < -1*startCell.y; j++) {
+					ArrayList<Integer> newRowUnlinked = new ArrayList<Integer>(newRow);
+					internalMap.add(newRowUnlinked);
+				}
+			}
+			else if(startCell.y > internalMap.size()-1) {
+				for (int j = 0; j < internalMap.get(0).size(); j++) {
+					newRow.add(0);
+				}
+				for (int j = 0; j < startCell.y-(internalMap.size()-1); j++) {
+					ArrayList<Integer> newRowUnlinked = new ArrayList<Integer>(newRow);
+					internalMap.add(newRowUnlinked);
+				}
+			}
+			
+			if(endCell.y < 0) {
+				for (int j = 0; j < internalMap.get(0).size(); j++) {
+					newRow.add(0);
+				}
+				for (int j = 0; j < -1*endCell.y; j++) {
+					ArrayList<Integer> newRowUnlinked = new ArrayList<Integer>(newRow);
+					internalMap.add(newRowUnlinked);
+				}
+			}
+			else if(endCell.y > internalMap.size()-1) {
+				for (int j = 0; j < internalMap.get(0).size(); j++) {
+					newRow.add(0);
+				}
+				for (int j = 0; j < endCell.y-(internalMap.size()-1); j++) {
+					ArrayList<Integer> newRowUnlinked = new ArrayList<Integer>(newRow);
+					internalMap.add(newRowUnlinked);
+				}
+			}
 			
 			// Define arrays
 			int maxY = internalMap.size();

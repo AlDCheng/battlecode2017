@@ -1,5 +1,6 @@
 package naclbot.variables;
 
+import battlecode.common.*;
 import battlecode.common.GameActionException;
 import naclbot.variables.GlobalVars;
 import java.util.ArrayList;
@@ -362,7 +363,50 @@ public class DataVars extends GlobalVars{
 					}
 				
 		
+<<<<<<< HEAD
 				}
+=======
+				if (sent_number > 0){
+					int ID_1 = rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					
+					int x_1 = rc.readBroadcast(2 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					int y_1 = rc.readBroadcast(3 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					int radius_1 = rc.readBroadcast(4 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					basicTreeInfo tree1 = new basicTreeInfo(ID_1, x_1, y_1, radius_1);
+					
+					
+					yahallo.insert(tree1, yahallo.tree_root);
+					
+					// Add to list of treees
+					if((radius_1 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_1 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
+						float[] dataRow = new float[3];
+						dataRow[0] = x_1;
+						dataRow[1] = y_1;
+						dataRow[2] = radius_1;
+						treeMapFormat.add(dataRow);
+					}
+				}
+				if (sent_number > 1){
+					int ID_2 = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					int x_2 = rc.readBroadcast(6+ SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					int y_2 = rc.readBroadcast(7 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					int radius_2 = rc.readBroadcast(8 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
+					basicTreeInfo tree2 = new basicTreeInfo(ID_2, x_2, y_2, radius_2);
+					
+					yahallo.insert(tree2, yahallo.tree_root);
+					
+					// Add to list of treees
+					if((radius_2 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_2 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
+						float[] dataRow = new float[3];
+						dataRow[0] = x_2;
+						dataRow[1] = y_2;
+						dataRow[2] = radius_2;
+						treeMapFormat.add(dataRow);
+					}
+				}
+			
+	
+>>>>>>> 2b3095fe96b9f866a0eba7ce5acd32a8cd62e2f3
 			}
 	    }
 	}

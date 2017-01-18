@@ -40,7 +40,7 @@ public class TreeSearch extends GlobalVars {
 		ArrayList<MapLocation> viableList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length; i++) {
 			if ((treeList[i].containedBullets > 0) && (treeList[i].getTeam() != rc.getTeam().opponent())) {
-				viableList.add(treeList[i].location);
+				viableList.add(treeList[i].getLocation());
 				//System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
 		}
@@ -54,7 +54,7 @@ public class TreeSearch extends GlobalVars {
 		ArrayList<MapLocation> waterList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length; i++) {
 			if (treeList[i].health <= treeList[i].maxHealth - GameConstants.WATER_HEALTH_REGEN_RATE && treeList[i].team == rc.getTeam()) {
-				waterList.add(treeList[i].location);
+				waterList.add(treeList[i].getLocation());
 				//System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
 		}
@@ -63,6 +63,7 @@ public class TreeSearch extends GlobalVars {
 	}
 	
 	public static ArrayList<MapLocation> getNearbyTrees() {
+		//variation of getNearbyBulletTrees(), gets nearby tree locations 
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		ArrayList<MapLocation> nearList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length; i++) {
@@ -72,11 +73,12 @@ public class TreeSearch extends GlobalVars {
 	}
 	
 	public static ArrayList<MapLocation> getNearbyNeutralTrees() {
+		//variation of getNearbyBulletTrees(), gets nearby neutral trees (used for lumberjacks)
 		TreeInfo[] treeList = rc.senseNearbyTrees();
 		ArrayList<MapLocation> neutralList = new ArrayList<MapLocation>();
 		for (int i = 0; i < treeList.length; i++) {
 			if (treeList[i].team == Team.NEUTRAL) {
-				neutralList.add(treeList[i].location);
+				neutralList.add(treeList[i].getLocation());
 				//System.out.println("Tree index " + i + ": " + treeList[i].location);
 			}
 		}

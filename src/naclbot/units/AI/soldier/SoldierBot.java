@@ -2,6 +2,7 @@
 package naclbot.units.AI.soldier;
 import battlecode.common.*;
 import naclbot.units.motion.Move;
+import naclbot.units.motion.routing.PathPlanning;
 import naclbot.units.motion.dodge.BulletDodge;
 import naclbot.units.motion.search.AllySearch;
 import naclbot.units.motion.shoot.Aim;
@@ -14,6 +15,7 @@ import naclbot.variables.DataVars.basicTreeInfo;
 import naclbot.variables.DataVars.binarySearchTree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class SoldierBot extends GlobalVars {
 	
@@ -65,14 +67,33 @@ public class SoldierBot extends GlobalVars {
 		
 		while (true){
 			try{
+
 				binarySearchTree.updateTrees(treeList);
 				updateMapTrees(DataVars.treeMapFormat);
+	
 				
+//				for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
+//					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
+//				}
+//				
+//				if(DataVars.treeMapFormat.size() > 1) {
+//					updateMapTrees(DataVars.treeMapFormat);
+//					System.out.println(internalMap.size() + ", " + internalMap.get(0).size());
+//					for (int i = internalMap.size()-1; i > -1; i--) {
+//						for (int j = 0; j < internalMap.get(0).size(); j++) {
+//							System.out.print(internalMap.get(i).get(j));
+//						}
+//						System.out.print("\n");
+//					}
+//					System.out.println();
+//				}
+//				
 				int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
 				int targetY = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 4);
 				int targetID = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 2);
 				
-				MapLocation targetLocation = new MapLocation(targetX, targetY);				
+				MapLocation targetLocation = new MapLocation(targetX, targetY);
+//				ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocation);
 				
 				System.out.println("Currently in attack for group: " + currentGroup);
 				
@@ -107,7 +128,27 @@ public class SoldierBot extends GlobalVars {
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+
             	binarySearchTree.updateTrees(treeList);
+          
+            	
+//            	for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
+//					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
+//				}
+//            	
+//            	if(DataVars.treeMapFormat.size() > 1) {
+//					updateMapTrees(DataVars.treeMapFormat);
+//					System.out.println(internalMap.size() + ", " + internalMap.get(0).size());
+//					for (int i = internalMap.size()-1; i > -1; i--) {
+//						for (int j = 0; j < internalMap.get(0).size(); j++) {
+//							System.out.print(internalMap.get(i).get(j));
+//						}
+//						System.out.print("\n");
+//					}
+//					System.out.println();
+//				}
+				
+
             	checkGroupAssignments();
             	
             	// check if thee robot has entered a group or not
@@ -126,7 +167,7 @@ public class SoldierBot extends GlobalVars {
 			RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
 	
 			// Shooting 
-			if (!enemyToShoot.isEmpty()) {
+			if (!enemyToShoot.isEmpty() && !rc.hasAttacked()) {
 			    //boolean canShoot = false;
 			    ShootingType shoot = Aim.toShoot(enemyToShoot, currentEnemies);
 	
@@ -168,29 +209,17 @@ public class SoldierBot extends GlobalVars {
 			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
 			    Direction noDodge = new Direction(-1);
 			    if (dodge != noDodge) {
-	
 				Move.tryMove(dodge);
-				hasMoved = true;
 			    }
 			}
 			
-			/*		
-			// TODO: Make it stay near archon
-			if (leaveArchon == false && hasMoved == false) {
-			    MapLocation archonLoc = new MapLocation(xPos,yPos);
-			    Direction dir = new Direction(myLocation,archonLoc);
-			    Move.tryMove(dir);
-			}
-			*/
-			
-			// If hasn't found archon or is not of protectinc archon role
 			// Check if it hasn't moved
 			if (myLocation == prevLocation) {
 			    notMoved += 1;
 			}
 			
 			// Move to other allies 
-			if (currentAllies.length > 0 && notMoved < 5 && hasMoved == false) {
+			if (currentAllies.length > 0 && notMoved < 5 && !rc.hasMoved()) {
 			    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
 			    if (locAlly == rc.getLocation()) {
 				Move.tryMove(Move.randomDirection());
@@ -201,14 +230,13 @@ public class SoldierBot extends GlobalVars {
 			    }
 			    
 			    
-			} else if (hasMoved == false) {
+			} else if (!rc.hasMoved()) {
 			    Move.tryMove(Move.randomDirection());
 			    notMoved = 0; // Reset counter
 			}
 			
 			
 	                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-			hasMoved = false;
 			Clock.yield();
 			
 
