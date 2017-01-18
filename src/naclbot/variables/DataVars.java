@@ -318,7 +318,7 @@ public class DataVars extends GlobalVars{
 	    
 		
 
-	    public static void updateTrees(binarySearchTree yahallo) throws GameActionException{
+	    public static void archonUpdateTrees(binarySearchTree yahallo) throws GameActionException{
 			// Reset trees to add
 			
 			System.out.println("currently the tree has size: " + yahallo.size);
@@ -327,7 +327,7 @@ public class DataVars extends GlobalVars{
 				
 				if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 3){
 					int sent_number = rc.readBroadcast(9 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-			
+					
 					if (sent_number > 0){
 						int ID_1 = rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
 						
@@ -340,11 +340,13 @@ public class DataVars extends GlobalVars{
 						yahallo.insert(tree1, yahallo.tree_root);
 						
 						// Add to list of treees
-						float[] dataRow = new float[3];
-						dataRow[0] = x_1;
-						dataRow[1] = y_1;
-						dataRow[2] = radius_1;
-						treeMapFormat.add(dataRow);
+						if((radius_1 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_1 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
+							float[] dataRow = new float[3];
+							dataRow[0] = x_1;
+							dataRow[1] = y_1;
+							dataRow[2] = radius_1;
+							treeMapFormat.add(dataRow);
+						}
 					}
 					if (sent_number > 1){
 						int ID_2 = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
@@ -356,56 +358,73 @@ public class DataVars extends GlobalVars{
 						yahallo.insert(tree2, yahallo.tree_root);
 						
 						// Add to list of treees
-						float[] dataRow = new float[3];
-						dataRow[0] = x_2;
-						dataRow[1] = y_2;
-						dataRow[2] = radius_2;
-						treeMapFormat.add(dataRow);
+						if((radius_2 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_2 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
+							float[] dataRow = new float[3];
+							dataRow[0] = x_2;
+							dataRow[1] = y_2;
+							dataRow[2] = radius_2;
+							treeMapFormat.add(dataRow);
+						}
 					}
-				
-		
+				}
+		    }
+		}
 
-				if (sent_number > 0){
-					int ID_1 = rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					
-					int x_1 = rc.readBroadcast(2 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int y_1 = rc.readBroadcast(3 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int radius_1 = rc.readBroadcast(4 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					basicTreeInfo tree1 = new basicTreeInfo(ID_1, x_1, y_1, radius_1);
-					
-					
-					yahallo.insert(tree1, yahallo.tree_root);
-					
-					// Add to list of treees
-					if((radius_1 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_1 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
-						float[] dataRow = new float[3];
-						dataRow[0] = x_1;
-						dataRow[1] = y_1;
-						dataRow[2] = radius_1;
-						treeMapFormat.add(dataRow);
-					}
+
+
+		public static void combatUpdateTrees(binarySearchTree yahallo, int homeArchon) throws GameActionException{
+			// Reset trees to add
+			
+			System.out.println("currently the tree has size: " + yahallo.size);
+			int numBroadcasted = 0;
+			if (yahallo.size == 0){
+				
+				numBroadcasted = rc.readBroadcast(7 + homeArchon * ARCHON_OFFSET);
+				
+				if (numBroadcasted >= TOTAL_TREE_NUMBER){
+					numBroadcasted = TOTAL_TREE_NUMBER - 1;
 				}
-				if (sent_number > 1){
-					int ID_2 = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int x_2 = rc.readBroadcast(6+ SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int y_2 = rc.readBroadcast(7 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					int radius_2 = rc.readBroadcast(8 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-					basicTreeInfo tree2 = new basicTreeInfo(ID_2, x_2, y_2, radius_2);
-					
-					yahallo.insert(tree2, yahallo.tree_root);
-					
-					// Add to list of treees
-					if((radius_2 >= GameConstants.NEUTRAL_TREE_MIN_RADIUS) && (radius_2 <= GameConstants.NEUTRAL_TREE_MAX_RADIUS)) {
-						float[] dataRow = new float[3];
-						dataRow[0] = x_2;
-						dataRow[1] = y_2;
-						dataRow[2] = radius_2;
-						treeMapFormat.add(dataRow);
-					}
-				}
+				
+
+				System.out.println("numBroadcasted: "  + numBroadcasted);
+				
+				for(int j = 0; j < numBroadcasted ; j++){
+			         
+					int treeX = rc.readBroadcast(1 + TREE_DATA_CHANNEL + j * TREE_OFFSET);
+	                int treeY = rc.readBroadcast(2 + TREE_DATA_CHANNEL +  j * TREE_OFFSET);
+	                int treeRadius =  rc.readBroadcast(3 + TREE_DATA_CHANNEL +  j * TREE_OFFSET);
+	                int treeID =  rc.readBroadcast(4 + TREE_DATA_CHANNEL +  j * TREE_OFFSET);
+	                
+	                basicTreeInfo newTree = new basicTreeInfo(treeID, treeX, treeY, treeRadius);
+	                
+	                yahallo.insert(newTree, yahallo.tree_root);
+				}				
 			}
-	    }
-	}
+			else{
+				numBroadcasted = rc.readBroadcast(7 + homeArchon * ARCHON_OFFSET) - 1;
+				
+				if (numBroadcasted >= TOTAL_TREE_NUMBER){
+					numBroadcasted = TOTAL_TREE_NUMBER-1;
+				}
+				
+				if (rc.readBroadcast(8 + homeArchon * ARCHON_OFFSET) == 33){
+					
+					System.out.println("New tree data received");
+					
+					int treeX = rc.readBroadcast(1 + TREE_DATA_CHANNEL + numBroadcasted * TREE_OFFSET);
+	                int treeY = rc.readBroadcast(2 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET);
+	                int treeRadius =  rc.readBroadcast(3 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET);
+	                int treeID =  rc.readBroadcast(4 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET);
+	                
+	                basicTreeInfo newTree = new basicTreeInfo(treeID, treeX, treeY, treeRadius);
+	                
+	                yahallo.insert(newTree, yahallo.tree_root);
+					
+					
+				}
+	
+		    }
+		}
 	}
 }
 

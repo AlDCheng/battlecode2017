@@ -146,33 +146,12 @@ public class ArchonBot extends ArchonVars {
                 broadcastLocation();
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
-            		binarySearchTree.updateTrees(treeList);  
+            		binarySearchTree.archonUpdateTrees(treeList);  
             	
             
             	}
           		
-        		if (archonNumber == 0){
-        
-    				if(numBroadcasted<treeList.size-1){
-    					
-    					Node toSend1 = getTerm(treeList.tree_root, numBroadcasted);
-        					if (toSend1 != null){
-		                    rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 33);
-		                    
-		                    System.out.println(" Updating the tree public storage with tree at x: " + toSend1.data.x +  " y: " + toSend1.data.y + " radius: " + toSend1.data.radius);
-		                    System.out.println(numBroadcasted);
-		                    rc.broadcast(TREE_DATA_CHANNEL, numBroadcasted);
-		                    rc.broadcast(1 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET, toSend1.data.x);
-		                    rc.broadcast(2 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET, toSend1.data.y);
-		                    rc.broadcast(3 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET, toSend1.data.radius);
-		                    numBroadcasted += 1;
-		                    numBroadcasted = numBroadcasted % TOTAL_TREE_NUMBER;
-        					}
-    					
-    				}			                   
 
-        			
-            	}
             	
             	
             	
@@ -228,6 +207,32 @@ public class ArchonBot extends ArchonVars {
                 Move.tryMove(Move.randomDirection());
 
                 // Broadcast archon's location for other robots on the team to know
+                
+        		if (archonNumber == 0){
+        	        
+    				if(numBroadcasted<treeList.size-1){
+    					
+    					Node toSend1 = getTerm(treeList.tree_root, numBroadcasted);
+        					if (toSend1 != null){
+		                    rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 33);
+		                    rc.broadcast(7 + archonNumber * ARCHON_OFFSET, numBroadcasted+1);
+		                    
+		                    System.out.println(" Updating the tree public storage with tree at x: " + toSend1.data.x +  " y: " + toSend1.data.y + " radius: " + toSend1.data.radius);
+		                    System.out.println(numBroadcasted);
+		                    rc.broadcast(TREE_DATA_CHANNEL, numBroadcasted);
+		                    
+		                    rc.broadcast(1 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.x);
+		                    rc.broadcast(2 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.y);
+		                    rc.broadcast(3 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.radius);
+		                    rc.broadcast(4 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.ID);
+		                    numBroadcasted += 1;
+		                 
+        					}
+    					
+    				}			                   
+
+        			
+            	}
             
                 lastAttackArchon += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again

@@ -68,7 +68,7 @@ public class SoldierBot extends GlobalVars {
 		while (true){
 			try{
 
-				binarySearchTree.updateTrees(treeList);
+				binarySearchTree.combatUpdateTrees(treeList, 0);
 				updateMapTrees(DataVars.treeMapFormat);
 	
 				
@@ -129,7 +129,8 @@ public class SoldierBot extends GlobalVars {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
 
-            	binarySearchTree.updateTrees(treeList);
+            	binarySearchTree.combatUpdateTrees(treeList, 0);
+            	treeList.printInOrder(treeList.tree_root);
           
             	
 //            	for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
