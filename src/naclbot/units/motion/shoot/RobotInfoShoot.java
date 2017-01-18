@@ -9,6 +9,8 @@ public class RobotInfoShoot extends GlobalVars {
     MapLocation robotCurrLoc;
     MapLocation robotPrevLoc;
     MapLocation robotNewLoc;
+    float distanceFromUnit;
+    int enemies;
     
     public RobotInfoShoot(int ID, RobotType robType, MapLocation location) {
         this.robotID = ID;
@@ -17,11 +19,21 @@ public class RobotInfoShoot extends GlobalVars {
         this.robotPrevLoc = location;
     }
 
-    public RobotInfoShoot(int ID, RobotType robType, MapLocation currentLoc, MapLocation previousLoc) {
+    public RobotInfoShoot(int ID, RobotType robType, MapLocation currentLoc, MapLocation previousLoc, float distance, int amountEnemies) {
 		this.robotID = ID;
 		this.robotType = robType;
 		this.robotCurrLoc = currentLoc;
 		this.robotPrevLoc = previousLoc;
+		this.distanceFromUnit = distance;
+		this.enemies = amountEnemies;
+    }
+
+    public int getNumEnemies() {
+	return enemies;
+    }
+    
+    public float getDistance() {
+	return distanceFromUnit;
     }
 
     public RobotType getType() {
@@ -58,7 +70,7 @@ public class RobotInfoShoot extends GlobalVars {
 
     // This function returns the location after probabilistically predicting dodging
     public MapLocation getNewLocation() {
-		MapLocation predLoc = getPreviousLocation();
+		MapLocation predLoc = getCurrentLocation();
 //    	MapLocation predLoc = getCurrentLocation(); //CHANGE
 		return predLoc;
 		
