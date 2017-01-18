@@ -119,32 +119,32 @@ public class Aim extends GlobalVars {
 				    }
 				}
 			    } else {
-				    if (nearestEnemies > 3) {
-					if (rc.canFirePentadShot()) {
-					    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
-					    return enemy;
-					} else if (rc.canFireTriadShot()) {
-					    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
-					    return enemy;
-					} else if (rc.canFireSingleShot()) {
-					    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
-					    return enemy;
-					}
-				    } else if (nearestEnemies > 1) {
-					if (rc.canFireTriadShot()) {
-					    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
-					    return enemy;
-					} else if (rc.canFireSingleShot()) {
-					    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
-					    return enemy;
-					}
-				    } else if (nearestEnemies == 1 && rc.canFireSingleShot()) {
-					ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+				if (nearestEnemies > 3) {
+				    if (rc.canFirePentadShot()) {
+					ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+					return enemy;
+				    } else if (rc.canFireTriadShot()) {
+					ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+					return enemy;
+				    } else if (rc.canFireSingleShot()) {
+					ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
 					return enemy;
 				    }
+				} else if (nearestEnemies > 1) {
+				    if (rc.canFireTriadShot()) {
+					ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+					return enemy;
+				    } else if (rc.canFireSingleShot()) {
+					ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+					return enemy;
+				    }
+				} else if (nearestEnemies == 1 && rc.canFireSingleShot()) {
+				    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+				    return enemy;
 				}
 			    }
 			}
+		    
 		    } else {
 			// If gardener nearby but no enemy trees in the way then just shoot single shots
 			if (rc.canFireSingleShot()) {
@@ -152,7 +152,7 @@ public class Aim extends GlobalVars {
 			    return enemy;
 			}
 		    }
-			    
+		    
 		} else {
 		    // Sometimes fire triad and sometimes fire single
 		    if (nearestEnemies > 1) {
