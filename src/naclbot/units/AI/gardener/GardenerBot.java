@@ -15,7 +15,7 @@ public class GardenerBot extends GlobalVars {
 		// Hello
 		int role;
 		int treeCount = 0;
-		
+
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
 		int prevNumBuilder = rc.readBroadcast(GARDENER_BUILDER_CHANNEL);
@@ -31,8 +31,8 @@ public class GardenerBot extends GlobalVars {
 			System.out.println("Planter/Waterer; rand: " + remISTHEBESTGIRLNum);
 			rc.broadcast(GARDENER_WATERER_CHANNEL, prevNumWaterer + 1);
 			role = 1; //planter and waterer
-
 		}
+		
 		
         // The code you want your robot to perform every round should be in this loop
         while (true) {
@@ -52,7 +52,6 @@ public class GardenerBot extends GlobalVars {
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
                 
                 Direction dir = Move.randomDirection();
-                
                 //unit builder
                 if (role == 0) {
 	                //Move in a random direction
@@ -75,47 +74,32 @@ public class GardenerBot extends GlobalVars {
 	                    rc.buildRobot(RobotType.SCOUT, dir);
 	                }
             	} 
-	            //planter,waterer    
+	            //waterer    
 	            else if (role == 1) {
 	                // First see if there is a tree nearby and if you can do anything to it
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
-	                ArrayList<MapLocation> nearbyTrees = TreeSearch.getNearbyTrees();
-	                Direction dirToNearestLow;
-	                float distanceNearestTree;
-	                if (nearbyTrees.size() > 0) {
-	                	distanceNearestTree = rc.getLocation().distanceTo(TreeSearch.locNearestTree(nearbyTrees));
-	                } else {
-	                	distanceNearestTree = 100;
-	                }
-	                
+	            	
 	                if (lowHealthTrees.size() > 0){
-	                    dirToNearestLow = rc.getLocation().directionTo(lowHealthTrees.get(0));
-		                
-		            //try to water a tree
-		                if (!rc.canWater(lowHealthTrees.get(0))) {
-		                	Move.tryMove(dirToNearestLow);
-		                } else {
-		                	rc.water(lowHealthTrees.get(0));
-		                }
-		                
-	                } else if (rc.canPlantTree(Direction.EAST) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
-	                		rc.plantTree(Direction.EAST);
+	                    if (rc.canWater(lowHealthTrees.get(0))) {
+	                    	rc.water(lowHealthTrees.get(0));
+	                    }
+ 
+	                } 
+	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+	                		rc.plantTree(Direction.getEast());
 			                treeCount++;
-	                } else if (rc.canPlantTree(Direction.NORTH) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
-                		rc.plantTree(Direction.NORTH);
+	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.getNorth());
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.SOUTH) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
-                		rc.plantTree(Direction.SOUTH);
+	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.getSouth());
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.WEST) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
-                		rc.plantTree(Direction.WEST);
-		                treeCount++;
-		                
-	                } else {
-	                	Move.tryMove(Move.randomDirection());
+	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.getWest());
+		                treeCount++;   
 	                }
-	            }
-	                
+
+	            }    	
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
             } catch (Exception e) {
