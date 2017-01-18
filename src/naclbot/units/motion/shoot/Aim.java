@@ -61,12 +61,13 @@ public class Aim extends GlobalVars {
 	*/
 
 	RobotInfoShoot nearestEnemy = ExtraFunctions.findNearestEnemyShooting(pastEnemies,currentEnemies,isTank);
-	int nearestEnemies = nearestEnemy.getNumEnemies();
+	
 	// If no enemies are found then return null
 	if (nearestEnemy == null) {
 	    return null;
 	} else {
 	    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
+	    int nearestEnemies = nearestEnemy.getNumEnemies();
 	    //If big units like archon or tank then try to fire as many bullets as possible
 	    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON) {
 		if (rc.canFirePentadShot()) {

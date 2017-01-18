@@ -55,7 +55,7 @@ public class ExtraFunctions extends GlobalVars {
 	return nearestEnemy;
     }
 
-    public static findNearestEnemyLumberjack(RobotInfo[] enemies) {
+    public static RobotInfoShoot findNearestEnemyLumberjack(RobotInfo[] enemies) {
 	MapLocation myLoc = rc.getLocation();
 	RobotInfoShoot nearestEnemy = null;
 	float nearestEnemyDistance = -1;
