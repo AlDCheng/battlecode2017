@@ -5,13 +5,13 @@ import naclbot.variables.GlobalVars;
 
 public class ShootingType extends GlobalVars {
     String bulletType;
-    boolean isArchon;
+    RobotType robotType;
     Direction enemyDir;
     // Add whether or not they are in a "cone" so shoot more
 	
-    public ShootingType(String bullet, boolean archon, Direction direction) {
+    public ShootingType(String bullet, RobotType type, Direction direction) {
 	this.bulletType = bullet;
-	this.isArchon = archon;
+	this.robotType = type;
 	this.enemyDir = direction;
     }
 
@@ -19,8 +19,8 @@ public class ShootingType extends GlobalVars {
 	return bulletType;
     }
 
-    public boolean getIsArchon() {
-	return isArchon;
+    public RobotType getType() {
+	return robotType;
     }
 
     public Direction getDirection() {

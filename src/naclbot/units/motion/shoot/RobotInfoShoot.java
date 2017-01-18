@@ -24,6 +24,10 @@ public class RobotInfoShoot extends GlobalVars {
 	this.robotPrevLoc = previousLoc;
     }
 
+    public RobotType getType() {
+	return robotType;
+    }
+
     public int getID() {
 	return robotID;
     }
