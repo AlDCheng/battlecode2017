@@ -55,9 +55,31 @@ public class ExtraFunctions extends GlobalVars {
 	return nearestEnemy;
     }
 
-    //public static findNearestEnemyLumberjack() {
-	
-    //}
+    public static findNearestEnemyLumberjack(RobotInfo[] enemies) {
+	MapLocation myLoc = rc.getLocation();
+	RobotInfoShoot nearestEnemy = null;
+	float nearestEnemyDistance = -1;
+	int nearestEnemies = 0;
+
+	for (RobotInfo enemy: enemies) {
+	    nearestEnemies += 1;
+	    MapLocation enemyLoc = enemy.getLocation();
+
+	    // Hasn't found one yet so assign
+	    if (nearestEnemyDistance == -1) {
+		nearestEnemyDistance = myLoc.distanceTo(enemyLoc);
+		RobotInfoShoot newNearestEnemy = new RobotInfoShoot(enemy.getID(),enemy.getType(),enemyLoc,enemyLoc,nearestEnemyDistance,nearestEnemies);
+		nearestEnemy = newNearestEnemy;
+	    } else {
+		if (myLoc.distanceTo(enemyLoc) < nearestEnemyDistance) {
+		    nearestEnemyDistance = myLoc.distanceTo(enemyLoc);
+		    RobotInfoShoot newNearestEnemy = new RobotInfoShoot(enemy.getID(),enemy.getType(),enemyLoc,enemyLoc,nearestEnemyDistance,nearestEnemies);
+		    nearestEnemy = newNearestEnemy;
+		}
+	    }
+	}
+	return nearestEnemy;
+    }
 
     //public static findNearestAlly() {
 
