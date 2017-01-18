@@ -162,8 +162,7 @@ public class SoldierBot extends GlobalVars {
 			BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 			if (nearbyBullets.length > 0) {
 			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
-			    Direction noDodge = new Direction(-1);
-			    if (dodge != noDodge) {
+			    if (dodge != null) {
 					System.out.println("TRYING TO DODGE");
 					Move.tryMove(dodge);
 			    }

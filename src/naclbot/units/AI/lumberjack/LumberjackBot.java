@@ -110,9 +110,8 @@ public class LumberjackBot extends GlobalVars {
 		    if (nearbyBullets.length > 0) {
 			
 			Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
-			Direction noDodge = new Direction(-1);
-			
-			if (dodge!= noDodge) {
+						
+			if (dodge != null) {
 			    
 			    Move.tryMove(dodge);
 			}
