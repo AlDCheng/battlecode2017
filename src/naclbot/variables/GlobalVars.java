@@ -27,6 +27,7 @@ public class GlobalVars {
 	
 	public static int TREE_DATA_CHANNEL;
 	public static int TREE_OFFSET;
+	public static int TOTAL_TREE_NUMBER;
 	
 	public static int GROUP_NUMBER_CHANNEL;
 	public static int GROUP_CHANNEL;
@@ -127,8 +128,9 @@ public class GlobalVars {
 		GROUP_START = GROUP_LEADER_START + GROUP_LEADER_OFFSET * GROUP_LIMIT;
 		GROUP_OFFSET = 20;
 
-		TREE_DATA_CHANNEL = 400; 
-		TREE_OFFSET = 4;
+		TREE_DATA_CHANNEL = 399; 
+		TREE_OFFSET = 3;
+		TOTAL_TREE_NUMBER = (int)((999 - TREE_DATA_CHANNEL) / 3);
 		//Offset 0: Tree ID
 		//Offset 2: Tree X Position
 		//Offset 3: Tree Y Position

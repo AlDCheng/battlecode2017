@@ -9,6 +9,7 @@ import naclbot.units.motion.shoot.Aim;
 import naclbot.units.motion.shoot.RobotInfoShoot;
 import naclbot.units.motion.shoot.ShootingType;
 import naclbot.variables.DataVars;
+import naclbot.variables.DataVars.*;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.DataVars.basicTreeInfo;
 import naclbot.variables.DataVars.binarySearchTree;
@@ -66,7 +67,10 @@ public class SoldierBot extends GlobalVars {
 		
 		while (true){
 			try{
-				DataVars.updateTrees(treeList);
+
+				binarySearchTree.updateTrees(treeList);
+				updateMapTrees(DataVars.treeMapFormat);
+	
 				
 //				for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
 //					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
@@ -121,7 +125,9 @@ public class SoldierBot extends GlobalVars {
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	DataVars.updateTrees(treeList);
+
+            	binarySearchTree.updateTrees(treeList);
+          
             	
 //            	for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
 //					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
@@ -139,6 +145,7 @@ public class SoldierBot extends GlobalVars {
 //					System.out.println();
 //				}
 				
+
             	checkGroupAssignments();
             	
             	// check if thee robot has entered a group or not

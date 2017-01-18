@@ -5,6 +5,7 @@ import battlecode.common.*;
 import naclbot.variables.ArchonVars;
 import naclbot.variables.DataVars;
 import naclbot.variables.DataVars.*;
+
 import naclbot.units.motion.*;
 import naclbot.units.motion.search.TreeSearch;
 
@@ -34,6 +35,12 @@ public class ArchonBot extends ArchonVars {
 	public static MapLocation myLocation;
 	public static int lastClumpAlert;
 	
+	public static int numBroadcasted;
+	public static int currentTreeSize; 
+	
+	public static int lastCount;
+	
+	
 	// Starting game phase
 	
 	public static void init() throws GameActionException {
@@ -58,7 +65,9 @@ public class ArchonBot extends ArchonVars {
 		allies = rc.getTeam();
 		
 		Arrays.fill(archonIDs, -1);
-		lastAttackArchon = 0;
+		lastAttackArchon = Integer.MIN_VALUE;
+		
+		numBroadcasted = 0;
 		
 		start();		
 	}
@@ -128,15 +137,44 @@ public class ArchonBot extends ArchonVars {
         	
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	lastCount = -1;
+            	
+            	currentTreeSize = treeList.size;
             	
             	current_round = rc.getRoundNum();
             	
                 broadcastLocation();
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
-            		DataVars.updateTrees(treeList);  
-          
+            		binarySearchTree.updateTrees(treeList);  
+            	
+            
             	}
+          		
+        		if (archonNumber == 0){
+        
+    				if(numBroadcasted<treeList.size-1){
+    					
+    					Node toSend1 = getTerm(treeList.tree_root, numBroadcasted);
+        					if (toSend1 != null){
+		                    rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 33);
+		                    
+		                    System.out.println(" Updating the tree public storage with tree at x: " + toSend1.data.x +  " y: " + toSend1.data.y + " radius: " + toSend1.data.radius);
+		                    System.out.println(numBroadcasted);
+		                    rc.broadcast(TREE_DATA_CHANNEL, numBroadcasted);
+		                    rc.broadcast(1 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET, toSend1.data.x);
+		                    rc.broadcast(2 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET, toSend1.data.y);
+		                    rc.broadcast(3 + TREE_DATA_CHANNEL +  numBroadcasted * TREE_OFFSET, toSend1.data.radius);
+		                    numBroadcasted += 1;
+		                    numBroadcasted = numBroadcasted % TOTAL_TREE_NUMBER;
+        					}
+    					
+    				}			                   
+
+        			
+            	}
+            	
+            	
             	
             	
             	detectEnemyGroup();
@@ -149,7 +187,7 @@ public class ArchonBot extends ArchonVars {
             				lastAttackArchon = 0;        
             			}
             		}
-            	if (lastAttackArchon >= 300){
+            	if (lastAttackArchon >= 100){
             		boolean made = generateCommand(1,archonLocations[0], archonIDs[0]);
             		if (made){
         				lastAttackArchon = 0;        
@@ -251,7 +289,8 @@ public class ArchonBot extends ArchonVars {
 					decidedGroup = i;	
 					decided = true;
 				} else{
-					System.out.println("The following group is already occupied: " + decidedGroup);
+					
+					System.out.println("The following group is already occupied: " + i);
 						
 				}
 			}
@@ -281,9 +320,13 @@ public class ArchonBot extends ArchonVars {
 				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 2, targetID);
 				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 3, (int)targetLocation.X);
 				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 4, (int)targetLocation.Y);
-				System.out.println("Group succesfully created");
+				System.out.println("Group creation succesfully initialized");
 				
 				return true;
+				
+			}
+			
+			else{System.out.println("Group creation was unsuccesful - no nearby units to join group");
 				
 			}
 		}
@@ -362,9 +405,9 @@ public class ArchonBot extends ArchonVars {
 		for(int i = 0; i < SCOUT_LIMIT; i++){			
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 2){
 				Tuple coords = new Tuple(rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(2 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
-				coords.printData();	
+		
 				coordinates[i] = coords;
-				System.out.println("received message of OMG");
+			
 			}
 			
 		}
@@ -404,4 +447,31 @@ public class ArchonBot extends ArchonVars {
 		return newUpdate;
 		
 	}
+	
+	public static Node getTerm(Node root, int index){
+		
+		Node desiredNode = null;
+		if (root!=null){
+			Node x = getTerm(root.leftChild, index);
+			if (x!=null){
+				desiredNode = x;	    	
+    		}
+    		//System.out.print("Node: " + root.key + "Data_x: " + root.data.x + "Data_y: " + root.data.y + "Radius: " + root.data.radius);
+    		if (lastCount == index){
+    			desiredNode = root;
+    		}
+    		lastCount += 1;
+    		
+	        //System.out.println();
+    		
+    		Node y = getTerm(root.rightChild, index);
+			if (y!=null){
+				desiredNode = y;	    	
+    		}
+    	}
+		return desiredNode;
+		
+	}
+
+
 }
