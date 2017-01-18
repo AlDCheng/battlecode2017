@@ -13,6 +13,7 @@ public class Aim extends GlobalVars {
     public static ShootingType shootNearestEnemy (ArrayList<RobotInfoShoot> pastEnemies, RobotInfo[] currentEnemies, boolean isTank) {
 	
 	MapLocation myLoc = rc.getLocation();
+	Team enemyTeam = rc.getTeam().opponent();
 
 	/*
 	RobotInfoShoot nearestEnemy = null;
@@ -82,29 +83,60 @@ public class Aim extends GlobalVars {
 		} 
 		
 	    } else {
+		RobotType enemyType = nearestEnemy.getType();
+		if (enemyType == RobotType.GARDENER) {
+		    TreeInfo[] nearbyEnemyTrees = rc.senseNearbyTrees(-1,enemyTeam);
 
-		// Sometimes fire triad and sometimes fire single
-		if (nearestEnemies > 1) {
-		    if (rc.canFireTriadShot()) {
-			ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
-			return enemy;
-		    } else if (rc.canFireSingleShot()) {
-			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
-			return enemy;
-		    } 
-		    
-		    
+		    // If there are trees nearby then check if they are between gardener and current robot
+		    if (nearbyEnemyTrees.length > 0) {
+
+			for (TreeInfo tree: nearbyEnemyTrees) {
+			    MapLocation treeLoc = rc.getLocation();
+			    Direction treeDir = new Direction(myLoc,treeLoc);
+			    float treeDist = myLoc.distanceTo(treeLoc);
+
+			    // If the tree is nearer than gardener and same direction
+			    if (treeDist < nearestEnemy.getDistance() && treeDir == dirShoot && rc.canFireSingleShot()) {
+				ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+				return enemy;
+			    } else {
+				if (rc.canFireSingleShot()) {
+				    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+				    return enemy;
+				}
+			    }
+			}
+		    } else {
+			// If gardener nearby but no enemy trees in the way then just shoot single shots
+			if (rc.canFireSingleShot()) {
+			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+			    return enemy;
+			}
+		    }
+			    
 		} else {
-		    if (rc.canFireSingleShot()) {
-			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
-			return enemy;
+		    // Sometimes fire triad and sometimes fire single
+		    if (nearestEnemies > 1) {
+			if (rc.canFireTriadShot()) {
+			    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+			    return enemy;
+			} else if (rc.canFireSingleShot()) {
+			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+			    return enemy;
+			} 
+			
+			
+		    } else {
+			if (rc.canFireSingleShot()) {
+			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
+			    return enemy;
+			}
 		    }
 		}
 	    }
 	}
 	return null;
     }
-    
 
     /*
     // Returns the direction of the optimum single shot
