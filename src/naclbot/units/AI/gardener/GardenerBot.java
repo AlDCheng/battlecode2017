@@ -14,8 +14,7 @@ public class GardenerBot extends GlobalVars {
 		// determines whether gardener is planter and waterer or unit builder 
 		// Hello
 		int role;
-		int treeCount = 0;
-		
+
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
 		int prevNumBuilder = rc.readBroadcast(GARDENER_BUILDER_CHANNEL);
@@ -23,7 +22,11 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if ((prevNumWaterer > 2) && ((2*prevNumBuilder) < prevNumWaterer)) {
+		if (prevNumPlanter == 0) {
+			role = 2;
+			rc.broadcast(GARDENER_PLANTER_CHANNEL,prevNumPlanter + 1);
+		}
+		else if ((prevNumWaterer > 2) && ((2*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
@@ -31,8 +34,8 @@ public class GardenerBot extends GlobalVars {
 			System.out.println("Planter/Waterer; rand: " + remISTHEBESTGIRLNum);
 			rc.broadcast(GARDENER_WATERER_CHANNEL, prevNumWaterer + 1);
 			role = 1; //planter and waterer
-
 		}
+		
 		
         // The code you want your robot to perform every round should be in this loop
         while (true) {
@@ -52,7 +55,6 @@ public class GardenerBot extends GlobalVars {
                 MapLocation archonLoc = new MapLocation(xPos,yPos);
                 
                 Direction dir = Move.randomDirection();
-                
                 //unit builder
                 if (role == 0) {
 	                //Move in a random direction
@@ -75,35 +77,17 @@ public class GardenerBot extends GlobalVars {
 	                    rc.buildRobot(RobotType.SCOUT, dir);
 	                }
             	} 
-	            //planter,waterer    
+	            //waterer    
 	            else if (role == 1) {
 	                // First see if there is a tree nearby and if you can do anything to it
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
-	                ArrayList<MapLocation> nearbyTrees = TreeSearch.getNearbyTrees();
-	                Direction dirToNearestLow;
-	                float distanceNearestTree;
-	                if (nearbyTrees.size() > 0) {
-	                	distanceNearestTree = rc.getLocation().distanceTo(TreeSearch.locNearestTree(nearbyTrees));
-	                } else {
-	                	distanceNearestTree = 100;
-	                }
-	                
+	            	
 	                if (lowHealthTrees.size() > 0){
-	                    dirToNearestLow = rc.getLocation().directionTo(lowHealthTrees.get(0));
-		                
-		            //try to water a tree
-		                if (!rc.canWater(lowHealthTrees.get(0))) {
-		                	Move.tryMove(dirToNearestLow);
-		                } else {
-		                	rc.water(lowHealthTrees.get(0));
-		                }
-	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 3.0) {
-		                rc.plantTree(dir);
-		                treeCount++;
-	                } else {
-	                	Move.tryMove(Move.randomDirection());
-	                }
-	            }
+	                    if (rc.canWater(lowHealthTrees.get(0))) {
+	                    	rc.water(lowHealthTrees.get(0));
+	                    }
+	                
+                
 	                
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
