@@ -255,6 +255,7 @@ public class SoldierBot extends GlobalVars {
     }
     
     private static void trackingEnemies() throws GameActionException {
+    	
 	
 
     }
