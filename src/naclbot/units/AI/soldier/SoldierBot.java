@@ -8,6 +8,7 @@ import naclbot.units.motion.shoot.Aim;
 import naclbot.units.motion.shoot.RobotInfoShoot;
 import naclbot.units.motion.shoot.ShootingType;
 import naclbot.variables.DataVars;
+import naclbot.variables.DataVars.*;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.DataVars.basicTreeInfo;
 import naclbot.variables.DataVars.binarySearchTree;
@@ -64,7 +65,7 @@ public class SoldierBot extends GlobalVars {
 		
 		while (true){
 			try{
-				DataVars.updateTrees(treeList);
+				binarySearchTree.updateTrees(treeList);
 				updateMapTrees(DataVars.treeMapFormat);
 				
 				int targetX = rc.readBroadcast(GROUP_START + currentGroup * GROUP_OFFSET + 3);
@@ -106,7 +107,7 @@ public class SoldierBot extends GlobalVars {
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	DataVars.updateTrees(treeList);
+            	binarySearchTree.updateTrees(treeList);
             	checkGroupAssignments();
             	
             	// check if thee robot has entered a group or not
