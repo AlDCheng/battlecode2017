@@ -2,6 +2,7 @@
 package naclbot.units.motion.shoot;
 import battlecode.common.*;
 import naclbot.variables.GlobalVars;
+import naclbot.units.motion.other.*;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -10,11 +11,14 @@ public class Aim extends GlobalVars {
 
     // Returns the direction of the nearest enemy single shot
     public static ShootingType shootNearestEnemy (ArrayList<RobotInfoShoot> pastEnemies, RobotInfo[] currentEnemies, boolean isTank) {
+	
 	MapLocation myLoc = rc.getLocation();
+
+	/*
 	RobotInfoShoot nearestEnemy = null;
 	float nearestEnemyDistance = -1;
 	int nearestEnemies = 0;
-	String typeBullet;
+
 	
 	// Look over all robots and find nearest enemy that has already been seen
 	for (RobotInfo robot: currentEnemies) {
@@ -53,23 +57,27 @@ public class Aim extends GlobalVars {
 		    }
 		}
 	    }
-	}
+	    }
+	*/
+
+	RobotInfoShoot nearestEnemy = ExtraFunctions.findNearestEnemyShooting(pastEnemies,currentEnemies,isTank);
 	
 	// If no enemies are found then return null
-	if (nearestEnemies == 0) {
+	if (nearestEnemy == null) {
 	    return null;
 	} else {
 	    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
+	    int nearestEnemies = nearestEnemy.getNumEnemies();
 	    //If big units like archon or tank then try to fire as many bullets as possible
 	    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON) {
 		if (rc.canFirePentadShot()) {
-		    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
 		    return enemy;
 		} else if (rc.canFireTriadShot()) {
-		    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
 		    return enemy;
 		} else if (rc.canFireSingleShot()) {
-		    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
 		    return enemy;
 		} 
 		
@@ -78,17 +86,17 @@ public class Aim extends GlobalVars {
 		// Sometimes fire triad and sometimes fire single
 		if (nearestEnemies > 1) {
 		    if (rc.canFireTriadShot()) {
-			ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
 			return enemy;
 		    } else if (rc.canFireSingleShot()) {
-			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
 			return enemy;
 		    } 
 		    
 		    
 		} else {
 		    if (rc.canFireSingleShot()) {
-			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemy.getDistance());
 			return enemy;
 		    }
 		}

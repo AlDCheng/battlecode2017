@@ -398,67 +398,70 @@ public class ScoutBot extends GlobalVars {
 	// move twoards a target robot
 	private static Direction moveTowards(RobotInfo quandary) throws GameActionException{
 		
-		float gap = myLocation.distanceTo(quandary.location);
-    	Direction dir = myLocation.directionTo(quandary.location);
-    	Direction perp = new Direction(dir.radians+((float) Math.PI/2));
-    	Direction anti_perp = new Direction(dir.radians+((float) Math.PI/2));
-
-    	Direction anti_dir = new Direction(dir.radians+(float) Math.PI);
-
-		if  (gap > 7.5){
-			// Move towards target]
-			if (rc.canMove(dir)){							
-				rc.move(dir);
-				return dir;
-			}
-			else{Direction dir2 = Move.randomDirection();
-     			tryMoveScout(dir);
-     			return dir2;
-			}
-			
-		} else if (gap < 2.5) {
-			// Move away from target
-			if (rc.canMove(anti_dir)){							
-				rc.move(anti_dir);
-				return dir;
-			}
-			else{Direction dir2 = Move.randomDirection();
-     			tryMoveScout(dir);
-     			return dir2;
-			}
-			
-		} else {
-			float nani = (float) Math.random();
-			float keikaku =  (float) Math.random() + (float) 1.5;
-			if (nani>0.5){
-				if (rc.canMove(perp)){							
-					rc.move(perp, keikaku);
-					return perp;
-				} else if (rc.canMove(anti_perp)){							
-					rc.move(anti_perp,keikaku);
-					return anti_perp;
-				} else{Direction dir2 = Move.randomDirection();
-					tryMoveScout(dir);
-					return dir2;
+		if (quandary != null){
+			float gap = myLocation.distanceTo(quandary.location);
+	    	Direction dir = myLocation.directionTo(quandary.location);
+	    	Direction perp = new Direction(dir.radians+((float) Math.PI/2));
+	    	Direction anti_perp = new Direction(dir.radians+((float) Math.PI/2));
+	
+	    	Direction anti_dir = new Direction(dir.radians+(float) Math.PI);
+	
+			if  (gap > 7.5){
+				// Move towards target]
+				if (rc.canMove(dir)){							
+					rc.move(dir);
+					return dir;
 				}
-			}   else{
-				
-				if (rc.canMove(anti_perp)){							
-					rc.move(anti_perp, keikaku);
-					return anti_perp;
-				} else if (rc.canMove(perp)){							
-					rc.move(perp, keikaku);
-					return perp;
-				} else{Direction dir2 = Move.randomDirection();
-					tryMoveScout(dir);
-					return dir2;
+				else{Direction dir2 = Move.randomDirection();
+	     			tryMoveScout(dir2);
+	     			return dir2;
 				}
-		
 				
+			} else if (gap < 2.5) {
+				// Move away from target
+				if (rc.canMove(anti_dir)){							
+					rc.move(anti_dir);
+					return dir;
+				}
+				else{Direction dir2 = Move.randomDirection();
+	     			tryMoveScout(dir2);
+	     			return dir2;
+				}
+				
+			} else {
+				float nani = (float) Math.random();
+				float keikaku =  (float) Math.random() + (float) 1.5;
+				if (nani>0.5){
+					if (rc.canMove(perp)){							
+						rc.move(perp, keikaku);
+						return perp;
+					} else if (rc.canMove(anti_perp)){							
+						rc.move(anti_perp,keikaku);
+						return anti_perp;
+					} else{Direction dir2 = Move.randomDirection();
+						tryMoveScout(dir2);
+						return dir2;
+					}
+				}   else{
+					
+					if (rc.canMove(anti_perp)){							
+						rc.move(anti_perp, keikaku);
+						return anti_perp;
+					} else if (rc.canMove(perp)){							
+						rc.move(perp, keikaku);
+						return perp;
+					} else{Direction dir2 = Move.randomDirection();
+						tryMoveScout(dir2);
+						return dir2;
+					}
+				}
+			
 			}
+	
 			
 			// Move to a 5 unit distance of the target (either away or towards)
 		}
+		return null;
 	}
 	
 	// Get the nearest enemy to the last known location of the archon

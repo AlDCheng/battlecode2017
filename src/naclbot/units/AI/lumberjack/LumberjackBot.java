@@ -119,6 +119,7 @@ public class LumberjackBot extends GlobalVars {
 		    } else {
 		    */
 			if (robots.length > 0) { // If there is a robot, move towards it			
+			    //if 
 			    MapLocation enemyLocation = robots[0].getLocation();
 			    
 			    Direction toEnemy = myLocation.directionTo(enemyLocation);
