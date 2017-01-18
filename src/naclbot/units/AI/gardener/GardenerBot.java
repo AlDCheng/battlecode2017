@@ -78,23 +78,24 @@ public class GardenerBot extends GlobalVars {
 	            else if (role == 1) {
 	                // First see if there is a tree nearby and if you can do anything to it
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
-	            	
+	            	boolean nearbyGard = Plant.nearbyGardeners(5);
+	            	boolean nearbyArc = Plant.nearbyArchons(5);
 	                if (lowHealthTrees.size() > 0){
 	                    if (rc.canWater(lowHealthTrees.get(0))) {
 	                    	rc.water(lowHealthTrees.get(0));
 	                    }
  
 	                } 
-	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
-	                		rc.plantTree(Direction.getEast());
-			                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
+	                	rc.plantTree(Direction.getEast());
+			            treeCount++;
+	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
                 		rc.plantTree(Direction.getNorth());
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
                 		rc.plantTree(Direction.getSouth());
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
                 		rc.plantTree(Direction.getWest());
 		                treeCount++;   
 	                }
