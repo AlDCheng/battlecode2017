@@ -11,26 +11,26 @@ public class ShootingType extends GlobalVars {
     // Add whether or not they are in a "cone" so shoot more
 	
     public ShootingType(String bullet, RobotType type, Direction direction, float distance) {
-	this.bulletType = bullet;
-	this.robotType = type;
-	this.enemyDir = direction;
-	this.enemyDist = distance;
+		this.bulletType = bullet;
+		this.robotType = type;
+		this.enemyDir = direction;
+		this.enemyDist = distance;
     }
 
     public String getBulletType() {
-	return bulletType;
+		return bulletType;
     }
 
     public RobotType getType() {
-	return robotType;
+		return robotType;
     }
 
     public Direction getDirection() {
-	return enemyDir;
+		return enemyDir;
     }
 
     public float getDistance() {
-	return enemyDist;
+		return enemyDist;
     }
 }
 			 
