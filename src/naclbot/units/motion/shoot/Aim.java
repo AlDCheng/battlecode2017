@@ -13,7 +13,6 @@ public class Aim extends GlobalVars {
 	Direction noDir = new Direction(0);
 	MapLocation loc = rc.getLocation();
 	boolean isArchon = false;
-	//RobotInfoShoot archon;
 	ArrayList<RobotInfoShoot> repeatedEnemies = new ArrayList<RobotInfoShoot>();
 
 	// Looks over all robots and checks which are repeated
@@ -29,7 +28,7 @@ public class Aim extends GlobalVars {
 		    repeatedEnemies.add(robInfo);
 		    
 		    // Check if one of the ones to attack is an archon
-		    if (robot.getType() == RobotType.ARCHON && isArchon == false) {
+		    if (robot.getType() == RobotType.ARCHON && isArchon == false && !rc.hasAttacked()) {
 			isArchon = true;
 		        RobotInfoShoot archon = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
 			Direction dir = archon.getDirectionToShoot(loc);
@@ -42,17 +41,17 @@ public class Aim extends GlobalVars {
 			} else if (rc.canFireSingleShot()) {
 			    ShootingType result = new ShootingType("single", isArchon, dir);
 			    return result;
-			} else {
-			    ShootingType result = new ShootingType("none", isArchon, dir);
-			    return result;
-			}
+			} 
+			ShootingType result = new ShootingType("none", isArchon, dir);
+			return result;
+			
 		    }
 		}			
 	    }
 	}
 
 	// Change this to be smarter
-	if (repeatedEnemies.size() == 0) {
+	if (repeatedEnemies.size() == 0 && !rc.hasAttacked()) {
 	    // If don't know where to shoot, shoot at random location
 	    if (pastEnemies.size() > 0 && rc.canFireSingleShot()) {
 		MapLocation someLoc = pastEnemies.get(0).getCurrentLocation();
@@ -63,13 +62,13 @@ public class Aim extends GlobalVars {
 		ShootingType result = new ShootingType("none", isArchon, noDir);
 		return result;
 	    }
-	} else if (repeatedEnemies.size() == 1) {
+	} else if (repeatedEnemies.size() == 1 && !rc.hasAttacked()) {
 	    if (rc.canFireSingleShot()) {
 		Direction shootDir = repeatedEnemies.get(0).getDirectionToShoot(loc);
 		ShootingType result = new ShootingType("single", isArchon, shootDir);
 		return result;
 	    }
-	} else if (repeatedEnemies.size() < 4) {
+	} else if (repeatedEnemies.size() < 4 && !rc.hasAttacked()) {
 	    int index = new Random().nextInt(repeatedEnemies.size()); 
 	    if (rc.canFireTriadShot()) {
 		Direction shootDir = repeatedEnemies.get(index).getDirectionToShoot(loc);
@@ -80,7 +79,7 @@ public class Aim extends GlobalVars {
 		ShootingType result = new ShootingType("single", isArchon, shootDir);
 		return result;
 	    }
-	} else if (repeatedEnemies.size() > 4) {
+	} else if (repeatedEnemies.size() > 4 && !rc.hasAttacked()) {
 	    int index = new Random().nextInt(repeatedEnemies.size());
 	    if (rc.canFirePentadShot()) {
 		Direction shootDir = repeatedEnemies.get(index).getDirectionToShoot(loc);

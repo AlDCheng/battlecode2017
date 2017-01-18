@@ -19,26 +19,26 @@ import java.util.Arrays;
 
 public class SoldierBot extends GlobalVars {
 	
-	public static int ID;
-	public static MapLocation myLocation;
-	public static int initRound;
-	public static int homeArchon;
-	public static Team enemy;
-	public static Team allies;
-	public static int currentRound;
-	public static int currentGroup = -1;
-	public static int command;
-	public static boolean isLeader;
-	
-	public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
-	public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
-
-	public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
-		
-	
-	
-	public static void init() throws GameActionException{
-		System.out.println("I'm an soldier!");
+    public static int ID;
+    public static MapLocation myLocation;
+    public static int initRound;
+    public static int homeArchon;
+    public static Team enemy;
+    public static Team allies;
+    public static int currentRound;
+    public static int currentGroup = -1;
+    public static int command;
+    public static boolean isLeader;
+    
+    public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
+    public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
+    
+    public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
+    
+    
+    
+    public static void init() throws GameActionException{
+	System.out.println("I'm an soldier!");
         enemy = rc.getTeam().opponent();
         allies = rc.getTeam();
         
@@ -56,6 +56,7 @@ public class SoldierBot extends GlobalVars {
 	
 	public static void attack() throws GameActionException{
 		
+ 
 		// Checks if robot is leader....	
 
 		if (isLeader){
@@ -103,28 +104,34 @@ public class SoldierBot extends GlobalVars {
                 System.out.println("Soldier Exception");
                 e.printStackTrace();
 			}		
+
+			// Checks if robot is leader....	
+	    
+		    if (isLeader){
+			System.out.println("I'm leader of this group WAT");
+			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
+			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
+			rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 3, (int)myLocation.y);
+		    }		    
 		}
 	}
+    
+    
+    //TODO make soldiers patrol around a certain location
+    public static void patrol(MapLocation targetLocation) throws GameActionException{
 	
-	
-	//TODO make soldiers patrol around a certain location
-	public static void patrol(MapLocation targetLocation) throws GameActionException{
-		
-	}
+    }
 	
     public static void main() throws GameActionException {
     	
-		// Important variables
-		ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
-		int notMoved = 0;
-		MapLocation prevLocation = rc.getLocation();
-		boolean hasMoved = false;
+	// Important variables
+	ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
+	int notMoved = 0;
+	MapLocation prevLocation = rc.getLocation();
+		
+	myLocation = rc.getLocation(); // Current location
 	
-		myLocation = rc.getLocation(); // Current location
-		
-		boolean leaveArchon = false; // If we want to make it surround archon until later grouping
-		
-        // The code you want your robot to perform every round should be in this loop
+	// The code you want your robot to perform every round should be in this loop
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
@@ -154,93 +161,73 @@ public class SoldierBot extends GlobalVars {
             	
             	// check if thee robot has entered a group or not
             	if (currentGroup >= 0){
-            		            		
-            		// Check the value of the command bit of the group
-            		
-            		// command 1 is an attack command
-            		if (command == 1){
-            			attack();
-            		}
+		    
+		    // Check the value of the command bit of the group
+		    
+		    // command 1 is an attack command
+		    if (command == 1){
+			attack();
+		    }
             	}
-		 
-			// Sense nearby enemy robots
-			RobotInfo[] currentEnemies = rc.senseNearbyRobots(-1, enemy);
-			RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
-	
-			// Shooting 
-			if (!enemyToShoot.isEmpty() && !rc.hasAttacked()) {
-			    //boolean canShoot = false;
-			    ShootingType shoot = Aim.toShoot(enemyToShoot, currentEnemies);
-	
-			    if (shoot.getBulletType() != "none") {
-				// No shooting if there is an ally in the way
-				for (RobotInfo ally: currentAllies) {
-				    MapLocation allyLoc = ally.getLocation();
-				    Direction allyDir = new Direction(myLocation, allyLoc);
-						    
-				    // TODO: implement radius location of ally
-				    if (allyDir != shoot.getDirection()) {
-					// Shoot
-					if (shoot.getBulletType() == "pentad") {
-					    rc.firePentadShot(shoot.getDirection());
-					} else if (shoot.getBulletType() == "triad") {
-					    rc.fireTriadShot(shoot.getDirection());
-					} else if (shoot.getBulletType() == "single") {
-					    rc.fireSingleShot(shoot.getDirection());
-					}
-				    }	    
-				}
-			    }
-			}
-			// Resets the list to add new ones
-			enemyToShoot.clear();
-	
-			// Adds the ones seen this turn
-			for (RobotInfo enemyRobot: currentEnemies) {
-			    MapLocation currentLoc = enemyRobot.getLocation();
-			    int ID = enemyRobot.getID();
-			    RobotType robType = enemyRobot.getType();
-			    RobotInfoShoot r = new RobotInfoShoot(ID, robType, currentLoc);
-			    enemyToShoot.add(r);
-			}
-	
-			// MOVEMENT 
-			BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
-			if (nearbyBullets.length > 0) {
-			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
-			    Direction noDodge = new Direction(-1);
-			    if (dodge != noDodge) {
-				Move.tryMove(dodge);
-			    }
-			}
-			
-			// Check if it hasn't moved
-			if (myLocation == prevLocation) {
-			    notMoved += 1;
-			}
-			
-			// Move to other allies 
-			if (currentAllies.length > 0 && notMoved < 5 && !rc.hasMoved()) {
-			    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
-			    if (locAlly == rc.getLocation()) {
-				Move.tryMove(Move.randomDirection());
-				notMoved += 1;
-			    } else {
-				Direction dir = rc.getLocation().directionTo(locAlly);
-				Move.tryMove(dir);
-			    }
-			    
-			    
-			} else if (!rc.hasMoved()) {
-			    Move.tryMove(Move.randomDirection());
-			    notMoved = 0; // Reset counter
-			}
-			
-			
-	                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-			Clock.yield();
-			
+		
+		// Sense nearby enemy robots
+		RobotInfo[] currentEnemies = rc.senseNearbyRobots(-1, enemy);
+		RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
 
+		/* ---------------------------------- SHOOTING --------------------------------------*/
+		// Shoots enemies that have been tracked and takes care not to single shoot to ally
+		// TODO: implement no shoot for triad and pentad to ally (?)
+		shootEnemies(currentEnemies,currentAllies,enemyToShoot);
+		
+		// Resets the list to add new ones
+		enemyToShoot.clear();
+		
+		// Adds the ones seen this turn
+		for (RobotInfo enemyRobot: currentEnemies) {
+		    MapLocation currentLoc = enemyRobot.getLocation();
+		    int ID = enemyRobot.getID();
+		    RobotType robType = enemyRobot.getType();
+		    RobotInfoShoot r = new RobotInfoShoot(ID, robType, currentLoc);
+		    enemyToShoot.add(r);
+		}
+		
+		/* ---------------------------------- MOVEMENT --------------------------------------*/
+		// Dodge
+		BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+		if (nearbyBullets.length > 0) {
+		    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
+		    Direction noDodge = new Direction(-1);
+		    if (dodge != noDodge) {
+			Move.tryMove(dodge);
+		    }
+		}
+		
+		// Check if it hasn't moved
+		if (myLocation == prevLocation) {
+		    notMoved += 1;
+		}
+		
+		// Move to other allies 
+		if (currentAllies.length > 0 && notMoved < 5 && !rc.hasMoved()) {
+		    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
+		    if (locAlly == rc.getLocation()) {
+			Move.tryMove(Move.randomDirection());
+			notMoved += 1;
+		    } else {
+			Direction dir = rc.getLocation().directionTo(locAlly);
+			Move.tryMove(dir);
+		    }
+		    
+		} else if (!rc.hasMoved()) {
+		    Move.tryMove(Move.randomDirection());
+		    notMoved = 0; // Reset counter
+		}
+		
+		
+		// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+		Clock.yield();
+		
+		
             } catch (Exception e) {
                 System.out.println("Soldier Exception");
                 e.printStackTrace();
@@ -249,35 +236,91 @@ public class SoldierBot extends GlobalVars {
     }
     
     private static void checkGroupAssignments() throws GameActionException{
-    
+	
     	int newGroups = rc.readBroadcast(8 + homeArchon * ARCHON_OFFSET);
     	if (newGroups == 1){
-    		
-    		int check = rc.readBroadcast(GROUP_NUMBER_CHANNEL);
-    		
-    		boolean isGroup = false;
-    		
-    		for (int i = 0; i < GROUP_SIZE_LIMIT; i++){
-    			if (rc.readBroadcast(GROUP_START + check * GROUP_OFFSET + 5 + i) == ID){
-    				isGroup = true;
-    				if (i == 0){
-    					isLeader = true;    					
-    				}
-    			}
-    		}    		
-    		if (isGroup){
-    			
-    			command = rc.readBroadcast(GROUP_START + check * GROUP_OFFSET + 1);
-    			currentGroup = check;
-    			System.out.println("I have joined a group: " + currentGroup + "with command type: " + command);
-    		}   		
+	    
+	    int check = rc.readBroadcast(GROUP_NUMBER_CHANNEL);
+	    
+	    boolean isGroup = false;
+	    
+	    for (int i = 0; i < GROUP_SIZE_LIMIT; i++){
+		if (rc.readBroadcast(GROUP_START + check * GROUP_OFFSET + 5 + i) == ID){
+		    isGroup = true;
+		    if (i == 0){
+			isLeader = true;    					
+		    }
+		}
+	    }    		
+	    if (isGroup){
+		
+		command = rc.readBroadcast(GROUP_START + check * GROUP_OFFSET + 1);
+		currentGroup = check;
+		System.out.println("I have joined a group: " + currentGroup + "with command type: " + command);
+	    }   		
     	}     		   	
     }
     
     
     private static RobotInfo[] senseNearbyEnemies(Team enemy){
-		return rc.senseNearbyRobots(-1, enemy);
+	return rc.senseNearbyRobots(-1, enemy);
+    }
+
+    private static void shootEnemies(RobotInfo[] enemies, RobotInfo[] allies, ArrayList<RobotInfoShoot> pastEnemies) {
+	// Checks if there are enemies to trace
+	// Checks if the unit has attacked already
+	if (!pastEnemies.isEmpty() && !rc.hasAttacked()) {
+	    ShootingType shoot = Aim.toShoot(pastEnemies, enemies); // Returns details about shooting
+	    boolean canShoot = true;
+	    // ShootingType: bulletType, isArchon, direction
+	    // Checks if we should actually shoot (bulletType is none if we cannot shoot)
+	    if (shoot.getBulletType() != "none") {
+		// No shooting if there is an ally in the way
+		for (RobotInfo ally: allies) {
+		    // Takes into account if the bullet will hit ally
+		    // This only works for single shots because they go in that direction. Triad and pentad are not considered (because they fan out)
+		    MapLocation allyLoc = ally.getLocation();
+		    Direction allyDir = new Direction(myLocation, allyLoc);
+		    Direction shootDir = shoot.getDirection();
+		    float theta = allyDir.radiansBetween(shootDir);
+		    float allyDist = myLocation.distanceTo(allyLoc);
+
+		    // This means the bullet will hit the ally
+		    if ((allyDist * Math.sin(theta)) <= ally.getRadius()) {
+			canShoot = false;
+			break;
+		    }
+		}
+
+		if (canShoot) {
+		    // Shoot
+		    if (shoot.getBulletType() == "pentad" && !rc.hasAttacked()) {
+			try {
+			    rc.firePentadShot(shoot.getDirection());
+			} catch (Exception GameActionException) {
+			    System.out.println("Cannot pentad");
+			}
+		    } else if (shoot.getBulletType() == "triad" && !rc.hasAttacked()) {
+			try {
+			    rc.fireTriadShot(shoot.getDirection());
+			} catch (Exception GameActionException) {
+			    System.out.println("Cannot triad");
+			}
+		    } else if (shoot.getBulletType() == "single" && !rc.hasAttacked()) {
+			try {
+			    rc.fireSingleShot(shoot.getDirection());
+			} catch (Exception GameActionException) {
+			    System.out.println("Cannot single");
+			}
+		    }
+		}
+	    }
 	}
+    }
+
+
+
+    
 }
 
 
