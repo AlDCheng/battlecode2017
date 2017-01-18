@@ -23,6 +23,7 @@ public class Aim extends GlobalVars {
 		
 		// If robot detected was also detected last turn ...
 		if (pastEnemies.get(x).getID() == robotID) {
+		    System.out.println("FOUND SEEN UNIT");
 		    nearestEnemies += 1;
 		    MapLocation newLoc = robot.getLocation();
 		    MapLocation oldLoc = pastEnemies.get(x).getCurrentLocation();
@@ -86,10 +87,15 @@ public class Aim extends GlobalVars {
 			} 
 
 
-			} 
+		    } else {
+			if (rc.canFireSingleShot()) {
+			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			    return enemy;
+			}
 		    }
 		}
 	    }
+	}
 	
 	return null;
     }
