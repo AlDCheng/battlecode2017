@@ -8,6 +8,7 @@ import naclbot.variables.DataVars.*;
 
 import naclbot.units.motion.*;
 import naclbot.units.motion.search.TreeSearch;
+import naclbot.units.motion.routing.PathPlanning;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,7 +148,14 @@ public class ArchonBot extends ArchonVars {
             	
             	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
             		binarySearchTree.archonUpdateTrees(treeList);  
-            	
+					            		
+            		for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
+    					System.out.println("* " + Arrays.toString(DataVars.treeMapFormat.get(i)));
+    				}
+            		if(DataVars.treeMapFormat.size() > 1) {
+    					updateMapTrees(DataVars.treeMapFormat);
+    					System.out.println("end treeAdd");
+    				}
             
             	}
           		
@@ -260,6 +268,11 @@ public class ArchonBot extends ArchonVars {
 		// Attack command - gathers nearby armed units to generate a group to attack a target location
 		if (kata == 1){
 			System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
+			
+			// Test path planning
+//			MapLocation targetLocationML = new MapLocation(targetLocation.X, targetLocation.Y);
+//			ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocationML);
+//			System.out.println(path);
 			
 			// to store all members that it wants to call to the group
 			int[] groupIDs = new int[GROUP_SIZE_LIMIT];
@@ -429,6 +442,14 @@ public class ArchonBot extends ArchonVars {
 				int foundArchonID = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
 				System.out.println("Recognized that Archon has been found with ID: " + foundArchonID);
 				coords.printData();	
+				
+				// Test path planning
+//				System.out.println("Start PP");
+//				MapLocation targetLocationML = new MapLocation(coords.X, coords.Y);
+//				System.out.println("Start (real): " + rc.getLocation() + ", End (real): " + targetLocationML);
+//				ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocationML);
+//				System.out.println(path);
+//				System.out.println("End PP");
 				
 				int x = arrayContainsIndex(archonIDs, foundArchonID);
 				if (x >= 0){
