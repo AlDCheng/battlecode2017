@@ -109,9 +109,7 @@ public class ScoutBot extends GlobalVars {
         // System check to see if init() is completed   
         
         rc.broadcast(SCOUT_CHANNEL, scout_number + 1);
-        
-		System.out.println("My scout_id is: " + scout_number);    
-                       
+
         main();        
 	}
 	
@@ -212,8 +210,7 @@ public class ScoutBot extends GlobalVars {
         		
         		// Too many enemies nearby will commit sudoku
         		if (enemyRobots.length > 5){
-                	System.out.println(" OMG WHY DO THEY LIKE EMILIA SO MUCH FUCKING KILL ME");
-        			
+         			
     				base = updateBase();        			
         			MapLocation nearest = getNearestEnemytoBase(enemyRobots, false);
         			rc.broadcast(1 + SCOUT_CHANNEL + scout_number * SCOUT_MESSAGE_OFFSET, (int)myLocation.x);
@@ -293,9 +290,7 @@ public class ScoutBot extends GlobalVars {
                 trackID = quandary.ID;
             	last_direction = moveTowards(quandary);
             	rc.broadcast(SCOUT_TRACKING + scout_number,  trackID);
-        		System.out.println("I am now tracking an enemy robot with ID: " + trackID);
-            	
-            	
+                 	
             	trackedTotal+=1;
             	currentlyTracked = 0;
             	
@@ -328,9 +323,7 @@ public class ScoutBot extends GlobalVars {
             	currentlyTracked +=1;                	
                   		
         	} else if (currentlyTracked >= 10){
-        		
-        		System.out.println("Switching Targets");
-        		
+        		                		
             	noTrack[trackedTotal % 3] = trackID;		
 				
 				

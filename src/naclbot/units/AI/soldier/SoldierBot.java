@@ -33,7 +33,7 @@ public class SoldierBot extends GlobalVars {
 	public static RobotInfo[] currentEnemies; 
 	public static RobotInfo[] currentAllies; 
 	
-	public boolean hasMoved;
+	public static boolean hasMoved;
     
     public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
     public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
@@ -43,7 +43,7 @@ public class SoldierBot extends GlobalVars {
     public static ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
 
     public static int currentTrackID;
-    
+    public static RobotInfo currentTrack;
     
     public static void init() throws GameActionException{
     	
@@ -140,9 +140,7 @@ public class SoldierBot extends GlobalVars {
             	currentAllies = rc.senseNearbyRobots(-1, allies);
             	
             	binarySearchTree.combatUpdateTrees(treeList, 0);
-            	
-            	treeList.printInOrder(treeList.tree_root);
-          
+            	     
             	checkGroupAssignments();
             	
             	// check if thee robot has entered a group or not
@@ -255,9 +253,39 @@ public class SoldierBot extends GlobalVars {
     }
     
     private static void trackingEnemies() throws GameActionException {
+    	
+    	if(currentTrackID == -1){
+			float minimum = Integer.MAX_VALUE;
+			
+			int index = -1;
+			
+			for (int i = 0; i < currentEnemies.length; i++){
 	
-
+				float dist = myLocation.distanceTo(currentEnemies[i].location);
+	
+				if (dist < minimum ){
+					minimum = dist;
+					index = i;
+		
+				}
+				
+			}		
+			
+			if (index != -1){
+					currentTrack =  currentEnemies[index];				
+					currentTrackID = currentTrack.ID;
+					moveTowards(currentTrack);
+					hasMoved = true;
+			}	   			
+    	}
+    	else{
+    		
+    	}
+    		
     }
+		
+    		
+    	
     
     private static RobotInfo[] senseNearbyEnemies(Team enemy){
     	return rc.senseNearbyRobots(-1, enemy);
@@ -301,7 +329,7 @@ public class SoldierBot extends GlobalVars {
 				    }
 				}
 		    } else {
-			System.out.println("SHOOT IS FUCKING NULL");
+			System.out.println("IM NOT SHOOTING BECAUSE THE ENEMY LIKES REM");
 		    }
  		}
     }
@@ -309,9 +337,12 @@ public class SoldierBot extends GlobalVars {
     private static boolean willHitAlly(RobotInfo frond, ShootingType shootInfo) {
 		MapLocation myLoc = rc.getLocation();
 		MapLocation allyLoc = frond.getLocation();
+		
 		Direction allyDir = new Direction(myLoc, allyLoc);
 		Direction shootDir = shootInfo.getDirection();
+		
 		float theta = allyDir.radiansBetween(shootDir);
+		
 		float allyDist = myLoc.distanceTo(allyLoc);
 		float enemyDist = shootInfo.getDistance();
 	
@@ -333,10 +364,11 @@ public class SoldierBot extends GlobalVars {
 	private static Direction moveTowards(RobotInfo quandary) throws GameActionException{
 	 		
 	 		float gap = myLocation.distanceTo(quandary.location);
+	 		
 	     	Direction dir = myLocation.directionTo(quandary.location);
 	     	Direction perp = new Direction(dir.radians+((float) Math.PI/2));
-	     	Direction anti_perp = new Direction(dir.radians+((float) Math.PI/2));
-	
+	     	
+	     	Direction anti_perp = new Direction(dir.radians+((float) Math.PI/2));	
 	     	Direction anti_dir = new Direction(dir.radians+(float) Math.PI);
 	
 	 		if  (gap > 7){
@@ -364,13 +396,17 @@ public class SoldierBot extends GlobalVars {
 	 		} else {
 	 			float nani = (float) Math.random();
 	 			float keikaku =  (float) Math.random() + (float) 1;
+	 			
 	 			if (nani>0.5){
+	 				
 	 				if (rc.canMove(perp)){							
 	 					rc.move(perp, keikaku);
 	 					return perp;
+	 					
 	 				} else if (rc.canMove(anti_perp)){							
 	 					rc.move(anti_perp,keikaku);
 	 					return anti_perp;
+	 					
 	 				} else{Direction dir2 = Move.randomDirection();
 	 					tryMoveSoldier(dir);
 	 					return dir2;
@@ -380,14 +416,15 @@ public class SoldierBot extends GlobalVars {
 	 				if (rc.canMove(anti_perp)){							
 	 					rc.move(anti_perp, keikaku);
 	 					return anti_perp;
+	 					
 	 				} else if (rc.canMove(perp)){							
 	 					rc.move(perp, keikaku);
 	 					return perp;
+	 					
 	 				} else{Direction dir2 = Move.randomDirection();
 	 					tryMoveSoldier(dir);
 	 					return dir2;
-	 				}
-	 		
+	 				}	 		
 	 				
 	 			}
 	 			

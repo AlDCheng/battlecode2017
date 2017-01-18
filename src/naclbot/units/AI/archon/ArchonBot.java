@@ -130,7 +130,7 @@ public class ArchonBot extends ArchonVars {
     }
 	
 	public static void mainPhase() throws GameActionException {
-		System.out.println("Archon transitioning to Main Phase");
+		// System.out.println("Archon transitioning to Main Phase");
 		
 		boolean hireGard = false;
 		
@@ -160,7 +160,7 @@ public class ArchonBot extends ArchonVars {
     				}
             		if(DataVars.treeMapFormat.size() > 1) {
     					updateMapTrees(DataVars.treeMapFormat);
-    					System.out.println("end treeAdd");
+    					//System.out.println("end treeAdd");
     				}
             
             	}
@@ -173,7 +173,7 @@ public class ArchonBot extends ArchonVars {
             	detectEnemyGroup();
             	// Notify & Create Group
             	if(updateEnemyArchonLocations(archonLocations, archonIDs)){
-            		System.out.println("archonIDs updated");  
+            		// System.out.println("archonIDs updated");  
             		if (lastAttackArchon >= 50){
             			boolean made = generateCommand(1,archonLocations[0], archonIDs[0]);
             			if (made){
@@ -271,7 +271,7 @@ public class ArchonBot extends ArchonVars {
 		
 		// Attack command - gathers nearby armed units to generate a group to attack a target location
 		if (kata == 1){
-			System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
+			//System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
 			
 			// Test path planning
 //			MapLocation targetLocationML = new MapLocation(targetLocation.X, targetLocation.Y);
@@ -312,7 +312,7 @@ public class ArchonBot extends ArchonVars {
 					decided = true;
 				} else{
 					
-					System.out.println("The following group is already occupied: " + i);
+					//System.out.println("The following group is already occupied: " + i);
 						
 				}
 			}
@@ -325,8 +325,8 @@ public class ArchonBot extends ArchonVars {
 				for (int j = 0; j < shounin.length; j++){
 					if (shounin[j].type == battlecode.common.RobotType.SOLDIER || shounin[j].type == battlecode.common.RobotType.TANK || shounin[j].type == battlecode.common.RobotType.LUMBERJACK){
 						if (groupCount < GROUP_SIZE_LIMIT){
-							System.out.println("Archon " + archonNumber + "would like the following unit to join group " + decidedGroup);;
-							System.out.println(shounin[j].ID);
+							//System.out.println("Archon " + archonNumber + "would like the following unit to join group " + decidedGroup);;
+							// System.out.println(shounin[j].ID);
 							
 							rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + groupCount + 5, shounin[j].ID);
 							
@@ -342,13 +342,14 @@ public class ArchonBot extends ArchonVars {
 				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 2, targetID);
 				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 3, (int)targetLocation.X);
 				rc.broadcast(GROUP_START + decidedGroup * GROUP_OFFSET + 4, (int)targetLocation.Y);
-				System.out.println("Group creation succesfully initialized");
+				//System.out.println("Group creation succesfully initialized");
 				
 				return true;
 				
 			}
 			
-			else{System.out.println("Group creation was unsuccesful - no nearby units to join group");
+			else{
+				// System.out.println("Group creation was unsuccesful - no nearby units to join group");
 				
 			}
 		}
@@ -444,7 +445,7 @@ public class ArchonBot extends ArchonVars {
 			if (rc.readBroadcast(10 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET) == 5){
 				Tuple coords = new Tuple(rc.readBroadcast(6 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET), rc.readBroadcast(7 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET));
 				int foundArchonID = rc.readBroadcast(5 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
-				System.out.println("Recognized that Archon has been found with ID: " + foundArchonID);
+				//System.out.println("Recognized that Archon has been found with ID: " + foundArchonID);
 				coords.printData();	
 				
 				// Test path planning
@@ -460,7 +461,7 @@ public class ArchonBot extends ArchonVars {
 					archonLocations[x] = coords;
 				}
 				else{
-					System.out.println("Oh shit it's a new normie Emilia-loving piece of shit");
+					System.out.println("Oh shit it's a new normie piece of shit ---- I bet it thinks Emilia is best girl holy fuck im triggered");
 					boolean fill = true;
 					for(int j =0; j < archonIDs.length; j++){
 						if (archonIDs[j] == -1 && fill){
