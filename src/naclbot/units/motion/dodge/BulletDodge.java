@@ -20,7 +20,7 @@ public class BulletDodge extends GlobalVars {
 		nearestBullet = dodgeInfo;
 	    } else if (willCollide == true && (distance < nearestBulletDistance)) {
 		nearestBulletDistance = distance;
-		nearestBullet = dodgeInfo
+		nearestBullet = dodgeInfo;
 	    }	    
 	}
 	if (nearestBullet != null) {
