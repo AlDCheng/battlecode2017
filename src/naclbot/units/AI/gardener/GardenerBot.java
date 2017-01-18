@@ -15,7 +15,8 @@ public class GardenerBot extends GlobalVars {
 		// Hello
 		int role;
 		int treeCount = 0;
-
+		boolean canMove = true;
+		
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		int numGard = rc.readBroadcast(GARDENER_CHANNEL);
 		int prevNumBuilder = rc.readBroadcast(GARDENER_BUILDER_CHANNEL);
@@ -43,7 +44,7 @@ public class GardenerBot extends GlobalVars {
                 int xPos = rc.readBroadcast(0);
                 int yPos = rc.readBroadcast(1);                
    
-                // Check number of scouts currently in service
+                // Check number of all units currently in service
                 int scoutCount = rc.readBroadcast(SCOUT_CHANNEL);                
                 int soldierCount = rc.readBroadcast(SOLDIER_CHANNEL);
                 int lumberjackCount = rc.readBroadcast(LUMBERJACK_CHANNEL);
@@ -78,13 +79,21 @@ public class GardenerBot extends GlobalVars {
 	            else if (role == 1) {
 	                // First see if there is a tree nearby and if you can do anything to it
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
+	            	
+	            	//checks if there are nearby gardeners and archons in 5 unit radius (for spacing)
 	            	boolean nearbyGard = Plant.nearbyGardeners(5);
 	            	boolean nearbyArc = Plant.nearbyArchons(5);
+	            	while (nearbyGard && nearbyArc && canMove) {
+	            		System.out.println(nearbyGard + " " + nearbyArc + " " + canMove);
+	            		Move.tryMove(Move.randomDirection());
+	            		Clock.yield();
+	            	}
+	            	canMove = false;
+	            	//check if any of its surrounding trees need watering
 	                if (lowHealthTrees.size() > 0){
 	                    if (rc.canWater(lowHealthTrees.get(0))) {
 	                    	rc.water(lowHealthTrees.get(0));
 	                    }
- 
 	                } 
 	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
 	                	rc.plantTree(Direction.getEast());
