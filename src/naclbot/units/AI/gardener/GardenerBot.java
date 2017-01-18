@@ -92,14 +92,14 @@ public class GardenerBot extends GlobalVars {
 	            	boolean nearbyGardAndArc = Plant.nearbyGardenersAndArchons(6);
 	            	
 	            	// has gardener move until it finds a location that is away from gardeners and archons
-	            	/*
+	            	
 	            	while (nearbyGardAndArc && canMove) {
 	            		Move.tryMove(Move.randomDirection());
 	            		Clock.yield();
 	            		nearbyGardAndArc = Plant.nearbyGardenersAndArchons(6);
 	            	}
 	            	canMove = false; //prevents moving again
-	            	*/
+	            	
 	            	//check if any of its surrounding trees need watering
 	                if (lowHealthTrees.size() > 0){
 	                    if (rc.canWater(lowHealthTrees.get(0))) {
