@@ -13,6 +13,7 @@ public class GlobalVars {
 	public static int GARDENER_CHANNEL;
 	public static int GARDENER_BUILDER_CHANNEL;
 	public static int GARDENER_WATERER_CHANNEL;
+	public static int GARDENER_PLANTER_CHANNEL;
 	
 	public static int LUMBERJACK_CHANNEL;	
 	
@@ -84,6 +85,7 @@ public class GlobalVars {
 		GARDENER_CHANNEL = 100; // Carries number of living Gardeners
 		GARDENER_BUILDER_CHANNEL = 101; // Carries number of living Gardeners designed as unit builders
 		GARDENER_WATERER_CHANNEL = 102; // Carries number of living Gardeners designed as waterers
+		GARDENER_PLANTER_CHANNEL = 103; // Carries number of living Gardeners designed as planters
 		
 		// Scouts
 		SCOUT_CHANNEL = 43; // Carries number of scouts
