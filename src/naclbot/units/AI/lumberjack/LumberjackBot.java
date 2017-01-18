@@ -66,8 +66,8 @@ public class LumberjackBot extends GlobalVars {
 					Clock.yield();
 				}
 				catch (Exception e) {
-	                System.out.println("Lumberjack Exception");
-	                e.printStackTrace();
+				    System.out.println("Lumberjack Exception");
+				    e.printStackTrace();
 				}		
 			}
 		}
