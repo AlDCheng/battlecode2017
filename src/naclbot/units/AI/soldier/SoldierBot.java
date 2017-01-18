@@ -139,7 +139,8 @@ public class SoldierBot extends GlobalVars {
             	currentAllies = rc.senseNearbyRobots(-1, allies);
             	
             	binarySearchTree.combatUpdateTrees(treeList, 0);
-            	//treeList.printInOrder(treeList.tree_root);
+            	
+            	treeList.printInOrder(treeList.tree_root);
           
             	checkGroupAssignments();
             	
@@ -162,6 +163,7 @@ public class SoldierBot extends GlobalVars {
 			BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 			if (nearbyBullets.length > 0) {
 			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
+			    Direction noDodge = new Direction(-1);
 			    if (dodge != null) {
 					System.out.println("TRYING TO DODGE");
 					Move.tryMove(dodge);
@@ -262,7 +264,7 @@ public class SoldierBot extends GlobalVars {
     private static void shootingEnemies(RobotInfo[] enemies, RobotInfo[] allies, ArrayList<RobotInfoShoot> pastEnemies) throws GameActionException {
 		// Checks if there are enemies to trace
 		// Checks if the unit has attacked already
-		if (!pastEnemies.isEmpty() && !rc.hasAttacked()) {
+		if (pastEnemies.size() != 0 && !rc.hasAttacked()) {
 		    ShootingType shoot = Aim.shootNearestEnemy(pastEnemies, enemies, false); // Returns details about shooting
 		    boolean hitAlly = false;
 		    
@@ -273,11 +275,12 @@ public class SoldierBot extends GlobalVars {
 		    	for (RobotInfo ally: allies) {
 				    // Takes into account if the bullet will hit ally
 				    // This only works for single shots because they go in that direction. Triad and pentad are not considered (because they fan out)
-				    hitAlly = willHitAlly(ally,shoot);
+				    boolean h = willHitAlly(ally,shoot);
 		
 				    // This means the bullet will hit the ally
-				    if (hitAlly) {
-					System.out.println("WILL HIT ALLY");
+				    if (h) {
+					System.out.println("WILL HIT ALLY ZOMG");
+					hitAlly = h;
 				    	break;
 				    }
 				}
@@ -295,8 +298,10 @@ public class SoldierBot extends GlobalVars {
 						System.out.println("FIRING SINGLE");
 				    }
 				}
+		    } else {
+			System.out.println("SHOOT IS FUCKING NULL");
 		    }
-		}
+ 		}
     }
 
     private static boolean willHitAlly(RobotInfo frond, ShootingType shootInfo) {
@@ -310,7 +315,8 @@ public class SoldierBot extends GlobalVars {
 	
 		// If ally in front of enemy then if the radius thing complies it will hit ally 
 		if (enemyDist > allyDist) {
-		    if (allyDist * Math.sin(theta) <= frond.getRadius()) {
+		    //if (allyDist * Math.sin(theta) <= frond.getRadius()) {
+		    if (allyDir == shootDir) {
 		    	return true;
 		    } else {
 		    	return false;
