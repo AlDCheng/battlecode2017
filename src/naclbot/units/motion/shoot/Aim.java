@@ -97,6 +97,7 @@ public class Aim extends GlobalVars {
 
 			    // If the tree is nearer than gardener and same direction
 			    if (treeDist < nearestEnemy.getDistance() && treeDir == dirShoot && rc.canFireSingleShot()) {
+				System.out.println("SHOOT DA TREEZ");
 				ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
 				return enemy;
 			    } else {
