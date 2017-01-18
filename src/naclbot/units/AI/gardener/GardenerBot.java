@@ -62,18 +62,20 @@ public class GardenerBot extends GlobalVars {
 	                System.out.println(soldierCount + " " + lumberjackCount + " " + tankCount);
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
-	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackRatio*lumberjackCount && soldierCount <= tankRatio*tankCount) {
+	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackRatio*lumberjackCount /*&& soldierCount <= tankRatio*tankCount*/) {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
 	                    rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
 	                } 
 	                if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackRatio*lumberjackCount < soldierCount) {
 	                    rc.buildRobot(RobotType.LUMBERJACK, dir);
 	                    rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
-	                } 
+	                }
+	                /*
 	                if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && tankRatio*tankCount < soldierCount) {
 	                    rc.buildRobot(RobotType.TANK, dir);
 	                    rc.broadcast(TANK_CHANNEL, tankCount+1);
 	                } 
+	                */
 	                if (rc.canBuildRobot(RobotType.SCOUT, dir) && rc.isBuildReady() && canBuildScout(scoutCount)) {
 	                	/* Check to build scout
 	                     * Must assert that there are not too many scouts in service at this moment in time
@@ -108,15 +110,18 @@ public class GardenerBot extends GlobalVars {
 	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
 	                	rc.plantTree(Direction.getEast());
 			            treeCount++;
-	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
-                		rc.plantTree(Direction.getNorth());
+	                } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(72)) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
+                		rc.plantTree(Direction.getEast().rotateLeftDegrees(72));
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
-                		rc.plantTree(Direction.getSouth());
+	                } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(144)) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
+                		rc.plantTree(Direction.getEast().rotateLeftDegrees(144));
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
-                		rc.plantTree(Direction.getWest());
+	                } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(216)) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
+                		rc.plantTree(Direction.getEast().rotateLeftDegrees(216));
 		                treeCount++;   
+	                } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(282)) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
+                		rc.plantTree(Direction.getEast().rotateLeftDegrees(282));
+		                treeCount++; 
 	                }
 
 	            }    	
