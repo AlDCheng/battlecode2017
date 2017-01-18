@@ -138,6 +138,11 @@ public class ArchonBot extends ArchonVars {
         	
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	// if enough bullets; win
+            	if(rc.getTeamBullets() >= 10000) {
+            		rc.donate(rc.getTeamBullets());
+            	}
+            	
             	lastCount = -1;
             	
             	currentTreeSize = treeList.size;
@@ -199,10 +204,9 @@ public class ArchonBot extends ArchonVars {
                 
 	            // Get number of gardeners
             	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
-            	rc.broadcast(GARDENER_CHANNEL, 0);
 	          	                        	            	
                 // Try to hire gardeners at 150 turn intervals
-            	if ((rc.getRoundNum() % 150 == 0)) {
+            	if ((rc.getRoundNum() % 50 == 0) || (prevNumGard < 3)) {
             		hireGard = false;
             	}
                 if (rc.canHireGardener(dir) && !hireGard) {

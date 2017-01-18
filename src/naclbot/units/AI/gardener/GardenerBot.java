@@ -23,7 +23,7 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if ((prevNumWaterer > 2) && ((2*prevNumBuilder) < prevNumWaterer)) {
+		if ((prevNumWaterer > 3) && ((2*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
@@ -59,7 +59,7 @@ public class GardenerBot extends GlobalVars {
 	                Move.tryMove(Move.randomDirection());
 	                
 	                // Randomly attempt to build a soldier or lumberjack or plant a tree in this direction
-	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackCount) {
+	                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= 3*lumberjackCount) {
 	                    rc.buildRobot(RobotType.SOLDIER, dir);
 	                    rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
 	                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackCount < soldierCount) {
@@ -97,9 +97,20 @@ public class GardenerBot extends GlobalVars {
 		                } else {
 		                	rc.water(lowHealthTrees.get(0));
 		                }
-	                } else if (rc.canPlantTree(dir) && rc.hasTreeBuildRequirements() && treeCount < 3 && distanceNearestTree > 3.0) {
-		                rc.plantTree(dir);
+		                
+	                } else if (rc.canPlantTree(Direction.EAST) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+	                		rc.plantTree(Direction.EAST);
+			                treeCount++;
+	                } else if (rc.canPlantTree(Direction.NORTH) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.NORTH);
 		                treeCount++;
+	                } else if (rc.canPlantTree(Direction.SOUTH) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.SOUTH);
+		                treeCount++;
+	                } else if (rc.canPlantTree(Direction.WEST) && rc.hasTreeBuildRequirements() && treeCount < 5/* && distanceNearestTree > 3.0*/) {
+                		rc.plantTree(Direction.WEST);
+		                treeCount++;
+		                
 	                } else {
 	                	Move.tryMove(Move.randomDirection());
 	                }

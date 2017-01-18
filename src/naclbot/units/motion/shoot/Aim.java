@@ -59,20 +59,21 @@ public class Aim extends GlobalVars {
 		    return null;
 		} else {
 		    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
-		    // If big units like archon or tank then try to fire as many bullets as possible
-		    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON || nearestEnemy.getType() == RobotType.LUMBERJACK || nearestEnemy.getType() == RobotType.SOLDIER) {
-			if (rc.canFirePentadShot()) {
-			    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			    return enemy;
-			} else if (rc.canFireTriadShot()) {
-			    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			    return enemy;
-			} else if (rc.canFireSingleShot()) {
-			    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-			    return enemy;
-			} else {
-			    return null;
-			}
+		    If big units like archon or tank then try to fire as many bullets as possible
+//		    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON || nearestEnemy.getType() == RobotType.LUMBERJACK || nearestEnemy.getType() == RobotType.SOLDIER) {
+		    	if (true) {
+				if (rc.canFirePentadShot()) {
+				    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+				    return enemy;
+				} else if (rc.canFireTriadShot()) {
+				    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+				    return enemy;
+				} else if (rc.canFireSingleShot()) {
+				    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+				    return enemy;
+				} else {
+				    return null;
+				}
 					
 		    } else {
 			// If other type of unit then just fire single shot
