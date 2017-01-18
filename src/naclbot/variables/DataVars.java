@@ -315,6 +315,7 @@ public class DataVars extends GlobalVars{
 	    }
 
 	
+	    
 		
 
 	    public static void updateTrees(binarySearchTree yahallo) throws GameActionException{
@@ -363,9 +364,7 @@ public class DataVars extends GlobalVars{
 					}
 				
 		
-<<<<<<< HEAD
-				}
-=======
+
 				if (sent_number > 0){
 					int ID_1 = rc.readBroadcast(1 + SCOUT_CHANNEL + i * SCOUT_MESSAGE_OFFSET);
 					
@@ -404,10 +403,9 @@ public class DataVars extends GlobalVars{
 						treeMapFormat.add(dataRow);
 					}
 				}
-			
-	
->>>>>>> 2b3095fe96b9f866a0eba7ce5acd32a8cd62e2f3
 			}
 	    }
 	}
+	}
 }
+
