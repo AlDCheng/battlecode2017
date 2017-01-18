@@ -30,15 +30,25 @@ public class SoldierBot extends GlobalVars {
     public static int command;
     public static boolean isLeader;
     
+	public static RobotInfo[] currentEnemies; 
+	public static RobotInfo[] currentAllies; 
+	
+    
     public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
     public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
     
     public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
     
+    public static ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
+
+    public static int currentTrackID;
     
     
     public static void init() throws GameActionException{
-	System.out.println("I'm an soldier!");
+    	
+    	currentTrackID = -1;
+    	
+    	System.out.println("I'm an soldier!");
         enemy = rc.getTeam().opponent();
         allies = rc.getTeam();
         
@@ -55,11 +65,12 @@ public class SoldierBot extends GlobalVars {
     }
     
     public static void attack() throws GameActionException{
-	
+    	
 	
 		// Checks if robot is leader....	
 		
 		if (isLeader){
+			// If the robot is deigned to be the leader of this group
 		    System.out.println("I'm leader of this group WAT");
 		    rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
 		    rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
@@ -68,6 +79,8 @@ public class SoldierBot extends GlobalVars {
 		
 		while (true){
 		    try{
+		      	currentEnemies = rc.senseNearbyRobots(-1, enemy);
+            	currentAllies = rc.senseNearbyRobots(-1, allies);
 			
 				binarySearchTree.combatUpdateTrees(treeList, 0);
 				updateMapTrees(DataVars.treeMapFormat);
@@ -79,10 +92,15 @@ public class SoldierBot extends GlobalVars {
 				MapLocation targetLocation = new MapLocation(targetX, targetY);
 				//				ArrayList<MapLocation> path = PathPlanning.findPath(rc.getLocation(), targetLocation);
 				
-				System.out.println("Currently in attack for group: " + currentGroup);
+				System.out.println("Currently in attack for group: " + currentGroup);							
 				
+				tryShoot();
+
 				Clock.yield();
-		    }
+			
+				
+		    }  
+		    
 		    catch (Exception e) {
 	                System.out.println("Soldier Exception");
 	                e.printStackTrace();
@@ -90,12 +108,7 @@ public class SoldierBot extends GlobalVars {
 		    
 		    // Checks if robot is leader....	
 		    
-		    if (isLeader){
-				System.out.println("I'm leader of this group WAT");
-				rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 1, ID);
-				rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 2, (int)myLocation.x);
-				rc.broadcast(GROUP_LEADER_START * currentGroup * GROUP_LEADER_OFFSET + 3, (int)myLocation.y);
-		    }		    
+		   
 		}
     }
     
@@ -108,7 +121,7 @@ public class SoldierBot extends GlobalVars {
     public static void main() throws GameActionException {
     	
 		// Important variables
-		ArrayList<RobotInfoShoot> enemyToShoot = new ArrayList<RobotInfoShoot>();
+		
 		int notMoved = 0;
 		MapLocation prevLocation = rc.getLocation();
 	
@@ -122,6 +135,9 @@ public class SoldierBot extends GlobalVars {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
 
+            	currentEnemies = rc.senseNearbyRobots(-1, enemy);
+            	currentAllies = rc.senseNearbyRobots(-1, allies);
+            	
             	binarySearchTree.combatUpdateTrees(treeList, 0);
             	//treeList.printInOrder(treeList.tree_root);
           
@@ -137,34 +153,12 @@ public class SoldierBot extends GlobalVars {
 			    	attack();
 			    }
 	    	}
-		
-			// Sense nearby enemy robots
-			RobotInfo[] currentEnemies = rc.senseNearbyRobots(-1, enemy);
-			RobotInfo[] currentAllies = rc.senseNearbyRobots(-1, allies);
-	
-			/* ---------------------------------- TRACKING --------------------------------------*/
+							
 			trackingEnemies();
 			
-			
-			/* ---------------------------------- SHOOTING --------------------------------------*/
-			// Shoots enemies that have been tracked and takes care not to single shoot to ally
-			// TODO: implement no shoot for triad and pentad to ally (?)
-			shootingEnemies(currentEnemies,currentAllies,enemyToShoot); // SHOOTS TO NEAREST ENEMY
-			
-			// Resets the list of past enemies to add new ones
-			enemyToShoot.clear();
-			
-			// Adds the ones seen this turn
-			for (RobotInfo enemyRobot: currentEnemies) {
-			    MapLocation currentLoc = enemyRobot.getLocation();
-			    int ID = enemyRobot.getID();
-			    RobotType robType = enemyRobot.getType();
-			    RobotInfoShoot r = new RobotInfoShoot(ID, robType, currentLoc);
-			    enemyToShoot.add(r);
-			}
-			
-			/* ---------------------------------- MOVEMENT --------------------------------------*/
-			// Dodge
+			tryShoot();		
+					
+					
 			BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 			if (nearbyBullets.length > 0) {
 			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
@@ -206,6 +200,30 @@ public class SoldierBot extends GlobalVars {
                 e.printStackTrace();
             }
         }
+    }
+    
+    private static void tryShoot() throws GameActionException{
+    	
+		/* ---------------------------------- SHOOTING --------------------------------------*/
+		// Shoots enemies that have been tracked and takes care not to single shoot to ally
+		// TODO: implement no shoot for triad and pentad to ally (?)
+		
+		// Sense nearby enemy robots
+		
+		shootingEnemies(currentEnemies,currentAllies,enemyToShoot); // SHOOTS TO NEAREST ENEMY
+		
+		// Resets the list of past enemies to add new ones
+		enemyToShoot.clear();
+		
+		// Adds the ones seen this turn
+		for (RobotInfo enemyRobot: currentEnemies) {
+		    MapLocation currentLoc = enemyRobot.getLocation();
+		    int ID = enemyRobot.getID();
+		    RobotType robType = enemyRobot.getType();
+		    RobotInfoShoot r = new RobotInfoShoot(ID, robType, currentLoc);
+		    enemyToShoot.add(r);
+		}
+    	
     }
     
     private static void checkGroupAssignments() throws GameActionException{

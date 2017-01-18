@@ -59,8 +59,8 @@ public class Aim extends GlobalVars {
 		    return null;
 		} else {
 		    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
-		    If big units like archon or tank then try to fire as many bullets as possible
-//		    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON || nearestEnemy.getType() == RobotType.LUMBERJACK || nearestEnemy.getType() == RobotType.SOLDIER) {
+		   // If big units like archon or tank then try to fire as many bullets as possible
+		   // if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON || nearestEnemy.getType() == RobotType.LUMBERJACK || nearestEnemy.getType() == RobotType.SOLDIER) {
 		    	if (true) {
 				if (rc.canFirePentadShot()) {
 				    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
