@@ -20,14 +20,20 @@ import java.util.Arrays;
 public class SoldierBot extends GlobalVars {
 	
     public static int ID;
+    
     public static MapLocation myLocation;
+    
     public static int initRound;
     public static int homeArchon;
+    
     public static Team enemy;
     public static Team allies;
+    
     public static int currentRound;
     public static int currentGroup = -1;
+    
     public static int command;
+    
     public static boolean isLeader;
     
 	public static RobotInfo[] currentEnemies; 
