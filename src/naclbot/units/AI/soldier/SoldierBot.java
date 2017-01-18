@@ -33,7 +33,7 @@ public class SoldierBot extends GlobalVars {
 	public static RobotInfo[] currentEnemies; 
 	public static RobotInfo[] currentAllies; 
 	
-	public static boolean hasMoved;
+
     
     public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
     public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
@@ -95,7 +95,24 @@ public class SoldierBot extends GlobalVars {
 				
 				System.out.println("Currently in attack for group: " + currentGroup);							
 				
+				trackingEnemies();
+				
 				tryShoot();
+				
+				if(!rc.hasMoved()){
+					if (currentAllies.length > 0){
+						RobotInfo closestAlly  = getNearestAlly();
+						tryMoveAway(closestAlly);
+					}
+					if (!rc.hasMoved()){
+						Direction testDir = Move.randomDirection();
+	        			tryMoveSoldier(testDir);
+					}
+						
+					
+								
+								
+				}
 
 				Clock.yield();
 			
@@ -135,7 +152,7 @@ public class SoldierBot extends GlobalVars {
         while (true) {
 	    // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-
+            	
             	currentEnemies = rc.senseNearbyRobots(-1, enemy);
             	currentAllies = rc.senseNearbyRobots(-1, allies);
             	
@@ -146,54 +163,73 @@ public class SoldierBot extends GlobalVars {
             	// check if thee robot has entered a group or not
             	if (currentGroup >= 0){
 		    
-			    // Check the value of the command bit of the group
-			    
-			    // command 1 is an attack command
-			    if (command == 1){
-			    	attack();
-			    }
-	    	}
-							
-			trackingEnemies();
-			
-			tryShoot();		
+				    // Check the value of the command bit of the group
+				    
+				    // command 1 is an attack command
+				    if (command == 1){
+				    	attack();
+				    }
+		    	}
+								
+				trackingEnemies();
+				
+				tryShoot();
+				
+				if(!rc.hasMoved()){
+					if (currentAllies.length > 0){
+						RobotInfo closestAlly  = getNearestAlly();
+						tryMoveAway(closestAlly);
+					}
+					if (!rc.hasMoved()){
+						Direction testDir = Move.randomDirection();
+	        			tryMoveSoldier(testDir);
+					}
+						
 					
-			/*	
-			BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
-			if (nearbyBullets.length > 0) {
-			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
-			    Direction noDodge = new Direction(-1);
-			    if (dodge != null) {
-					System.out.println("TRYING TO DODGE");
-					Move.tryMove(dodge);
-			    }
-			}
-			*/
-			
-			// Check if it hasn't moved
-			if (myLocation == prevLocation) {
-			    notMoved += 1;
-			}
-			
-			// Move to other allies 
-			if (currentAllies.length > 0 && notMoved < 5 && !rc.hasMoved()) {
-			    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
-			    if (locAlly == rc.getLocation()) {
-					Move.tryMove(Move.randomDirection());
-					notMoved += 1;
-			    } else {
-					Direction dir = rc.getLocation().directionTo(locAlly);
-					Move.tryMove(dir);
-			    }
-			    
-			} else if (!rc.hasMoved()) {
-			    Move.tryMove(Move.randomDirection());
-			    notMoved = 0; // Reset counter
-			}
-			
-			System.out.println("End turn");
-			// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-			Clock.yield();
+								
+								
+				}
+				/*	
+				BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+				if (nearbyBullets.length > 0) {
+				    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
+				    Direction noDodge = new Direction(-1);
+				    if (dodge != null) {
+						System.out.println("TRYING TO DODGE");
+						Move.tryMove(dodge);
+				    }
+				}
+				*/
+				
+				//*Check if it hasn't moved
+				/*
+				if (myLocation == prevLocation) {
+				    notMoved += 1;
+				}
+				
+				*/
+				/*
+				// Move to other allies 
+				if (currentAllies.length > 0 && notMoved < 5 && !rc.hasMoved()) {
+				    MapLocation locAlly = AllySearch.locFurthestAlly(currentAllies);
+				    if (locAlly == rc.getLocation()) {
+						Move.tryMove(Move.randomDirection());
+						notMoved += 1;
+				    } else {
+						Direction dir = rc.getLocation().directionTo(locAlly);
+						Move.tryMove(dir);
+				    }
+				    
+				} else if (!rc.hasMoved()) {
+				    Move.tryMove(Move.randomDirection());
+				    notMoved = 0; // Reset counter
+				}
+				
+				*/
+				
+				System.out.println("End turn");
+				// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+				Clock.yield();
 		
 		
             } catch (Exception e) {
@@ -272,13 +308,28 @@ public class SoldierBot extends GlobalVars {
 			}		
 			
 			if (index != -1){
-					currentTrack =  currentEnemies[index];				
+					currentTrack =  currentEnemies[index];		
 					currentTrackID = currentTrack.ID;
+					
+					
+					System.out.println("Am currently tracking a robot with ID: "+ currentTrackID);
+					
 					moveTowards(currentTrack);
-					hasMoved = true;
+			
 			}	   			
     	}
     	else{
+    		if (rc.canSenseRobot(currentTrackID)){
+    			
+    			moveTowards(currentTrack);
+	
+    		}
+    		else{
+    			currentTrack = null;
+    			currentTrackID = -1;
+    			
+    			System.out.println("Lost sight of previous enemy");
+    		}    		
     		
     	}
     		
@@ -361,6 +412,50 @@ public class SoldierBot extends GlobalVars {
 		}
     }
     
+    
+    private static RobotInfo getNearestAlly(){
+    	
+    	float minimum = Integer.MAX_VALUE;
+		
+		int index = 0;
+		
+		for (int i = 0; i < currentAllies.length; i++){
+
+			float dist = myLocation.distanceTo(currentAllies[i].location);
+
+			if (dist < minimum ){
+				minimum = dist;
+				index = i;
+	
+			}			
+		}	
+		
+		System.out.println("My neareset ally has ID: " + currentAllies[index].ID);
+		return currentAllies[index];
+    }
+    
+    private static void tryMoveAway(RobotInfo ally) throws GameActionException{
+    	
+    	System.out.println("Attempting to disperse");
+    	
+    	
+    	
+    	float gap = myLocation.distanceTo(ally.location);
+ 		
+ 		
+     	Direction dir = myLocation.directionTo(ally.location);
+  
+     	float keikaku = (float)(Math.random() *  Math.PI/3 - Math.PI/6);
+     	
+     	Direction anti_dir = new Direction(dir.radians+(float) Math.PI + keikaku);
+     	
+     	for (int i = 0; i < 4; i ++)
+	     	if (rc.canMove(anti_dir, (float)(2- 0.4*i)) && !rc.hasMoved()){
+	     		rc.move(anti_dir, (float)(2- 0.4*i));
+	     	}			
+     	
+    }
+    
 	private static Direction moveTowards(RobotInfo quandary) throws GameActionException{
 	 		
 	 		float gap = myLocation.distanceTo(quandary.location);
@@ -427,8 +522,7 @@ public class SoldierBot extends GlobalVars {
 	 				}	 		
 	 				
 	 			}
-	 			
-	 			// Move to a 5 unit distance of the target (either away or towards)
+	 	
 	 		}
 	 	}
  	private static boolean tryMoveSoldier(Direction dir) throws GameActionException {

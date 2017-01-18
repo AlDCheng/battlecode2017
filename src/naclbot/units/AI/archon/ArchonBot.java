@@ -271,7 +271,7 @@ public class ArchonBot extends ArchonVars {
 		
 		// Attack command - gathers nearby armed units to generate a group to attack a target location
 		if (kata == 1){
-			//System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
+			System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
 			
 			// Test path planning
 //			MapLocation targetLocationML = new MapLocation(targetLocation.X, targetLocation.Y);
@@ -506,25 +506,24 @@ public class ArchonBot extends ArchonVars {
 	
 	public static Node getUnsentTerm(Node root){
 			
-			Node desiredNode = null;
+		
 			if (root!=null){
 				Node x = getUnsentTerm(root.leftChild);
 				if (x!=null){
-					desiredNode = x;	    	
+					return x;   	
 	    		}
 	    		//System.out.print("Node: " + root.key + "Data_x: " + root.data.x + "Data_y: " + root.data.y + "Radius: " + root.data.radius);
 	    		if (!arrayContainsInt (givenIDs, root.data.ID)){
-	    			desiredNode = root;
+	    			return root;
 	    		}	    		
 		        //System.out.println();
 	    		
 	    		Node y = getUnsentTerm(root.rightChild);
 				if (y!=null){
-					desiredNode = y;	    	
+					return y;    	
 	    		}
 	    	}
-			return desiredNode;
-			
+			return null;
 		}
 
 
