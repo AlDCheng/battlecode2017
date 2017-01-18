@@ -58,6 +58,10 @@ public class RobotInfoShoot extends GlobalVars {
 
     // This function returns the location after probabilistically predicting dodging
     public MapLocation getNewLocation() {
+	MapLocation predLoc = getPreviousLocation();
+	return predLoc;
+	
+	/*
 	if (Math.random() > 0.4) {
 	    MapLocation predLoc = getPredictedLocation();
 	    return predLoc;
@@ -66,6 +70,7 @@ public class RobotInfoShoot extends GlobalVars {
 	    MapLocation predLoc = getPreviousLocation();
 	    return predLoc;
 	}
+	*/
     }
 
     public Direction getDirectionToShoot(MapLocation myLoc) {

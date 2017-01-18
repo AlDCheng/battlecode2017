@@ -303,11 +303,13 @@ public class SoldierBot extends GlobalVars {
 		    // Shoot
 		    if (shoot.getBulletType() == "pentad" && !rc.hasAttacked()) {
 			rc.firePentadShot(shoot.getDirection());
+			System.out.println("FIRING PENTAD");
 		    } else if (shoot.getBulletType() == "triad" && !rc.hasAttacked()) {
 			rc.fireTriadShot(shoot.getDirection());
+			System.out.println("FIRING TRIAD");
 		    } else if (shoot.getBulletType() == "single" && !rc.hasAttacked()) {
 			rc.fireSingleShot(shoot.getDirection());
-			System.out.println("FIRING");
+			System.out.println("FIRING SINGLE");
 		    }
 		}
 	    }
@@ -321,12 +323,22 @@ public class SoldierBot extends GlobalVars {
 	Direction shootDir = shootInfo.getDirection();
 	float theta = allyDir.radiansBetween(shootDir);
 	float allyDist = myLoc.distanceTo(allyLoc);
-	if ((allyDist * Math.sin(theta)) <= frond.getRadius()) {
-	    return true;
+	float enemyDist = shootInfo.getDistance();
+
+	// If ally in front of enemy then if the radius thing complies it will hit ally 
+	if (enemyDist > allyDist) {
+	    if (allyDist * Math.sin(theta) <= frond.getRadius()) {
+		return true;
+	    } else {
+		return false;
+	    }
+	    
 	} else {
+	    // Enemy is not in front of ally
 	    return false;
 	}
     }
+
 }
 
 

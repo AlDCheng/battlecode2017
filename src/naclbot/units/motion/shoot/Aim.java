@@ -53,23 +53,39 @@ public class Aim extends GlobalVars {
 	}
 
 	// If no enemies are found then return null
-	if (nearestEnemies == 0 || nearestEnemyDistance == -1) {
+	if (nearestEnemies == 0) {
 	    return null;
 	} else {
-	    // Try to shoot to this enemy
 	    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
-	    // What kind of bullet to shoot (FOR NOW just shoot single bullet)
-	    if (rc.canFireSingleShot()) {
-		ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot);
-		return enemy;
+	    // If big units like archon or tank then try to fire as many bullets as possible
+	    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON) {
+		if (rc.canFirePentadShot()) {
+		    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} else if (rc.canFireTriadShot()) {
+		    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} else if (rc.canFireSingleShot()) {
+		    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} else {
+		    return null;
+		}
+				
 	    } else {
-		return null;
+		// If other type of unit then just fire single shot
+		if (rc.canFireSingleShot()) {
+		    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+		    return enemy;
+		} else {
+		    return null;
+		}
 	    }
 	}
     }
 
 
-    
+    /*
     // Returns the direction of the optimum single shot
     public static ShootingType shootEnemies (ArrayList<RobotInfoShoot> pastEnemies, RobotInfo[] currentEnemies) {
 	Direction noDir = new Direction(0);
@@ -157,4 +173,5 @@ public class Aim extends GlobalVars {
 	}
 	return null;
     }
+    */
 }
