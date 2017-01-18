@@ -139,7 +139,8 @@ public class SoldierBot extends GlobalVars {
             	currentAllies = rc.senseNearbyRobots(-1, allies);
             	
             	binarySearchTree.combatUpdateTrees(treeList, 0);
-            	//treeList.printInOrder(treeList.tree_root);
+            	
+            	treeList.printInOrder(treeList.tree_root);
           
             	checkGroupAssignments();
             	
@@ -162,7 +163,8 @@ public class SoldierBot extends GlobalVars {
 			BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 			if (nearbyBullets.length > 0) {
 			    Direction dodge = BulletDodge.whereToDodge(nearbyBullets);
-			    if (dodge != null) {
+			    Direction noDodge = new Direction(-1);
+			    if (dodge != noDodge) {
 					System.out.println("TRYING TO DODGE");
 					Move.tryMove(dodge);
 			    }
@@ -264,7 +266,7 @@ public class SoldierBot extends GlobalVars {
 		// Checks if the unit has attacked already
 		if (!pastEnemies.isEmpty() && !rc.hasAttacked()) {
 		    ShootingType shoot = Aim.shootNearestEnemy(pastEnemies, enemies, false); // Returns details about shooting
-		    boolean hitAlly = false;
+		    boolean hitAlly = true;
 		    
 		    // ShootingType: bulletType, isArchon, direction
 		    // Checks if we should actually shoot (bulletType is none if we cannot shoot)
@@ -277,7 +279,6 @@ public class SoldierBot extends GlobalVars {
 		
 				    // This means the bullet will hit the ally
 				    if (hitAlly) {
-					System.out.println("WILL HIT ALLY");
 				    	break;
 				    }
 				}
