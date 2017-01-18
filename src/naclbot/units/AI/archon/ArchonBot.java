@@ -271,7 +271,7 @@ public class ArchonBot extends ArchonVars {
 		
 		// Attack command - gathers nearby armed units to generate a group to attack a target location
 		if (kata == 1){
-			//System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
+			System.out.println("Archon " + archonNumber + "would like to issue an attack on the target" + targetID + "at location x: " + targetLocation.X + " Y: " + targetLocation.Y);
 			
 			// Test path planning
 //			MapLocation targetLocationML = new MapLocation(targetLocation.X, targetLocation.Y);
