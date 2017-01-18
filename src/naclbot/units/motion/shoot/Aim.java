@@ -10,83 +10,90 @@ public class Aim extends GlobalVars {
 
     // Returns the direction of the nearest enemy single shot
     public static ShootingType shootNearestEnemy (ArrayList<RobotInfoShoot> pastEnemies, RobotInfo[] currentEnemies, boolean isTank) {
-		MapLocation myLoc = rc.getLocation();
-		RobotInfoShoot nearestEnemy = null;
-		float nearestEnemyDistance = -1;
-		int nearestEnemies = 0;
-		String typeBullet;
+	MapLocation myLoc = rc.getLocation();
+	RobotInfoShoot nearestEnemy = null;
+	float nearestEnemyDistance = -1;
+	int nearestEnemies = 0;
+	String typeBullet;
 	
-		// Look over all robots and find nearest enemy that has already been seen
-		for (RobotInfo robot: currentEnemies) {
-		    int robotID = robot.getID();
-		    for (int x=0; x<pastEnemies.size(); x++) {
-		    	
-				// If robot detected was also detected last turn ...
-				if (pastEnemies.get(x).getID() == robotID) {
-				    nearestEnemies += 1;
-				    MapLocation newLoc = robot.getLocation();
-				    MapLocation oldLoc = pastEnemies.get(x).getCurrentLocation();
-				    RobotType robType = robot.getType();
-				    
-				    // Hasn't found one yet so set it
-				    if (nearestEnemyDistance == -1) {
-						// Tanks only shoot at soldiers, archons or tanks
-						if (isTank && (robType != RobotType.SOLDIER || robType != RobotType.ARCHON || robType != RobotType.TANK)) {
-						    continue;
-						} else {
-						    RobotInfoShoot newNearestEnemy = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
-						    nearestEnemy = newNearestEnemy;
-						    nearestEnemyDistance = myLoc.distanceTo(newLoc);
-						} 
-				    } else {
-						if (isTank && (robType != RobotType.SOLDIER || robType != RobotType.ARCHON || robType != RobotType.TANK)) {
-						    continue;
-						} else {
-						    // If the distance is less than prev distance then update the nearest enemy
-						    if (myLoc.distanceTo(newLoc) < nearestEnemyDistance) {
-								RobotInfoShoot newNearestEnemy = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
-								nearestEnemy = newNearestEnemy;
-								nearestEnemyDistance = myLoc.distanceTo(newLoc);
-						    }
-						}
-				    }
-				}
-		    }
-		}
-
-		// If no enemies are found then return null
-		if (nearestEnemies == 0) {
-		    return null;
-		} else {
-		    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
-		   // If big units like archon or tank then try to fire as many bullets as possible
-		   // if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON || nearestEnemy.getType() == RobotType.LUMBERJACK || nearestEnemy.getType() == RobotType.SOLDIER) {
-		    	if (true) {
-				if (rc.canFirePentadShot()) {
-				    ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-				    return enemy;
-				} else if (rc.canFireTriadShot()) {
-				    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-				    return enemy;
-				} else if (rc.canFireSingleShot()) {
-				    ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-				    return enemy;
-				} else {
-				    return null;
-				}
-					
+	// Look over all robots and find nearest enemy that has already been seen
+	for (RobotInfo robot: currentEnemies) {
+	    int robotID = robot.getID();
+	    for (int x=0; x<pastEnemies.size(); x++) {
+		
+		// If robot detected was also detected last turn ...
+		if (pastEnemies.get(x).getID() == robotID) {
+		    nearestEnemies += 1;
+		    MapLocation newLoc = robot.getLocation();
+		    MapLocation oldLoc = pastEnemies.get(x).getCurrentLocation();
+		    RobotType robType = robot.getType();
+		    
+		    // Hasn't found one yet so set it
+		    if (nearestEnemyDistance == -1) {
+			// Tanks only shoot at soldiers, archons or tanks
+			if (isTank && (robType != RobotType.SOLDIER || robType != RobotType.ARCHON || robType != RobotType.TANK)) {
+			    continue;
+			} else {
+			    RobotInfoShoot newNearestEnemy = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
+			    nearestEnemy = newNearestEnemy;
+			    nearestEnemyDistance = myLoc.distanceTo(newLoc);
+			} 
 		    } else {
-			// If other type of unit then just fire single shot
-		    	if (rc.canFireSingleShot()) {
-				    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
-				    return enemy;
-				} else {
-				    return null;
-				}
+			if (isTank && (robType != RobotType.SOLDIER || robType != RobotType.ARCHON || robType != RobotType.TANK)) {
+			    continue;
+			} else {
+			    // If the distance is less than prev distance then update the nearest enemy
+			    if (myLoc.distanceTo(newLoc) < nearestEnemyDistance) {
+				RobotInfoShoot newNearestEnemy = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
+				nearestEnemy = newNearestEnemy;
+				nearestEnemyDistance = myLoc.distanceTo(newLoc);
+			    }
+			}
 		    }
 		}
-    }
+	    }
+	}
+	
+	// If no enemies are found then return null
+	if (nearestEnemies == 0) {
+	    return null;
+	} else {
+	    Direction dirShoot = nearestEnemy.getDirectionToShoot(myLoc);
+	    //If big units like archon or tank then try to fire as many bullets as possible
+	    if (nearestEnemy.getType() == RobotType.TANK || nearestEnemy.getType() == RobotType.ARCHON) {
+		if (true) {
+		    if (rc.canFirePentadShot()) {
+			ShootingType enemy = new ShootingType("pentad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			return enemy;
+		    } else if (rc.canFireTriadShot()) {
+			ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			return enemy;
+		    } else if (rc.canFireSingleShot()) {
+			ShootingType enemy = new ShootingType ("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			return enemy;
+		    } 
+		    
+		} else {
 
+		    // Sometimes fire triad and sometimes fire single
+		    if (nearestEnemies > 1) {
+			if (rc.canFireTriadShot()) {
+			    ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			    return enemy;
+			} else if (rc.canFireSingleShot()) {
+			    ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),dirShoot,nearestEnemyDistance);
+			    return enemy;
+			} 
+
+
+			} 
+		    }
+		}
+	    }
+	
+	return null;
+    }
+    
 
     /*
     // Returns the direction of the optimum single shot
