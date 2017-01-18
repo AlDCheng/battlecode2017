@@ -109,6 +109,15 @@ public class Aim extends GlobalVars {
 					ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
 					return enemy;
 				    }
+				} else {
+				    if (rc.canFireTriadShot()) {
+					ShootingType enemy = new ShootingType("triad",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+					return enemy;
+				    } else if (rc.canFireSingleShot()) {
+					ShootingType enemy = new ShootingType("single",nearestEnemy.getType(),treeDir,treeDist); //CHANGE THIS TO SAY SHOOTING AT TREE
+					return enemy;
+				    }
+				}
 			    } else {
 				    if (nearestEnemies > 3) {
 					if (rc.canFirePentadShot()) {
