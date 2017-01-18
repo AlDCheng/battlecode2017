@@ -81,23 +81,15 @@ public class Plant extends GlobalVars {
 		}
 	}
 	
-	public static boolean nearbyGardeners(float radius) {
+	public static boolean nearbyGardenersAndArchons(float radius) {
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
 		for (RobotInfo robot: nearbyRobots) {
-			if (robot.getType() == RobotType.GARDENER) {
+			if (robot.getType() == RobotType.GARDENER || robot.getType() == RobotType.ARCHON) {
 				return true;
 			}
 		}
 		return false;
 	}
-	public static boolean nearbyArchons(float radius) {
-		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
-		for (RobotInfo robot: nearbyRobots) {
-			if (robot.getType() == RobotType.ARCHON) {
-				return true;
-			}
-		}
-		return false;
-	}
+
 		
 }

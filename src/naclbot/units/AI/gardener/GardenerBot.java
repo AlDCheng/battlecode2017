@@ -24,7 +24,7 @@ public class GardenerBot extends GlobalVars {
 		
 		System.out.println("Builders: " + prevNumBuilder + ", Waterers: " + prevNumWaterer);
 		// This code is stupid for now, but creates unit builders every other gardener after at least 4 planters are built.
-		if ((prevNumWaterer > 3) && ((2*prevNumBuilder) < prevNumWaterer)) {
+		if ((prevNumWaterer > 5) && ((3*prevNumBuilder) < prevNumWaterer)) {
 			rc.broadcast(GARDENER_BUILDER_CHANNEL, prevNumBuilder + 1);
 			role = 0; //unit builder
 		} else {
@@ -81,30 +81,34 @@ public class GardenerBot extends GlobalVars {
 	            	ArrayList<MapLocation> lowHealthTrees = TreeSearch.getNearbyLowTrees();
 	            	
 	            	//checks if there are nearby gardeners and archons in 5 unit radius (for spacing)
-	            	boolean nearbyGard = Plant.nearbyGardeners(5);
-	            	boolean nearbyArc = Plant.nearbyArchons(5);
-	            	while (nearbyGard && nearbyArc && canMove) {
-	            		System.out.println(nearbyGard + " " + nearbyArc + " " + canMove);
+	            	boolean nearbyGardAndArc = Plant.nearbyGardenersAndArchons(6);
+	            	
+	            	// has gardener move until it finds a location that is away from gardeners and archons
+	            	while (nearbyGardAndArc && canMove) {
 	            		Move.tryMove(Move.randomDirection());
 	            		Clock.yield();
+	            		nearbyGardAndArc = Plant.nearbyGardenersAndArchons(6);
 	            	}
-	            	canMove = false;
+	            	canMove = false; //prevents moving again
+	            	
 	            	//check if any of its surrounding trees need watering
 	                if (lowHealthTrees.size() > 0){
 	                    if (rc.canWater(lowHealthTrees.get(0))) {
 	                    	rc.water(lowHealthTrees.get(0));
 	                    }
 	                } 
-	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
+	                
+	                // plants trees around itself in 4 cardinal directions
+	                if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
 	                	rc.plantTree(Direction.getEast());
 			            treeCount++;
-	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
+	                } else if (rc.canPlantTree(Direction.getNorth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
                 		rc.plantTree(Direction.getNorth());
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
+	                } else if (rc.canPlantTree(Direction.getSouth()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
                 		rc.plantTree(Direction.getSouth());
 		                treeCount++;
-	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGard) {
+	                } else if (rc.canPlantTree(Direction.getWest()) && rc.hasTreeBuildRequirements() && treeCount < 5 && !nearbyGardAndArc) {
                 		rc.plantTree(Direction.getWest());
 		                treeCount++;   
 	                }
