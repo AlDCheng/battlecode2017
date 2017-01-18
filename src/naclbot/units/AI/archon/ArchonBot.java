@@ -41,6 +41,7 @@ public class ArchonBot extends ArchonVars {
 	
 	public static int lastCount;
 	
+	public static int[] givenIDs = new int [TOTAL_TREE_NUMBER];
 	
 	// Starting game phase
 	
@@ -224,26 +225,25 @@ public class ArchonBot extends ArchonVars {
         	        
     				if(numBroadcasted<treeList.size-1){
     					
-    					Node toSend1 = getTerm(treeList.tree_root, numBroadcasted);
-        					if (toSend1 != null){
+    					Node toSend1 = getUnsentTerm(treeList.tree_root);
+    					
+        				if (toSend1 != null){
+        					
+        					givenIDs[numBroadcasted] = toSend1.data.ID;
+        					
 		                    rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 33);
 		                    rc.broadcast(7 + archonNumber * ARCHON_OFFSET, numBroadcasted+1);
-		                    
-		                    System.out.println(" Updating the tree public storage with tree at x: " + toSend1.data.x +  " y: " + toSend1.data.y + " radius: " + toSend1.data.radius);
-		                    System.out.println(numBroadcasted);
+		                    		                  
 		                    rc.broadcast(TREE_DATA_CHANNEL, numBroadcasted);
 		                    
 		                    rc.broadcast(1 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.x);
 		                    rc.broadcast(2 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.y);
 		                    rc.broadcast(3 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.radius);
 		                    rc.broadcast(4 + TREE_DATA_CHANNEL +  (numBroadcasted % TOTAL_TREE_NUMBER) * TREE_OFFSET, toSend1.data.ID);
-		                    numBroadcasted += 1;
-		                 
+		                    numBroadcasted += 1;		                    
         					}
-    					
-    				}			                   
-
-        			
+    				}		
+    	
             	}
             
                 lastAttackArchon += 1;
@@ -502,6 +502,29 @@ public class ArchonBot extends ArchonVars {
 		return desiredNode;
 		
 	}
+	
+	public static Node getUnsentTerm(Node root){
+			
+			Node desiredNode = null;
+			if (root!=null){
+				Node x = getUnsentTerm(root.leftChild);
+				if (x!=null){
+					desiredNode = x;	    	
+	    		}
+	    		//System.out.print("Node: " + root.key + "Data_x: " + root.data.x + "Data_y: " + root.data.y + "Radius: " + root.data.radius);
+	    		if (!arrayContainsInt (givenIDs, root.data.ID)){
+	    			desiredNode = root;
+	    		}	    		
+		        //System.out.println();
+	    		
+	    		Node y = getUnsentTerm(root.rightChild);
+				if (y!=null){
+					desiredNode = y;	    	
+	    		}
+	    	}
+			return desiredNode;
+			
+		}
 
 
 }
