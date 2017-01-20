@@ -40,8 +40,8 @@ public class LumberjackBot extends GlobalVars {
     
     public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
 
-    public static ArrayList<MapLocation> nearbyNeutralTrees;
-    public static ArrayList<MapLocation> nearbyBulletTrees;
+    public static ArrayList<TreeInfo> nearbyNeutralTrees;
+    //public static ArrayList<MapLocation> nearbyBulletTrees;
 	
     public static Direction lastDirection;
     
@@ -50,9 +50,6 @@ public class LumberjackBot extends GlobalVars {
 	System.out.println("I'm an lumberjack!");
         enemy = rc.getTeam().opponent();
         allies = rc.getTeam();
-	
-        nearbyNeutralTrees = TreeSearch.getNearbyNeutralTrees();
-	nearbyBulletTrees = TreeSearch.getNearbyBulletTrees();
         
     	lastDirection = Move.randomDirection();
         
@@ -127,6 +124,8 @@ public class LumberjackBot extends GlobalVars {
 		
             	currentEnemies = rc.senseNearbyRobots(-1, enemy);
 		currentAllies = rc.senseNearbyRobots(-1, allies);
+
+		nearbyNeutralTrees = TreeSearch.getNearbyNeutTrees(); // Different from getNearbyNeutralTrees()
 	        
             	checkGroupAssignments();
             	
@@ -142,87 +141,56 @@ public class LumberjackBot extends GlobalVars {
 		}
             	
             	myLocation = rc.getLocation(); // Current location
-        	
+
+		// Shakes trees if there are bullets in it
+		// Chops trees if robot in it or there are no bullets in it
+		// If cannot do those things to nearest tree then moves towards nearest tree
+		if (nearbyNeutralTrees.size() > 0) {
+		    manageNeutralTrees();
+		}
+		
                 // See if there are any enemy robots within striking range (distance 1 from lumberjack's radius)
                 RobotInfo[] robots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
                 if(robots.length > 0 && !rc.hasAttacked()) {
                     // Use strike() to hit all nearby robots!
 		    System.out.println("STRIKING ENEMIES GRRR");
                     rc.strike();
-                    
-                } else {
-                    // No close robots, so search for robots within sight radius
-                    robots = rc.senseNearbyRobots(-1,enemy);
-
-		    if (robots.length > 0) { // If there is a robot, move towards it			
-			//if 
-			MapLocation enemyLocation = robots[0].getLocation();
-			
-			Direction toEnemy = myLocation.directionTo(enemyLocation);
-			
-			Move.tryMove(toEnemy);
-			System.out.println("TRYING TO MOVE TO ENEMY");
-					    
-		    } else if (nearbyBulletTrees.size() > 0) { // If there is instead a nearby tree that can be shaken
-			
-			MapLocation nearestBulletTree = TreeSearch.locNearestTree(nearbyBulletTrees); 
-			
-			if (rc.canShake(nearestBulletTree)) { // If close enough, then shake
-			    System.out.println("TRYING TO SHAKE TREE");
-			    rc.shake(nearestBulletTree);
-			    
-			} else { // If not close enough, walk towards it
-			    
-			    Direction toBulletTree = rc.getLocation().directionTo(nearestBulletTree);
-			    Move.tryMove(toBulletTree);
-			    System.out.println("TRYING TO MOVE TO TREE TO SHAKE");
-			}
-			
-		    } else if (nearbyNeutralTrees.size() > 0) { // If there is instead a neutral tree that can be chopped
-			
-			MapLocation nearestNeutralTree = TreeSearch.locNearestTree(nearbyNeutralTrees);
-			
-			if (rc.canChop(nearestNeutralTree)) {
-			    
-			    rc.chop(nearestNeutralTree);
-			    System.out.println("TRYING TO CHOP DOWN NEUTRAL TREE");
-			    
-			} else {
-			    Direction toNeutralTree = rc.getLocation().directionTo(nearestNeutralTree);
-			    Move.tryMove(toNeutralTree);
-			    System.out.println("TRYING TO MOVE TO TREE TO CHOP");
-			}
-		    } 
+                }
+               
+		// No close robots, so search for robots within sight radius
+		robots = rc.senseNearbyRobots(-1,enemy);
+		if (robots.length > 0 && !rc.hasMoved()) { // If there is a robot, move towards it			
+		    MapLocation enemyLocation = robots[0].getLocation();
 		    
-		    if(!rc.hasMoved()){
-			if (currentAllies.length > 0){
-			    RobotInfo closestAlly  = getNearestAlly();
-			    tryMoveAway(closestAlly);
-			}
-			if (!rc.hasMoved()){
-			    Direction testDir = Move.randomDirection();
-			    tryMoveLumberjack(testDir);
-			}
-			
-			
-			
-			
+		    Direction toEnemy = myLocation.directionTo(enemyLocation);
+		    
+		    Move.tryMove(toEnemy);
+		    System.out.println("TRYING TO MOVE TO ENEMY");
+		}			    
+		    
+		// If hasn't moved yet then get away from ally or move randomly
+		if(!rc.hasMoved()){
+		    if (currentAllies.length > 0){
+			RobotInfo closestAlly  = getNearestAlly();
+			tryMoveAway(closestAlly);
+		    } else {
+			Direction testDir = Move.randomDirection();
+			tryMoveLumberjack(testDir);
 		    }
 		    
-		    //}
-                }
+		}
 		// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-                Clock.yield();
+		Clock.yield();
 		
-            } 
-            catch (Exception e) {
+	    } catch (Exception e) {
 		
-                System.out.println("Lumberjack Exception");
-                e.printStackTrace();
-            }
-        }
+		System.out.println("Lumberjack Exception");
+		e.printStackTrace();
+	    }
+	
+	}
     }
-    
+	
     private static void checkGroupAssignments() throws GameActionException{
 	
     	int newGroups = rc.readBroadcast(8 + homeArchon * ARCHON_OFFSET);
@@ -249,10 +217,50 @@ public class LumberjackBot extends GlobalVars {
     	}     		   	
     }
 
-    private static void chopNeutralTrees() throws GameActionException {
-        
+    private static void manageNeutralTrees() throws GameActionException {
 	
-
+        // Assumes that nearbyNeutralTrees is not empty
+	TreeInfo nearestTree = nearbyNeutralTrees.get(0);
+	if (nearestTree.getContainedRobot() != null) {
+	    
+	    // There is a prize! Chop the tree to get it
+	    if (rc.canChop(nearestTree.getLocation())) {
+		rc.chop(nearestTree.getLocation());
+		
+	    } else {
+		// If can't chop then move towards the tree (most likely it means it is too far away)
+		if (!rc.hasMoved()) {
+		    Direction move = new Direction(myLocation,nearestTree.getLocation());
+		    Move.tryMove(move);
+		}
+	    }
+		
+	} else if (nearestTree.getContainedBullets() > 0) {
+		
+	    // There are bullets! Shake it SHAKE IT
+	    if (rc.canShake(nearestTree.getLocation())) {
+		rc.shake(nearestTree.getLocation());
+		
+	    } else {
+		// If can't shake then move towards the tree (most likely it means it is too far away)
+		if (!rc.hasMoved()) {
+		    Direction move = new Direction(myLocation,nearestTree.getLocation());
+		    Move.tryMove(move);
+		}
+	    }
+	} else {
+		
+	    if (rc.canChop(nearestTree.getLocation())) {
+		rc.chop(nearestTree.getLocation());
+		
+	    } else {
+		// If can't chop then move towards the tree (most likely it means it is too far away)
+		if (!rc.hasMoved()) {
+		    Direction move = new Direction(myLocation,nearestTree.getLocation());
+		    Move.tryMove(move);
+		}
+	    }
+	}
     }
     
     private static boolean tryMoveLumberjack(Direction dir) throws GameActionException {
@@ -314,13 +322,6 @@ public class LumberjackBot extends GlobalVars {
 	return currentAllies[index];
     }
 
-    private static TreeInfo getNearestNeutralTree() {
-	float minimum = Integer.MAX_VALUE;
-	int index = 0;
-
-	for (int i = 0; i < nearbyNeutralTrees.size(); i++) {
-	    
-    }
     
     private static void tryMoveAway(RobotInfo ally) throws GameActionException{
 	
@@ -333,12 +334,12 @@ public class LumberjackBot extends GlobalVars {
 	
 	Direction anti_dir = new Direction(dir.radians+(float) Math.PI + keikaku);
 	
-	for (int i = 0; i < 4; i ++) {
+	for (int i = 0; i < 4; i ++) 
 	    if (rc.canMove(anti_dir, (float)(2- 0.4*i)) && !rc.hasMoved()){
 		rc.move(anti_dir, (float)(2- 0.4*i));
 		lastDirection = anti_dir;
 	    }			
-	}
+	
     }
     
     
