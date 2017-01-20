@@ -171,7 +171,7 @@ public class LumberjackBot extends GlobalVars {
 		// If hasn't moved yet then get away from ally or move randomly
 		if(!rc.hasMoved()){
 		    if (currentAllies.length > 0){
-			RobotInfo closestAlly  = getNearestAlly();
+			RobotInfo closestAlly = getNearestAlly();
 			tryMoveAway(closestAlly);
 		    } else {
 			Direction testDir = Move.randomDirection();
@@ -225,6 +225,7 @@ public class LumberjackBot extends GlobalVars {
 	    
 	    // There is a prize! Chop the tree to get it
 	    if (rc.canChop(nearestTree.getLocation())) {
+		System.out.println("DIGGING FOR PRIZE");
 		rc.chop(nearestTree.getLocation());
 		
 	    } else {
@@ -232,6 +233,7 @@ public class LumberjackBot extends GlobalVars {
 		if (!rc.hasMoved()) {
 		    Direction move = new Direction(myLocation,nearestTree.getLocation());
 		    Move.tryMove(move);
+		    System.out.println("MOVE TO TREE");
 		}
 	    }
 		
@@ -239,6 +241,7 @@ public class LumberjackBot extends GlobalVars {
 		
 	    // There are bullets! Shake it SHAKE IT
 	    if (rc.canShake(nearestTree.getLocation())) {
+		System.out.println("SHAKE IT SHAKE IT");
 		rc.shake(nearestTree.getLocation());
 		
 	    } else {
@@ -246,18 +249,21 @@ public class LumberjackBot extends GlobalVars {
 		if (!rc.hasMoved()) {
 		    Direction move = new Direction(myLocation,nearestTree.getLocation());
 		    Move.tryMove(move);
+		    System.out.println("MOVE TO TREE");
 		}
 	    }
 	} else {
 		
 	    if (rc.canChop(nearestTree.getLocation())) {
 		rc.chop(nearestTree.getLocation());
+		System.out.println("CHOP USELESS TREE");
 		
 	    } else {
 		// If can't chop then move towards the tree (most likely it means it is too far away)
 		if (!rc.hasMoved()) {
 		    Direction move = new Direction(myLocation,nearestTree.getLocation());
 		    Move.tryMove(move);
+		    System.out.println("MOVE TO TREE");
 		}
 	    }
 	}
