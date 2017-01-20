@@ -2,12 +2,26 @@
 package naclbot.units.AI.scout;
 import java.util.Arrays;
 
+import com.sun.source.tree.Tree;
+
 import battlecode.common.*;
 
 import naclbot.units.motion.Move;
 import naclbot.variables.GlobalVars;
 
+/* Short List of Things to Do...............
+ * 
+ * Get Scouts to Hide in Trees and Kill Gardeners 
+ *
+ * Get Scouts to Broadcast Locations of any enemies that are near allied non combatants...
+ * 
+ * Improve Dodge - Post process desired location.....
+ * 
+ */
+
 public class ScoutBot extends GlobalVars {
+	
+	// ------------- GENERAL (IMPORTANT TO SELF) VARS -------------//
 	
 	// Variable for round number
 	private static int Rem_is_better;
@@ -16,28 +30,27 @@ public class ScoutBot extends GlobalVars {
 	public static int id;
 	public static int scout_number;
 	private static Team enemy;
-	private static Team allies;
+	private static Team allies;		
+	
+	// The archon number of the archon from which this scout will receive its information
+	public static int homeArchon;
+	
+	// The intial round in which the scout was constructed
+	public static int initRound;
+	
+	// Parameters to store locations of self and the nearest archon
+	private static MapLocation base;
+	public static MapLocation myLocation;	
+	
+	// The total number of scouts in active service
+	private static int currentNumberofScouts;	
+
+	// ------------- TREE SEARCH VARIABLES -------------//
 	
 	// Parameter that asserts array storage of scout
 	private static final int unitMemorySize = 5;
 	private static final int staticMemorySize = 200;
 	private static final int dynamicMemorySize = TOTAL_TREE_BROADCAST_LIMIT;
-	
-	// Parameter that determines whether a scout determines threats to be too great and run away
-	private static boolean runAway = false;
-	
-	// Arrays to store information on enemy archons
-	private static RobotInfo[] enemyArchons= new RobotInfo[unitMemorySize];
-	private static int[] enemyArchonIDs = new int[unitMemorySize];
-	
-	// Parameter to determine at which index the archon data was updated
-	private static int archonIndex;
-	
-	// Parameters to store locations of self and the nearest archon
-	private static MapLocation base;
-	public static MapLocation myLocation;
-	
-	public static final int senseDistance = 7;
 	
 	// Arrays that store the IDs of trees seen or sent by the scout
 	private static int[] sentTreesIDs = new int[dynamicMemorySize];
@@ -53,38 +66,22 @@ public class ScoutBot extends GlobalVars {
 	private static int sentTotal;
 	
 	// Useless param used for debugging reading of other scouts' messages
-	private static int receivedTotal;
+	private static int receivedTotal;	
+	
+	// Max range at which the scout will scan for trees...
+	private static final int treeSenseDistance = 7;
+	
+	// ------------- MOVEMENT VARIABLES -------------//
 	
 	// Direction at which the scout traveled last
-	private static Direction last_direction;
+	private static Direction lastDirection;
 	
 	// The ID of the robot the scout is currently tracking and its information
 	public static int trackID;	
 	public static RobotInfo trackedRobot;
+	public static boolean isTracking;
 	
-	// Stores the number of rounds that the scout has been tracking the current enemy
-	private static int roundsCurrentlyTracked;
-	
-	// Stores the total number of unique enemies the scout has tracked
-	private static int trackedTotal;
-	
-	// Parameter to express if the scout has already broadcasted status information this turn
-	public static boolean hasBroadcastedStatus;	
-	
-	// The archon number of the archon from which this scout will receive its information
-	public static int homeArchon;
-	
-	// The intial round in which the scout was constructed
-	public static int initRound;
-	
-	// The total number of scouts in active service
-	private static int currentNumberofScouts;	
-    
-    // Array of the last three enemies tracked by the scouts 
-    public static int[] noTrack = new int[3];   
-    public static int noTrackUpdateIndex;   
-    
-    // Placeholder for desired location to go to
+	// Placeholder for desired location to go to
     public static MapLocation desiredMove;
     
     // Place holder to show where the robot had originally intended to go before the trajectory was altered by post-track/move functions
@@ -92,6 +89,51 @@ public class ScoutBot extends GlobalVars {
 	
     // Boolean for rng rotation direction - true for counterclockwise, false for clockwise
     public static boolean rotationDirection = true;
+    
+    // Boolean for determining if the robot wants to move or no
+    private static boolean wantsToMove;    
+    
+    // ------------- TRACKING VARIABLES -------------//
+    
+	// Stores the number of rounds that the scout has been tracking the current enemy
+	private static int roundsCurrentlyTracked;
+	
+	// Stores the total number of unique enemies the scout has tracked
+	private static int trackedTotal;
+	
+	// Parameter to express if the scout has already broadcasted status information this turn
+	public static boolean hasBroadcastedStatus;		
+    
+    // Array of the last three enemies tracked by the scouts 
+    public static int[] noTrack = new int[3];   
+    public static int noTrackUpdateIndex; 
+    
+    // ------------- SHOOTING VARIABLES -------------//
+  
+	// Separation distance of shoot check...
+	private static final float obstacleCheck = (float)0.4;
+    
+    // TreeInfo for any tree blocking the way to a shot...
+    private static TreeInfo blockingTree;
+    
+    // Variable to store last working firing location - in case dodging is necessary (may not be used in future)
+    private static MapLocation lastFiringLocation;
+    
+    // Variable to store last working firing direction (measured from target)...
+    private static Direction lastFiringDirection;
+    
+    // ------------- ENEMY DATA VARIABLES -------------//
+    
+    // Store the last known location of the gardener...
+    private static MapLocation gardenerLocation;    
+		
+	// Arrays to store information on enemy archons
+	private static RobotInfo[] enemyArchons= new RobotInfo[unitMemorySize];
+	private static int[] enemyArchonIDs = new int[unitMemorySize];
+	
+	// Parameter to determine at which index the archon data was updated #TODO
+	private static int archonIndex;	
+    
     
 	/************************************************************************
 	 ***************** Runtime Functions and Initialization *****************
@@ -153,6 +195,9 @@ public class ScoutBot extends GlobalVars {
         myLocation = rc.getLocation();
         trackID = -1;
         noTrackUpdateIndex = 0;
+        isTracking = false;
+        gardenerLocation = null;
+        
         
         // Update SCOUT_CHANNEL
         rc.broadcast(SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
@@ -183,8 +228,14 @@ public class ScoutBot extends GlobalVars {
         while (true) {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	// Allow the scout to move by default - would be prety dumb if being stupid was original staste Q________Q...
+            	wantsToMove = true;
+            	
             	// Force base to be null at start of round - rest closest ally
             	base = null;
+            	
+            	// Set it so that there is by default no tree blocking the path to the target...
+            	blockingTree = null;
             	
             	// Update total number of scouts
             	currentNumberofScouts = rc.readBroadcast(SCOUT_CHANNEL);
@@ -202,8 +253,19 @@ public class ScoutBot extends GlobalVars {
             	RobotInfo[] enemyRobots = NearbyUnits(enemy);
             	RobotInfo[] alliedRobots = NearbyUnits(allies);
             	
-            	// Update the location of the nearest noncombatant allied location
-             	RobotInfo NearestAlly = getNearestAlly(alliedRobots);
+        		// Get information on all trees that are able to be sensed    	
+            	TreeInfo[] sensedTrees = addTrees(treeSenseDistance);
+            	
+            	// Param to store the location of the nearest ally for the current turn            	
+            	RobotInfo NearestAlly;
+            	
+            	// Update the location of the nearest noncombatant allied location and sdore into the variable Nearest Ally - which is null if no nearby ally exists
+            	if (alliedRobots.length > 0){            		
+                 	NearestAlly = getNearestAlly(alliedRobots);
+            	}
+            	else{
+            		NearestAlly = null;
+            	}
              	
              	// If there is a friendly noncombatant nearby
              	if(NearestAlly != null){
@@ -211,17 +273,18 @@ public class ScoutBot extends GlobalVars {
              		base = NearestAlly.location;
              		
              		// For Initialization - have last direction originally point away from the closest ally, rounded to 30 degree intervals
-            		Direction awayAlly = new Direction(myLocation.directionTo(base).radians + (float) Math.PI);
+             		int randOffset = (int)(Math.random() * 4 - 2);
+            		Direction awayAlly = new Direction(myLocation.directionTo(base).radians + (float) (Math.PI + randOffset * Math.PI/8));
             		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
             		
-            		last_direction = new Direction(newRadians);
+            		lastDirection = new Direction(newRadians);
             		
             		// SYSTEM CHECK - make sure direction is multiple of 30 degrees
-            		System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + last_direction.getAngleDegrees());            		
+            		// System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + lastDirection.getAngleDegrees());            		
              	}             	
                 
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
-            	desiredMove = myLocation.add(last_direction, (float) 2.5);
+            	desiredMove = null;
             	            	
              	/***********************************************************************************
             	 *************************** Actions to be Completed ******************************
@@ -230,7 +293,7 @@ public class ScoutBot extends GlobalVars {
             	// Broadcast Tree Data
             	
             	// Currently on hold until we find use for it... D:
-            	// broadcastTree(TOTAL_TREE_BROADCAST_LIMIT);
+            	// broadcastTree(TOTAL_TREE_BROADCAST_LIMIT, sensedTrees);
             	
             	// Other broadcasts -> Only do if the unit is 10 units away from any ally #TODO
             	
@@ -243,12 +306,31 @@ public class ScoutBot extends GlobalVars {
               	// SYSTEM CHECK - See if move function has been completed
             	// System.out.println("Move Completed");
             	
-            	if (rc.canMove(desiredMove)){
+            	// Check if the initial desired move can be completed
+            	if(!rc.canMove(desiredMove)){
+            		
+            		// If it cannot, attempt to correct out of bounds errors, or slightly shift angle...
+            		correctMove();
+            		
+            		// If that still doesn't work, attempt to try running the path finding from the reverse angle...
+            		if (!rc.canMove(desiredMove)){
+            			// Obtain the reverse direfction
+            			Direction newTestDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            			
+            			if (rc.canMove(myLocation.add(newTestDirection))){            				
+            				// Attempt to run the open path finding check
+            				MapLocation testMove = tryMoveScout(newTestDirection);
+            				if (testMove != null){
+            					desiredMove = testMove;
+            				}
+            			}
+            		}
+            	}            	
+            	if(rc.canMove(desiredMove) && wantsToMove){
             		rc.move(desiredMove);
             	}
             	else{
-            		System.out.println("Cannot move to desired location");
-            		
+            		System.out.println("This scout cannot find anywhere to go and is sad Q____Q)");
             	}
     
             	// Make sure to show appreciation for the one and only best girl in the world.
@@ -266,12 +348,12 @@ public class ScoutBot extends GlobalVars {
 	
 	
 	/*****************************************************************************
-	 ******************** Tree SEarch and Broadcast Functions ********************
+	 ******************** Tree Search and Broadcast Functions ********************
 	 ****************************************************************************/
 			
     // Function to sense and return the information of all nearby trees
 	
-    private static TreeInfo[] addTrees(){
+    private static TreeInfo[] addTrees(float senseDistance){
     	
     	// Sense all nearby trees
     	TreeInfo[] nearby_trees = rc.senseNearbyTrees(senseDistance);
@@ -285,14 +367,11 @@ public class ScoutBot extends GlobalVars {
 	
 	// Function to Broadcast the locations of all trees found this turn
 	
-    private static void broadcastTree (int totalBroadcastLimit) throws GameActionException {
+    private static void broadcastTree (int totalBroadcastLimit, TreeInfo[] newTrees) throws GameActionException {
     	
     	// Takes one parameter: totalBroadcastLimit
     	// totalBroadcastLimit is an integer representing the maximum number of trees that may be broadcasted in a single turn
-   
-		// Get information on all trees that are able to be sensed    	
-    	TreeInfo[] newTrees = addTrees();
-		
+   		
     	// Array of the trees that the scout could potentially send this turn    	
     	TreeInfo [] canSend = new TreeInfo[5];
     	int canSendCounter = 0;
@@ -422,6 +501,7 @@ public class ScoutBot extends GlobalVars {
     
     
     // Overarching move function for the scout
+    
     private static void move(RobotInfo[] enemyRobots) throws GameActionException{
     	
     	// If the robot is currently not tracking anything
@@ -430,12 +510,13 @@ public class ScoutBot extends GlobalVars {
     		trackedRobot = findNewTrack(enemyRobots);    
     		
     		// SYSTEM CHECK - see if the robot recognizes that it is currently not tracking anything
-    		System.out.println("Currently not tracking anything");
+    		// System.out.println("Currently not tracking anything");
     		
     		// If there is a robot
     		if (trackedRobot != null){
     			// Update the trackID
-    			trackID = trackedRobot.ID;   			
+    			trackID = trackedRobot.ID;
+    			isTracking = true;
     			
     			// SYSTEM CHECK - Notify what the robot will now track
         		System.out.println("The scout will now track the robot with ID: " + trackID);
@@ -444,78 +525,109 @@ public class ScoutBot extends GlobalVars {
     			move(enemyRobots);    	
     		
     		} else{ // If there is no robot to be tracked 
-    			// Check to see if a move in the last moved direction or in the forward field of view is possible 
-    			MapLocation testMove = tryMoveScout(last_direction);
+    			// Posit the desired move location as a forward movement along the last direction
+    			desiredMove = myLocation.add(lastDirection, (float) (Math.random() + 1.5));
+    			
+    			// SYSTEM Check - Set light grey line indicating where the scout would wish to go
+    			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
+    			
+    			System.out.println(lastDirection);
     			
         		// SYSTEM CHECK - Notify that nothing to be scouted has been found
-        		System.out.println("The scout cannot find anything to track");
-        		
-    			
-    			// If the robot cannot move to any of the tested locations try the opposite direction 
-    			if(testMove == null){
-    				Direction new_attempt = new Direction(last_direction.radians + (float)Math.PI);
-    				MapLocation newTestMove = tryMoveScout(new_attempt);
-    				desiredMove = newTestMove;
-    										
-    			} else{
-    				// If it can move to that location update the desired location with the data
-    				desiredMove = testMove;
-    			}    			
+        		// System.out.println("The scout cannot find anything to track");     			
+    				
     		}
     	} else{ // If the robot is actually currently tracking something
     		// If the currently tracked robot is a gardener, execute special tracking method
     		if (trackedRobot.type == battlecode.common.RobotType.GARDENER){
-    			trackGardener();
     			
-    		} else{ // Otherwise execute the standard tracking method
+    			trackGardener(enemyRobots); 
+    			
+    			
+    		} else if (trackedRobot.type == battlecode.common.RobotType.ARCHON){
+    			
+    			track(enemyRobots);
+    		}
+    		
+    		else{ // Otherwise execute the standard tracking method
     			track(enemyRobots);    		
     		}
     	}        	
     }
     
 	
-	
-	// Function to retrieve the nearest enemy to the robot
-	
-	private static RobotInfo getNearestEnemy(RobotInfo[] enemyRobots){
+    // Function to run if the initial move idea was flawed
+    // Corrects out of bounds errors, or attempts 15 degree offsets from the currently chosen direction of motion
+    
+	private static void correctMove() throws GameActionException{		
 
-		// Parameter to store the smallest distance to another robot
-		float minimum = Integer.MAX_VALUE;
-				
-		// Parameter to store the array index of the closest robot				
-		int index = -1;			
-		for (int i = 0; i < enemyRobots.length; i++){
+		// Obtain the location the scout initially desired to travel to
+		Direction desiredDirection = new Direction(myLocation, desiredMove);
+		
+		
+		// SYSTEM CHECK - See if the robot recognizes that it cannot currently move to the desired location
+		// System.out.println("Cannot move to desired location");
+		
+		// If for some reason the desired location isn't on the map
+		if (!rc.onTheMap(desiredMove, battlecode.common.RobotType.SCOUT.bodyRadius)){
 			
-			// If the type of the robot spotted is a gardener, return it
-			if (enemyRobots[i].type == battlecode.common.RobotType.GARDENER){
+			// SYSTEM CHECK - Make sure that the scouts determination of the incorrect map location is accurate...
+			System.out.println("Your current selection of Chitoge Kirisaki as best girl is incorrect.... please select Onodera to continue!!!");
+			
+			// If the scout is attempting to move above the map bounds...
+			if (!rc.onTheMap(new MapLocation(myLocation.x, myLocation.y + 3))){
+				// Correct the discrepancy in the y coordinates
+				float yCorrect = desiredMove.y - myLocation.y;				
+				MapLocation newMove = new MapLocation(desiredMove.x, desiredMove.y - 2 * yCorrect);
+				desiredMove = newMove;		
+			}
+			// If the scout is attempting to move to the left of the map bounds...
+			else if (!rc.onTheMap(new MapLocation(myLocation.x - 3, myLocation.y))){				
+				// Correct the discrepancy in the y coordinates
+				float xCorrect = desiredMove.x - myLocation.x;
+				MapLocation newMove = new MapLocation(desiredMove.x - 2 * xCorrect, desiredMove.y);
+				desiredMove = newMove;				
+			}
+			// If the scout is attempting to move below the map bounds...
+			else if ((!rc.onTheMap(new MapLocation(myLocation.x, myLocation.y - 3)))){				
+				// Correct the discrepancy in the y coordinates
+				float yCorrect = desiredMove.y - myLocation.y;
+				MapLocation newMove = new MapLocation(desiredMove.x, desiredMove.y - 2 * yCorrect);
+				desiredMove = newMove;				
+			}
+			// If the scout is attempting to move to the right of the map bounds...
+			else{	
+				// Correct the discrepancy in the y coordinates
+				float xCorrect = desiredMove.x - myLocation.x;
+				MapLocation newMove = new MapLocation(desiredMove.x - 2 * xCorrect, desiredMove.y);
+				desiredMove = newMove;			
+			}			
+			
+			// If it is possible to move to the fixed location....
+			if (rc.canMove(desiredMove)){
+
+				// Alter lastDirection to match new desired general path
+				lastDirection = new Direction(myLocation, desiredMove);
 				
-				return enemyRobots[i];
-			} else{		
-				// Otherwise search for the closest one that has not recently been tracked
-				float dist = myLocation.distanceTo(enemyRobots[i].location);
-				if (dist < minimum ){
-					// If the robot has not been tracked recently
-					if (!arrayContainsInt(noTrack, enemyRobots[i].ID)){
-						// Update no track and the index
-						noTrack[noTrackUpdateIndex] = enemyRobots[i].ID;
-						noTrackUpdateIndex += 1;
-						
-						minimum = dist;
-						index = i;		
-					}
-				}			
+				// If the robot was rotating around another robot change the direction...
+				if (isTracking){
+					rotationDirection = !rotationDirection;
+				}
+				// SYSTEM CHECK - Display the corrected move on screen as an orange line
+				rc.setIndicatorLine(myLocation, desiredMove, 255, 165, 0);
 			}
 		}
-		// This should always happen, but if the found index is positive return the closest robot
-		if (index >= 0){	
-			
-			return enemyRobots[index];	
-			
-		} else{			
-			return null;
-		}		
+		else{
+			// Vary away from the current impossible location and attempt to move in that direction???
+    		MapLocation newLocation = tryMoveScout(desiredDirection);
+    		
+    		if (newLocation != null){
+    			// Update lastDirection to reflect the slightly altered course
+    			lastDirection = new Direction(myLocation, newLocation);
+    		}
+		}
 	}
-	
+		
 	
 	// Wrapper function for finding a new enemy to track
     
@@ -532,18 +644,210 @@ public class ScoutBot extends GlobalVars {
     }
    
     
-    // Function to execute when the robot is attempting to track down a gardener
-    private static void trackGardener() throws GameActionException{
-    	moveTowardsTarget();
+    // Function to determine if there is any tree in the line between one location and the other
+    
+    private static boolean isLineBLocked(MapLocation start, MapLocation end, float spacing) throws GameActionException {
+    	
+    	// Find the direction from the starting point to the end
+    	Direction search = start.directionTo(end);
+    	
+    	// Iterate up through the length of the gap between the two selected points
+    	for(int i = 0; i * spacing < start.distanceTo(end); i++){
+    		
+    		// If there is a tree in the way, say so..,
+    		if (rc.isLocationOccupiedByTree(start.add(search, (float)  (i * spacing)))){
+    			return true;
+    		}
+    	// If by the end of the for loop nothing is there, then we return false, meaning that the line isn't blocked
+    	}
+    	return false;
     }
     
+    
+    private static boolean shoot(float gap) throws GameActionException{
+    	
+    	// SYSTEM CHECK See if the robot is willing to fire a bullet this turn
+    	
+    	// Get direction towards target robot
+    	Direction dir = myLocation.directionTo(trackedRobot.location);
+    	
+    	// Boolean that determines whether or no the way is clear to the target...
+    	boolean clear = true;
+    	
+    	// Iterate through the gap between the robot and the target at 0.5 unit intervals
+    	for(int i = 0; i * obstacleCheck < gap; i++){
+    		// Check at 0.5 intervals to see if there is anything in the way of the robot shooting at the target
+    		if (rc.isLocationOccupiedByTree(myLocation.add(dir, (float) (i * obstacleCheck)))){
+    			
+    			// Update the blocking tree - since there may be multiple, picks out the one closest to the target
+    			blockingTree = rc.senseTreeAtLocation(myLocation.add(dir, (float) (i * obstacleCheck)));
+    			clear = false;
+    		}    	
+    	} // Fire if the way is clear to the robot
+    	if (clear){
+    		// Potential other restricting statement - currently asserts that there are enough bullets in the team's store
+	    	if(rc.canFireSingleShot()){
+	    		rc.fireSingleShot(dir);    
+	    	}
+	    	lastFiringDirection = dir;
+	    	lastFiringLocation = myLocation;
+	    }
+    	else{// If there is a tree....
+    	// SYSTEM CHECK print light pink dot at where the blocking tree is located...
+    	rc.setIndicatorDot(blockingTree.location, 255, 180, 190);
+    	}
+    	return clear;    	
+    }
+    
+    
+    // Function to attempt to find a new firing location to the target object at a certain distance away
+    
+    private static MapLocation findFiringLocation(float Distance, Direction dirFromTarget) throws GameActionException{
+    
+    	// SYSTEM CHECK - Print that firing currently is impossible and that the scout is searching for a new trajectory
+    	System.out.println("Cannot fire at target with ID: " + trackID + " - there appears to be a tree blocking the way... Searching for alternative line of fire");;
+    	
+    	// Check 30 degree intervals of direction out FROM the target object
+    	for(int i = 1; i <= 11; i ++){
+    		Direction testDir = new Direction(dirFromTarget.radians + (float) (Math.PI / 12 * i));
+    		MapLocation newCheck = trackedRobot.location.add(testDir, Distance);
+    		
+    		// Make sure that it is possible to reach the new considered location
+    		if (myLocation.distanceTo(newCheck) < 2.5){    			
+    			// Make sure the location has a fclear line of sight
+    			if (!isLineBLocked(trackedRobot.location, newCheck, obstacleCheck)){
+    				return newCheck;
+    			}
+    		}
+    	} 
+    	// If no possible firing location is found....
+    	return null;    	
+    }
+    
+    
+    // Function to execute when the robot is attempting to track down a gardener
+    
+    private static void trackGardener(RobotInfo[] enemyRobots) throws GameActionException{
+    	
+    	if(rc.canSenseRobot(trackID)){
+    		
+    		// Update location of tracked robot - the Gardener...
+    		trackedRobot = rc.senseRobot(trackID);
+    		
+    	   	// SYSTEM CHECK Print line from current location to intended move location violet line
+        	rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);   	
+    		
+	    	// Get distance and direction between scout and the Gardener
+	    	float gap = myLocation.distanceTo(trackedRobot.location);
+	    	Direction dir = myLocation.directionTo(trackedRobot.location);
+	    	
+	    	// Prevent null pointer exception, assert that the gardener's location has been seen before attempting to access 
+	    	if(gardenerLocation == null){
+	    	   	// If it has not yet been initialized set the robot's last location as its current
+	    		gardenerLocation = trackedRobot.location;
+	    	}
+	    		
+	    	// If the gap between the scout and the gardener is too large, move towards the gardener....
+	    	if (gap > 6){
+		    	// Update the gardener's location
+	    		gardenerLocation = trackedRobot.location;
+	    		// Elect to just move towards the gardener
+	    		moveTowardsTarget();    		
+	    	}
+	    	// Otherwise if the gardener is fairly close...
+	    	else{
+	    		boolean hasShot = shoot(gap);    
+	    		
+	    		// If the robot was unable to shoot, attempt to find a shooting location
+	    		if (!hasShot){
+	    			// Get the direction to the robot FROM the target - should be opposed to dir
+	    			Direction dirFromTarget = new Direction(trackedRobot.location, myLocation);
+	    			
+	    			// Obtain a random number between 3 and 4 to find a firing location...
+	    			float testDist = 3 + (float) Math.random();
+	    			
+	    			// See if such a firing location exists
+	    			MapLocation tryFiringLocation = findFiringLocation(testDist, dirFromTarget);
+	    			
+	    			// If it does set it as the desired moving point and shoot in the direction of the gardener
+	    			if (tryFiringLocation != null){
+	    				desiredMove = tryFiringLocation;
+	    				if(rc.canFireSingleShot()){
+	    		    		rc.fireSingleShot(dir);   
+	    		    		
+	    		    		lastFiringDirection = dir;
+	    			    	lastFiringLocation = tryFiringLocation;
+	    			    	desiredMove = tryFiringLocation;
+	    			    	
+	    			    	// SYSTEM CHECK print bright red line to new location to fire from
+	    			    	rc.setIndicatorLine(myLocation, tryFiringLocation, 220, 0, 0);
+	    		    	}	    			
+	    			}
+	    			else{
+	    		    	// Update the gardener's location
+	    	    		gardenerLocation = trackedRobot.location;
+	    				// If no firing location can be found simply utilize the tracking portion of the algorithm
+	    				moveTowardsTarget();
+	    			}
+	    		}
+	    		else{
+	    			// If the current position allows the robot to keep shooting, it will utilize the gardener's movement to decide a new place to move to
+	    			
+	    			// Difference in the gardener's movement
+		    		float delX = trackedRobot.location.x - gardenerLocation.x ;
+		    		float delY = trackedRobot.location.y - gardenerLocation.y ;
+		    		
+		    		// Generate delta multipliers randomly..		    		
+		    		float ranX = (float)(Math.random() * 0.4 + 0.8);
+		    		float ranY = (float)(Math.random() * 0.4 + 0.8);
+		    		
+		    		desiredMove = new MapLocation(myLocation.x + delX * ranX, myLocation.y + delY * ranY);
+		    		
+		    	   	// SYSTEM CHECK Print line from current location to intended move location - light blue green
+		        	rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			    		
+		    		
+    		    	// Update the gardener's location
+    	    		gardenerLocation = trackedRobot.location;
+		    		// SYSTEM CHECK - Make sure the robot recognizes that it it has fired something
+		    		System.out.println("Projectile fired successfully");	 		    		
+	    		}   
+	    	}
+	    // Of the gardener is no longer visible, run following code..
+    	} else{    		
+    		// If the scout can no longer sense the target gardener...
+    		noTrack[noTrackUpdateIndex % 3] = trackID;
+			noTrackUpdateIndex += 1;
+			
+        	trackID = -1;
+        	roundsCurrentlyTracked = 0;
+        	isTracking = false;        	
+			
+        	// Update the location of be null, so that the new gardener refreshes the data...
+        	gardenerLocation = null;
+        	// SYSTEM CHECK - Notify of lost sight of gardener
+        	System.out.println("Lost sight of gardener (ittai nani??????????) /Finding a new target");    
+        	
+        	// Call the move function to obtain a new target
+        	move(enemyRobots);    
+    	}
+    	
+    }
+    
+    
+    // Function to execute when the robot is attempting to track down an archon 
+    // For now just rotates around for a greater amount....
+    
+    private static void trackArchon () throws GameActionException{
+    	
+    	moveTowardsTargetMulti((float) 1.5);
+    }
     
     // Function to follow a unit and approach it
     
 	private static void track(RobotInfo[] enemyRobots) throws GameActionException{
 		
 		// If the robot can currently sense the robot it is tracking and if it has not been tracking this robot for too long
-    	if (rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 10){
+    	if (rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 15){
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		System.out.println("I am currently tracking a robot with ID: " + trackID);
@@ -561,10 +865,14 @@ public class ScoutBot extends GlobalVars {
         // If the robot has been tracking its current prey for too long or has lost sight of its target
     	} else {
     		
-    		// If the robot has been tracking the current enemy for a long time        	
+    		// If the robot has been tracking the current enemy for a long time make sure it doesnt check the same enemy again
+    		noTrack[noTrackUpdateIndex % 3] = trackID;
+			noTrackUpdateIndex += 1;
+			
         	trackID = -1;
-        	roundsCurrentlyTracked = 0;  
-        	
+        	roundsCurrentlyTracked = 0;
+        	isTracking = false;        	
+			
         	// SYSTEM CHECK - Notify of target loss
         	System.out.println("Lost sight of target/Finding a new target");        	
         	
@@ -573,10 +881,14 @@ public class ScoutBot extends GlobalVars {
     	}	                		
     }
 	
+	// If there is no multiplier argument provided
+	private static void moveTowardsTarget() throws GameActionException{
+		moveTowardsTargetMulti(1);
+	}
 	
 	// Function to move towards a given robot
 	
-	private static void moveTowardsTarget() throws GameActionException{
+	private static void moveTowardsTargetMulti(float multiplier) throws GameActionException{
 		
 		// Variable to store the distance to the robot currently being tracked
 		float gap = myLocation.distanceTo(trackedRobot.location);
@@ -585,19 +897,19 @@ public class ScoutBot extends GlobalVars {
     	Direction dir = myLocation.directionTo(trackedRobot.location);
     	
     	// If the gap is large enough move directly towards the target
-    	if (gap > 4.5){
+    	if (gap > 6 * multiplier){
     		desiredMove = myLocation.add(dir, (float) 2.5);
     	}
     	
     	// If the gap is slightly smaller, moves so that the approach is not so direct
-    	else if (gap > 3){	    		
+    	else if (gap > 4.5 * multiplier){	    		
     		// If the object was set to be rotating counterclockwise, go clockwise
     		if (rotationDirection){	    			
     			// Rotate 30 degrees clockwise
     			Direction newDir = new Direction(dir.radians - (float) (Math.PI/6));
     			
     			// Set new move point
-    			desiredMove = myLocation.add(newDir, (float) 2.5);
+    			desiredMove = myLocation.add(newDir, (float) (2.5 * multiplier));
     			
     			// Set rotation direction to be clockwise
     			rotationDirection = false;	    			
@@ -607,7 +919,7 @@ public class ScoutBot extends GlobalVars {
     			Direction newDir = new Direction(dir.radians + (float) (Math.PI/6));
     			
     			// Set new move point
-    			desiredMove = myLocation.add(newDir, (float) 2.5);
+    			desiredMove = myLocation.add(newDir, (float) (2.5 * multiplier));
     			
     			// Set rotation direction to be counterclockwise
     			rotationDirection = true;	    				    			
@@ -620,26 +932,69 @@ public class ScoutBot extends GlobalVars {
     			Direction fromDir = new Direction(dir.radians - (float) (2 * Math.PI/3));
     			
     			// Obtain the desired target location
-    			desiredMove = trackedRobot.location.add(fromDir, (float) 1.5);
+    			desiredMove = trackedRobot.location.add(fromDir, (float) (2.5 * multiplier));
     			
     		} else{
     			// Calculate the direction from the target that you want to end up at
     			Direction fromDir = new Direction(dir.radians + (float) (2 * Math.PI/3));
     			
     			// Obtain the desired target location
-    			desiredMove = trackedRobot.location.add(fromDir, (float) 1.5);	    			
+    			desiredMove = trackedRobot.location.add(fromDir, (float) (2.5 * multiplier));	    			
     		}
-    	// SYSTEM CHECK Print line from current location to intended move location
+    	// SYSTEM CHECK Print line from current location to intended move location - light blue green
     	rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			
     	}   		
 	}	
+	
+
+	// Function to attempt to move in a target direction
+	
+    private static MapLocation tryMoveScout(Direction dir) throws GameActionException {
+    	// If only a direction is given  use arbitrary values
+        return tryMoveScout(dir,30, 3, (float) 2.5);
+    }    
+
+    
+    // Function to attempt to move in a target direction (with inputed values), returns true if it actually can move in that direction
+    
+    private static MapLocation tryMoveScout(Direction dir, float degreeOffset, int checksPerSide, float distance) throws GameActionException {
+    	
+    	// Generate distances to test 
+    	for (int i = 0; i < 5; i++){
+    		
+    		float testDistance = (float)(distance - (i * distance / 5));    		
+	        // Try going the test distance in the targeted direction
+	        if (rc.canMove(dir, testDistance)) {	            
+	            return myLocation.add(dir, testDistance);
+	        }
+        }
+
+    	// Now check with 30 degree offsets to either side of the intended direction
+        int currentCheck = 1;
+        while(currentCheck<=checksPerSide) {
+            // Try the offset of the left side
+            if(rc.canMove(dir.rotateLeftDegrees(degreeOffset*currentCheck))) {
+                return myLocation.add(dir.rotateLeftDegrees(degreeOffset*currentCheck), (float) distance);
+            }
+            // Try the offset on the right side
+            if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck))) {
+                return myLocation.add(dir.rotateRightDegrees(degreeOffset*currentCheck), (float) distance);
+            }
+            // No move performed, try slightly further to either direction
+            currentCheck+=1;
+        }
+        // A move through the checks cannot happen, so return a null to express this
+        return null;
+    }    
+    
 		
 	/*****************************************************************************
 	 ******************* Miscellaneous Functions************** ********************
 	 ****************************************************************************/   
 	
 	// Get location of home Archon if it has broadcasted previously
-	
+	// TODO
+    
 	private static MapLocation updateArchon() throws GameActionException{
 		
 		MapLocation base = new MapLocation(rc.readBroadcast(1 + homeArchon * ARCHON_OFFSET), rc.readBroadcast(2 + homeArchon * ARCHON_OFFSET));
@@ -695,47 +1050,50 @@ public class ScoutBot extends GlobalVars {
     }
 	
 
-	// Function to attempt to move in a target direction
+	// Function to retrieve the nearest enemy to the robot
 	
-    private static MapLocation tryMoveScout(Direction dir) throws GameActionException {
-    	// If only a direction is given  use arbitrary values
-        return tryMoveScout(dir,30,3);
-    }    
+	private static RobotInfo getNearestEnemy(RobotInfo[] enemyRobots){
 
-    // Function to attempt to move in a target direction (with inputed values), returns true if it actually can move in that direction
-    
-    private static MapLocation tryMoveScout(Direction dir, float degreeOffset, int checksPerSide) throws GameActionException {
-    	
-    	// Generate distances to test 
-    	for (int i = 0; i < 5; i++){
-    		
-    		float testDistance = (float)(2.5 - i * 0.5);    		
-	        // Try going the test distance in the targeted direction
-	        if (rc.canMove(dir, testDistance)) {	            
-	            return myLocation.add(dir, testDistance);
-	        }
-        }
-
-    	// Now check with 30 degree offsets to either side of the intended direction
-        int currentCheck = 1;
-        while(currentCheck<=checksPerSide) {
-            // Try the offset of the left side
-            if(rc.canMove(dir.rotateLeftDegrees(degreeOffset*currentCheck))) {
-                return myLocation.add(dir.rotateLeftDegrees(degreeOffset*currentCheck), (float) 2.5);
-            }
-            // Try the offset on the right side
-            if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck))) {
-                return myLocation.add(dir.rotateRightDegrees(degreeOffset*currentCheck), (float) 2.5);
-            }
-            // No move performed, try slightly further to either direction
-            currentCheck+=1;
-        }
-        // A move through the checks cannot happen, so return a null to express this
-        return null;
-    }    
-
-
-//Get the nearest enemy to the last updated location of base
+		// Parameter to store the smallest distance to another robot
+		float minimum = Integer.MAX_VALUE;
+				
+		// Parameter to store the array index of the closest robot				
+		int index = -1;			
+		for (int i = 0; i < enemyRobots.length; i++){
+			
+			// If the type of the robot spotted is a gardener, return it
+			if (enemyRobots[i].type == battlecode.common.RobotType.GARDENER){
+				
+				return enemyRobots[i];
+			} else{		
+				// Otherwise search for the closest one that has not recently been tracked
+				float dist = myLocation.distanceTo(enemyRobots[i].location);
+				if (dist < minimum ){
+					// If the robot has not been tracked recently
+					if (!arrayContainsInt(noTrack, enemyRobots[i].ID)){
+						
+						// Update the index
+						
+						minimum = dist;
+						index = i;		
+					}
+				}			
+			}
+		}
+		// This should always happen, but if the found index is positive return the closest robot that is a Gardener
+		if (index >= 0){	
+			
+			return enemyRobots[index];	
+			
+		} else{			
+			return null;
+		}		
+	}
+	
+	
+	//Get the nearest enemy to the last updated location of base (i.e. closest ally)
+	// TODO
+	
 	private static MapLocation getNearestEnemytoBase(RobotInfo[] enemies, boolean update){
 		
 		// Smallest distance to another robot
