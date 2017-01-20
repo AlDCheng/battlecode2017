@@ -14,9 +14,6 @@ public class GardenerBot extends GlobalVars {
 	public static int treeCount = 0;
 	public static boolean canMove = true;
 	
-	public static int lumberjackRatio;
-	public static int tankRatio;
-	
 	public static int numGard;
 	public static int prevNumBuilder;
 	public static int prevNumWaterer;
@@ -41,9 +38,6 @@ public class GardenerBot extends GlobalVars {
 		System.out.println("I'm a gardener!");
 		
 		role = 0;
-		
-		lumberjackRatio = 2;
-		tankRatio = 10;
 		
 		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
 		numGard = rc.readBroadcast(GARDENER_CHANNEL);
@@ -184,17 +178,17 @@ public class GardenerBot extends GlobalVars {
 	        rc.broadcast(SCOUT_CHANNEL, scoutCount+1);
 	    }
 	    //try to build SOLDIER, make sure soldierCount:lumberjackCount < lumberjackRatio
-	    if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= lumberjackRatio*lumberjackCount /*&& soldierCount <= tankRatio*tankCount*/) {
+	    if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= LUMBERJACK_RATIO*lumberjackCount  && lumberjackCount > START_LUMBERJACK_COUNT) {
 	        rc.buildRobot(RobotType.SOLDIER, dir);
 	        rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
 	    } 
 	    //try to build LUMBERJACK, "
-	    if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && lumberjackRatio*lumberjackCount < soldierCount) {
+	    if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && rc.isBuildReady() && (LUMBERJACK_RATIO*lumberjackCount < soldierCount || lumberjackCount < START_LUMBERJACK_COUNT)) {
 	        rc.buildRobot(RobotType.LUMBERJACK, dir);
 	        rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
 	    }
 	    /*
-	    if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && tankRatio*tankCount < soldierCount) {
+	    if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && TANK_RATIO*tankCount < soldierCount) {
 	        rc.buildRobot(RobotType.TANK, dir);
 	        rc.broadcast(TANK_CHANNEL, tankCount+1);
 	    } 
