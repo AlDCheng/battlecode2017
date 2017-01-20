@@ -32,7 +32,7 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    ArchonBot.init();			
 			    break; 
 			case GARDENER:
-			    GardenerBot.entry();
+			    GardenerBot.init();
 			    break;
 			case SOLDIER:
 			    SoldierBot.init();

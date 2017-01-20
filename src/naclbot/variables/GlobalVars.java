@@ -19,6 +19,8 @@ public class GlobalVars {
 	public static int GARDENER_PLANTER_CHANNEL;
 	
 	public static int LUMBERJACK_CHANNEL;	
+	public static int START_LUMBERJACK_COUNT;
+	public static int LUMBERJACK_RATIO;
 	
 	public static int SCOUT_CHANNEL;
 	public static int SCOUT_MESSAGE_OFFSET;
@@ -30,6 +32,9 @@ public class GlobalVars {
 	
 	public static int TOTAL_TREE_BROADCAST_LIMIT;
 	
+
+	public static int TANK_RATIO;
+
 	
 	public static int TREE_DATA_CHANNEL;
 	public static int TREE_OFFSET;
@@ -46,6 +51,9 @@ public class GlobalVars {
 	public static int GROUP_LIMIT;
 	public static int GROUP_SIZE_LIMIT;
 	public static int TREES_STORED;
+	
+
+
 	
 	// Internal map variables
 	public static ArrayList<ArrayList<Integer>> internalMap = new ArrayList<ArrayList<Integer>>();
