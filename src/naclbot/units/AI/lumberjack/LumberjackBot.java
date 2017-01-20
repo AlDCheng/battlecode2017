@@ -39,6 +39,7 @@ public class LumberjackBot extends GlobalVars {
     public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
     
     public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
+    public static boolean foundPrize = false;
 
     public static ArrayList<TreeInfo> nearbyNeutralTrees;
     //public static ArrayList<MapLocation> nearbyBulletTrees;
@@ -159,7 +160,7 @@ public class LumberjackBot extends GlobalVars {
                
 		// No close robots, so search for robots within sight radius
 		robots = rc.senseNearbyRobots(-1,enemy);
-		if (robots.length > 0 && !rc.hasMoved()) { // If there is a robot, move towards it			
+		if (robots.length > 0 && !rc.hasMoved() && !foundPrize) { // If there is a robot, move towards it			
 		    MapLocation enemyLocation = robots[0].getLocation();
 		    
 		    Direction toEnemy = myLocation.directionTo(enemyLocation);
@@ -169,13 +170,15 @@ public class LumberjackBot extends GlobalVars {
 		}			    
 		    
 		// If hasn't moved yet then get away from ally or move randomly
-		if(!rc.hasMoved()){
+		if(!rc.hasMoved() && !foundPrize){
 		    if (currentAllies.length > 0){
 			RobotInfo closestAlly = getNearestAlly();
 			tryMoveAway(closestAlly);
+			System.out.println("MOVING AWAY FROM CLOSEST ALLY");
 		    } else {
 			Direction testDir = Move.randomDirection();
 			tryMoveLumberjack(testDir);
+			System.out.println("MOVING IN A RANDOM DIR");
 		    }
 		    
 		}
@@ -227,6 +230,10 @@ public class LumberjackBot extends GlobalVars {
 	    if (rc.canChop(nearestTree.getLocation())) {
 		System.out.println("DIGGING FOR PRIZE");
 		rc.chop(nearestTree.getLocation());
+	        foundPrize = true;
+		if (nearestTree.getHealth() < 5) {
+		    foundPrize = false;
+		}
 		
 	    } else {
 		// If can't chop then move towards the tree (most likely it means it is too far away)
