@@ -84,7 +84,7 @@ public class ArchonBot extends ArchonVars {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	
-    		    
+    		    rc.broadcast(TREES_SENT_THIS_TURN, 0);
 		        // Broadcast archon's location for other robots on the team to know
 			    broadcastLocation();
             	// Check for condition to exit Starting Phase
@@ -139,6 +139,8 @@ public class ArchonBot extends ArchonVars {
         	
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	  rc.broadcast(TREES_SENT_THIS_TURN, 0);
+            	  
             	// if enough bullets; win
             	if(rc.getTeamBullets() >= 10000) {
             		rc.donate(rc.getTeamBullets());

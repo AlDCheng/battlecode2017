@@ -6,6 +6,9 @@ import java.util.ArrayList;
 public class GlobalVars {
 	public static RobotController rc;
 	
+	public static int SCOUT_NUMBER_CHANNEL;
+	public static int ARCHON_NUMBER_CHANNEL;
+	
 	public static int ARCHON_CHANNEL;
 	public static int ARCHON_OFFSET;
 	public static int ARCHON_LIMIT;
@@ -25,6 +28,8 @@ public class GlobalVars {
 	
 	public static int TANK_CHANNEL;
 	
+	public static int TOTAL_TREE_BROADCAST_LIMIT;
+	
 	
 	public static int TREE_DATA_CHANNEL;
 	public static int TREE_OFFSET;
@@ -40,6 +45,7 @@ public class GlobalVars {
 	public static int GROUP_OFFSET;
 	public static int GROUP_LIMIT;
 	public static int GROUP_SIZE_LIMIT;
+	public static int TREES_STORED;
 	
 	// Internal map variables
 	public static ArrayList<ArrayList<Integer>> internalMap = new ArrayList<ArrayList<Integer>>();
@@ -48,6 +54,8 @@ public class GlobalVars {
 	public static MapLocation centerCoords;
 	public static int offsetX, offsetY;
 	public static int SOLDIER_CHANNEL;
+	
+	public static int TREES_SENT_THIS_TURN;
 	
 	public static void globalInit(RobotController _RC) {
 		rc = _RC;
@@ -74,6 +82,8 @@ public class GlobalVars {
 		// Archons
 		
 		ARCHON_CHANNEL = 0; // Carries number of living Archons
+		SCOUT_NUMBER_CHANNEL = 397;
+		ARCHON_NUMBER_CHANNEL = 0;
 		
 		ARCHON_OFFSET = 8;
 		// Offset 1: Current X Position
@@ -130,9 +140,13 @@ public class GlobalVars {
 		GROUP_START = GROUP_LEADER_START + GROUP_LEADER_OFFSET * GROUP_LIMIT;
 		GROUP_OFFSET = 20;
 
-		TREE_DATA_CHANNEL = 399; 
-		TREE_OFFSET = 3;
-		TOTAL_TREE_NUMBER = (int)((999 - TREE_DATA_CHANNEL) / 3);
+		TREES_SENT_THIS_TURN = 397;
+		TREE_DATA_CHANNEL = 398; 
+		TREE_OFFSET = 4;
+		TOTAL_TREE_NUMBER = (int)((999 - TREE_DATA_CHANNEL) / TREE_OFFSET);
+		
+		TOTAL_TREE_BROADCAST_LIMIT = 15;
+		TREES_STORED = 396;
 		//Offset 0: Tree ID
 		//Offset 2: Tree X Position
 		//Offset 3: Tree Y Position
