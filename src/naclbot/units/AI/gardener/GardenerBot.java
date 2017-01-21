@@ -66,7 +66,7 @@ public class GardenerBot extends GlobalVars {
                 tankCount = rc.readBroadcast(TANK_CHANNEL);
 
                 //generate random direction
-                dir = Move.randomDirection();
+                dir = Direction.getEast().rotateLeftDegrees(288);
                 
                 //generate list of trees that are not full health
                 lowHealthTrees = TreeSearch.getNearbyLowTrees();
@@ -178,7 +178,7 @@ public class GardenerBot extends GlobalVars {
 	        rc.broadcast(SCOUT_CHANNEL, scoutCount+1);
 	    }
 	    //try to build SOLDIER, make sure soldierCount:lumberjackCount < lumberjackRatio
-	    if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= LUMBERJACK_RATIO*lumberjackCount  && lumberjackCount > START_LUMBERJACK_COUNT) {
+	    if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= LUMBERJACK_RATIO*lumberjackCount  && lumberjackCount >= START_LUMBERJACK_COUNT) {
 	        rc.buildRobot(RobotType.SOLDIER, dir);
 	        rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
 	    } 
