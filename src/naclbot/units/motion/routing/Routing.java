@@ -19,6 +19,18 @@ public class Routing extends GlobalVars{
 	
 	public static ArrayList<MapLocation> path = new ArrayList<MapLocation>();
 	
+	public static void setRouting(ArrayList<MapLocation> pathNew) {
+		prevDir = new Direction(0);
+		reRoute = 0; 
+		newDest = false;
+		
+		prevLoc = rc.getLocation();
+		curLoc = new MapLocation(prevLoc.x,prevLoc.y);
+		lastDest = new MapLocation(prevLoc.x,prevLoc.y);
+		
+		path = new ArrayList<MapLocation>(pathNew);
+	}
+	
 	public static void routingWrapper() {
 		try {
 			// Get current location
