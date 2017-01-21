@@ -129,11 +129,14 @@ public class GlobalVars {
 		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_LIMIT * SCOUT_UPDATE_FREQUENCY + 1;
 		
 		LUMBERJACK_CHANNEL = 140;
+		START_LUMBERJACK_COUNT = 10; //builds 10 lumberjacks before soldiers/tanks
+		LUMBERJACK_RATIO = 3;
 		
 		/* Scout Channel is the placeholding value foir all scout channels. 
 		 * The broadcasts at this number contain only the number of scouts currently available to the team		
 		*/
 		TANK_CHANNEL = 180;
+		TANK_RATIO = 10;
 		
 		SOLDIER_CHANNEL = 160;
 		GROUP_NUMBER_CHANNEL = 200;
