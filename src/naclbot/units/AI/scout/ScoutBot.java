@@ -126,9 +126,6 @@ public class ScoutBot extends GlobalVars {
 	// Stores the number of rounds that the scout has been tracking the current enemy
 	private static int roundsCurrentlyTracked;
 	
-	// Stores the total number of unique enemies the scout has tracked
-	private static int trackedTotal;
-	
 	// Parameter to express if the scout has already broadcasted status information this turn
 	public static boolean hasBroadcastedStatus;		
     
@@ -253,8 +250,6 @@ public class ScoutBot extends GlobalVars {
         
 		// Initialize other parameters for tracking
 	    roundsCurrentlyTracked = 0;
-	    trackedTotal = -1; 
-        
 	    // Clear memory of last tracked members
 	    Arrays.fill(noTrack, -1);    
 	    
@@ -376,10 +371,7 @@ public class ScoutBot extends GlobalVars {
             	System.out.println("Calling Dodge Function....");
             	
             	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
-            	
-            	// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright red
-    			rc.setIndicatorDot(desiredMove,0, 255, 0);
-    			
+            	    			
             	
             	if (dodgeLocation != null){
             		desiredMove = dodgeLocation;
@@ -967,7 +959,7 @@ public class ScoutBot extends GlobalVars {
     			desiredMove = trackedRobot.location.add(fromDir, (float) (2.5 * multiplier));	    			
     		}
     	// SYSTEM CHECK Print line from current location to intended move location - light blue green
-    	rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			
+    	// rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			
     	}   		
 	}   
 		

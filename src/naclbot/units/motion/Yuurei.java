@@ -49,6 +49,14 @@ public class Yuurei extends GlobalVars {
 		// Obtain the locations of all bullets within the scanRadius centered at the robot's current location
 		ArrayList <MapLocation> newBulletLocations = getNextBulletLocations(nearbyBullets, scanRadius, startingLocation);
 		
+		// Add the current bullet locations to the array list...
+		for(int i = 0; i < nearbyBullets.length; i++){
+			// Only add again if the they are too close
+			if (startingLocation.distanceTo(nearbyBullets[i].location) <= scanRadius){
+				
+			newBulletLocations.add(nearbyBullets[i].location);	
+			}
+		}
 		// If any of the bullets are near enough to warrant issue, proceed forwards
 		if (newBulletLocations.size() > 0){	
 			
@@ -68,7 +76,8 @@ public class Yuurei extends GlobalVars {
 				// If the robot will be able to dodge something the dodgeLocation should be non-null
 				if(dodgeLocation != null){
 					
-					
+					// SYSTEM CHECK - Tell everyone that you can dodge the bullet
+					System.out.println("Scout can dodge bullet yay!");	
 					
 					canDodge = true;
 				}
@@ -115,7 +124,21 @@ public class Yuurei extends GlobalVars {
 		
 		
 		// Since we will start by searching away from the current desiredLocation...
-		Direction desiredDir = new Direction(startingLocation, desiredLocation);
+		Direction dir = new Direction(startingLocation, desiredLocation);
+		
+		// Introduce a little bit of rng
+		float offset = (float)(Math.random() * (Math.PI/3) + Math.PI/3);
+		
+		// New offset direction to start searching from
+		Direction desiredDir;
+		
+		// Decide based on rotation direction which one to use....
+		if(rotationDirection){
+			desiredDir = new Direction(dir.radians - offset);
+		}
+		else{
+			desiredDir = new Direction(dir.radians + offset);
+		}
 		
 		// Local value of the offset
 		float scanAngleOffset = scanningAngleDiff;
@@ -153,7 +176,7 @@ public class Yuurei extends GlobalVars {
 				
 				// Obtain the possible new location
 				MapLocation testLocation = scanStartLocation.add(testDir, searchRadius - (scanGranularity * j));
-				
+			
 				// Assert that it is within stride distance of the current location of the robot
 				if(testLocation.distanceTo(startingLocation) <= strideRadius){
 					// Assert that it is actually possible to move to this new location
@@ -161,22 +184,38 @@ public class Yuurei extends GlobalVars {
 						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge
 						if(dodge){
 							
-							if(!ifBulletWillCollide(nearbyBulletLocations, desiredLocation, bodyRadius)){	
+							if(!ifBulletWillCollide(nearbyBulletLocations, testLocation, bodyRadius)){	
 								
 								// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
-								rc.setIndicatorDot(testLocation, 0, 0, 128);
+								// rc.setIndicatorDot(testLocation, 0, 0, 128);
 								
 								return testLocation;
+							}
+							// If the robot would collide with a bullet in the location 
+							else{
+								
+								// SYSTEM CHECK - Show which location the robot decides as invalid - sky blue
+								// rc.setIndicatorDot(testLocation, 0, 191, 255);								
 							}
 						} else{ // If the robot is not currently looking to dodge, the test location has become valid
 							
 							// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
-							rc.setIndicatorDot(testLocation, 0, 0, 128);
+							// rc.setIndicatorDot(testLocation, 0, 0, 128);
 							
 							return  testLocation;
 						}						
 					}
-				}				
+					// If the test location isn't possible for the robot to move to
+					else{
+					// SYSTEM CHECK - Show which location the robot decides as invalid - lavender
+					// rc.setIndicatorDot(testLocation, 230, 230, 250);
+					}
+				}
+				// If the test location is too far away
+				else{
+					// SYSTEM CHECK - Show which location the robot decides as invalid - very light blue
+					// rc.setIndicatorDot(testLocation, 240, 248, 255);					
+				}
 			}			
 		} 
 		// If the function has not found a valid location, return nothing - there are no valid points for the robot.... 
@@ -198,10 +237,10 @@ public class Yuurei extends GlobalVars {
 	
 	// Checks to see if there will be a bullet within a body radius of the currently selected location next turn. Returns true if so....
 	
-	public static boolean ifBulletWillCollide(ArrayList<MapLocation> nearbyBulletLocations, MapLocation desiredLocation, float bodyRadius){
+	public static boolean ifBulletWillCollide(ArrayList<MapLocation> allBulletLocations, MapLocation desiredLocation, float bodyRadius){
 		
 		// Iterate through each bullet location nearby
-		for (MapLocation bulletLocation: nearbyBulletLocations){
+		for (MapLocation bulletLocation: allBulletLocations){
 			// If the location is within the radius distance of the object at the desired location, return false
 			
 			// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright red
@@ -240,7 +279,7 @@ public class Yuurei extends GlobalVars {
 				newBulletLocations.add(newLocation);
 				
 				// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright pink
-				rc.setIndicatorDot(newLocation, 255, 20, 147);
+				//  rc.setIndicatorDot(newLocation, 255, 20, 147);
 			}
 		}
 		return newBulletLocations;
@@ -313,8 +352,8 @@ public class Yuurei extends GlobalVars {
 		
 		// Otherwise if the correction is not on the map (the robot is then in a corner.... reverse directions feelsbadman
 		else{
-			// SYSTEM CHECK - See if object is returning the oppostite line or not
-			System.out.println("Turnin all the way around....");
+			// SYSTEM CHECK - See if object is returning the opposite line or not
+			// System.out.println("Turning all the way around....");
 			
 			Direction oppositeDirection = new Direction(desiredLocation, startingLocation);
 			
