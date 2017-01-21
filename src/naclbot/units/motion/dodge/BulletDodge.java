@@ -3,11 +3,11 @@ package naclbot.units.motion.dodge;
 import battlecode.common.*;
 
 import naclbot.variables.GlobalVars;
-import naclbot.units.motion.Move;
+
 import java.util.ArrayList;
 
 public class BulletDodge extends GlobalVars {
-	
+	/*
 	public static MapLocation goPlacesAndDodge(MapLocation desiredLocation) {
 		
 		ArrayList<MapLocation> bulletLocations;
@@ -46,6 +46,7 @@ public class BulletDodge extends GlobalVars {
 		}
 		return newBulletLocations;
 	}
+	*/
 	
     public static Direction whereToDodge(BulletInfo[] bullets) {
 		float nearestBulletDistance = -1;

@@ -4,12 +4,11 @@ package naclbot.units.AI.lumberjack;
 import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.search.TreeSearch;
+import naclbot.units.interact.iFeed;
 import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.DataVars.basicTreeInfo;
 import naclbot.variables.DataVars.binarySearchTree;
-import naclbot.units.motion.dodge.BulletDodge;
-
 import java.util.ArrayList;
 
 public class LumberjackBot extends GlobalVars {	
@@ -163,8 +162,18 @@ public class LumberjackBot extends GlobalVars {
 				    
 				    Direction toEnemy = myLocation.directionTo(enemyLocation);
 				    
+				    if (rc.canMove(toEnemy)) {
+				    	// If it can move then determine whether it will die if it moves there and move it
+				    	MapLocation endLoc = myLocation.add(toEnemy);
+				    	iFeed.willFeed(endLoc);
+				    	rc.move(toEnemy);
+				    	System.out.println("TRYING TO MOVE TO ENEMY");
+				    }
+				    /*
 				    Move.tryMove(toEnemy);
+				    willFeed();
 				    System.out.println("TRYING TO MOVE TO ENEMY");
+				    */
 				}			    
 		    
 				// If hasn't moved yet then get away from ally or move randomly
@@ -237,8 +246,17 @@ public class LumberjackBot extends GlobalVars {
 				// If can't chop then move towards the tree (most likely it means it is too far away)
 				if (!rc.hasMoved()) {
 				    Direction move = new Direction(myLocation,nearestTree.getLocation());
+				    if (rc.canMove(move)) {
+				    	// If it can move then determine whether it will die if it moves there and move it
+				    	MapLocation endLoc = myLocation.add(move);
+				    	iFeed.willFeed(endLoc);
+				    	rc.move(move);
+				    	System.out.println("TRYING TO MOVE TO TREE");
+				    }
+				    /*
 				    Move.tryMove(move);
 				    System.out.println("MOVE TO TREE");
+				    */
 				}
 		    }
 		
@@ -253,8 +271,17 @@ public class LumberjackBot extends GlobalVars {
 				// If can't shake then move towards the tree (most likely it means it is too far away)
 				if (!rc.hasMoved()) {
 				    Direction move = new Direction(myLocation,nearestTree.getLocation());
+				    if (rc.canMove(move)) {
+				    	// If it can move then determine whether it will die if it moves there and move it
+				    	MapLocation endLoc = myLocation.add(move);
+				    	iFeed.willFeed(endLoc);
+				    	rc.move(move);
+				    	System.out.println("TRYING TO MOVE TO TREE");
+				    }
+				    /*
 				    Move.tryMove(move);
 				    System.out.println("MOVE TO TREE");
+				    */
 				}
     		}
     	} else {
@@ -265,13 +292,22 @@ public class LumberjackBot extends GlobalVars {
 		
 		    } else {
 			// If can't chop then move towards the tree (most likely it means it is too far away)
-			if (!rc.hasMoved()) {
-			    Direction move = new Direction(myLocation,nearestTree.getLocation());
-			    Move.tryMove(move);
-			    System.out.println("MOVE TO TREE");
-			}
-	    }
-	}
+				if (!rc.hasMoved()) {
+				    Direction move = new Direction(myLocation,nearestTree.getLocation());
+				    if (rc.canMove(move)) {
+				    	// If it can move then determine whether it will die if it moves there and move it
+				    	MapLocation endLoc = myLocation.add(move);
+				    	iFeed.willFeed(endLoc);
+				    	rc.move(move);
+				    	System.out.println("TRYING TO MOVE TO TREE");
+				    }
+				    /*
+				    Move.tryMove(move);
+				    System.out.println("MOVE TO TREE");
+				    */
+				}
+		    }
+    	}
     }
     
     private static boolean tryMoveLumberjack(Direction dir) throws GameActionException {
@@ -295,15 +331,15 @@ public class LumberjackBot extends GlobalVars {
 		while(currentCheck<=checksPerSide) {
 		    // Try the offset of the left side
 		    if(rc.canMove(dir.rotateLeftDegrees(degreeOffset*currentCheck))) {
-			rc.move(dir.rotateLeftDegrees(degreeOffset*currentCheck));
-			lastDirection = dir.rotateLeftDegrees(degreeOffset*currentCheck);
-			return true;
+				rc.move(dir.rotateLeftDegrees(degreeOffset*currentCheck));
+				lastDirection = dir.rotateLeftDegrees(degreeOffset*currentCheck);
+				return true;
 		    }
 		    // Try the offset on the right side
 		    if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck))) {
-			rc.move(dir.rotateRightDegrees(degreeOffset*currentCheck));
-			lastDirection = dir.rotateRightDegrees(degreeOffset*currentCheck);
-			return true;
+				rc.move(dir.rotateRightDegrees(degreeOffset*currentCheck));
+				lastDirection = dir.rotateRightDegrees(degreeOffset*currentCheck);
+				return true;
 		    }
 		    // No move performed, try slightly further
 		    currentCheck+=1;
