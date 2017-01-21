@@ -37,12 +37,8 @@ public class GardenerBot extends GlobalVars {
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		
+		//value of initial role, set to planting trees first
 		role = 0;
-		
-		// AC: Quick hotfix to have deterministic selection. Should update code to read from broadcast intelligently
-		numGard = rc.readBroadcast(GARDENER_CHANNEL);
-		prevNumBuilder = rc.readBroadcast(GARDENER_BUILDER_CHANNEL);
-		prevNumWaterer = rc.readBroadcast(GARDENER_WATERER_CHANNEL);
 		
 		main();
 	}
@@ -54,7 +50,7 @@ public class GardenerBot extends GlobalVars {
         	//System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	// Listen for home archon's location
+            	// Listen for home archon's location, not implemented yet
                 xPos = rc.readBroadcast(0);
                 yPos = rc.readBroadcast(1);                
                 archonLoc = new MapLocation(xPos,yPos);
@@ -65,24 +61,27 @@ public class GardenerBot extends GlobalVars {
                 lumberjackCount = rc.readBroadcast(LUMBERJACK_CHANNEL);
                 tankCount = rc.readBroadcast(TANK_CHANNEL);
 
-                //generate random direction
+                //generates direction of opening after gardeners partially enclose themselves in trees
                 dir = Direction.getEast().rotateLeftDegrees(288);
                 
                 //generate list of trees that are not full health
                 lowHealthTrees = TreeSearch.getNearbyLowTrees();
                 
                 if (lowHealthTrees.size() > 0 || TreeSearch.getNearbyTeamTrees().size() == 0) {
+                	//if there are no teams nearby role = 0, calls incompleteSurroundTrees()
                 	role = 0;
                 } else {
+                	//if no trees need to be watered, role = 1, calls on buildUnits()
                 	role = 1;
                 }
                 
-                //unit builder
+                //calls different methods based on gardener's role
                 if (role == 0) {
                 	incompleteSurroundTrees(6);
                 } else if (role == 1) {
                 	buildUnits();
                 } else if (role == 2) {
+                	//not yet implemented
                 	completeSurroundTrees(6);
                 }
                 
@@ -97,7 +96,7 @@ public class GardenerBot extends GlobalVars {
 	
 	
 	public static void completeSurroundTrees(float spacing) throws GameActionException {
-		lowHealthTrees = TreeSearch.getNearbyLowTrees();
+		//boolean indicating whether there are nearby gardeners or archons
 		nearbyGardAndArc = Plant.nearbyGardenersAndArchons(spacing);
 		
 		if (lowHealthTrees.size() > 0){
@@ -109,7 +108,7 @@ public class GardenerBot extends GlobalVars {
 		//makes sure to stay (spacing) units away from other gardeners and archons before surrounding itself
 		while (nearbyGardAndArc && canMove) {
     		Move.tryMove(Move.randomDirection());
-    		Clock.yield();
+    		Clock.yield(); 
     		nearbyGardAndArc = Plant.nearbyGardenersAndArchons(spacing);
     	}
     	canMove = false; //prevents moving again
@@ -132,7 +131,7 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void incompleteSurroundTrees(float spacing) throws GameActionException {
-		lowHealthTrees = TreeSearch.getNearbyLowTrees();
+		//boolean indicating whether there are nearby gardeners or archons
 		nearbyGardAndArc = Plant.nearbyGardenersAndArchons(spacing);
 		
 		if (lowHealthTrees.size() > 0){
@@ -149,7 +148,7 @@ public class GardenerBot extends GlobalVars {
     	}
     	canMove = false; //prevents moving again
         
-        // plants trees around itself in 4 directions
+        // plants trees around itself in 4 directions, leaving one opening
         if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 4) {
         	rc.plantTree(Direction.getEast());
             treeCount++;
@@ -163,21 +162,18 @@ public class GardenerBot extends GlobalVars {
     		rc.plantTree(Direction.getEast().rotateLeftDegrees(216));
             treeCount++;   
         }
-        
-        
 	}
 	
 	public static void buildUnits() throws GameActionException {
-		//Move in a random direction
+		//default moving status
 	    //Move.tryMove(Move.randomDirection());
-	    System.out.println(soldierCount + " " + lumberjackCount + " " + tankCount);
 	    
 	    //try to build SCOUT, make sure not over SCOUT_LIMIT
 	    if (rc.canBuildRobot(RobotType.SCOUT, dir) && rc.isBuildReady() && scoutCount < SCOUT_LIMIT) {
 	        rc.buildRobot(RobotType.SCOUT, dir);
 	        rc.broadcast(SCOUT_CHANNEL, scoutCount+1);
 	    }
-	    //try to build SOLDIER, make sure soldierCount:lumberjackCount < lumberjackRatio
+	    //try to build SOLDIER, make sure soldierCount:lumberjackCount < LUMBERJACK_RATIO
 	    if (rc.canBuildRobot(RobotType.SOLDIER, dir) && soldierCount <= LUMBERJACK_RATIO*lumberjackCount  && lumberjackCount >= START_LUMBERJACK_COUNT) {
 	        rc.buildRobot(RobotType.SOLDIER, dir);
 	        rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
@@ -187,6 +183,7 @@ public class GardenerBot extends GlobalVars {
 	        rc.buildRobot(RobotType.LUMBERJACK, dir);
 	        rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
 	    }
+	    //try to build TANK, make sure soldierCount:tankCount < TANK_RATIO
 	    /*
 	    if (rc.canBuildRobot(RobotType.TANK, dir) && rc.isBuildReady() && TANK_RATIO*tankCount < soldierCount) {
 	        rc.buildRobot(RobotType.TANK, dir);
