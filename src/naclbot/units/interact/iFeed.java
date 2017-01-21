@@ -13,32 +13,89 @@ public class iFeed extends GlobalVars {
     public static boolean willFeed(MapLocation optLocation) {
     	
     	float currentHealth = rc.getHealth();
+    	float remainingHealth = currentHealth;
     	ArrayList<BulletInfo> bulletsThatWillHit = bulletsThatHit(optLocation);
 		
+    	// If there are bullets that will hit then determine whether robot lives or dies from this
     	if (bulletsThatWillHit.size() > 0) {
-    		float totalDamage = 0;
-    		int i;
-			for (i=0; i < bulletsThatWillHit.size(); i++) {
-			    totalDamage += bulletsThatWillHit.get(i).getDamage();
-			}
-			
-			if (totalDamage >= currentHealth) {
-				// There is enough damage to kill the unit
-				System.out.println("GG I WILL DIE");
-				return true;
-			    
-			} else {
-				// Unit takes damage but will not die
-				System.out.println("WILL NOT DIE THIS TIME, NOT ENOUGH DMG ON ME");
-				return false;
-			    
-			}
-    	} else {
-    		// If no bullets hit it then will not die
-    		System.out.println("WILL NOT DIE THIS TIME, NO BULLETS WILL HIT");
-    		return false;
+    		remainingHealth = healthLeftBullets(bulletsThatWillHit,currentHealth);
     		
+    		if (remainingHealth == 0) {
+    			return true;
+    		}
     	}
+    	
+    	// If robot did not die, then determine if they will die from lumberjack strikes
+    	//float strikeRadius = rc.getType().bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS;
+    	float strikeRadius = GameConstants.LUMBERJACK_STRIKE_RADIUS;
+    	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(strikeRadius,rc.getTeam().opponent());
+    	
+    	if (nearbyRobots.length > 0) {
+    		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
+    		
+    		if (remainingHealth == 0) {
+    			return true;
+    		} else {
+    			return false;
+    		}
+    		
+    	} else {
+    		System.out.println("WILL NOT DIE THIS TIME TEEHEE");
+    		return false;
+    	}
+    	
+    	
+    }
+    
+    public static float healthLeftLumberjacks(RobotInfo[] nearbyRob, float currHealth) {
+    	float totalLumberjackDamage = 0;
+    	
+    	int i;
+    	for (RobotInfo robot: nearbyRob) {
+    		if (robot.getType() == RobotType.LUMBERJACK) {
+    			totalLumberjackDamage += 2;
+    		}
+    	}
+    	
+    	// If the damage is larger then no health left
+    	// Otherwise there will be some health left
+    	if (totalLumberjackDamage >= currHealth) {
+    		// There is enough damage to kill the unit
+    		System.out.println("GG I WILL DIE FROM LUMBERJACK STRIKES");
+    		float health = 0;
+    		return health;
+    	} else {
+    		if (totalLumberjackDamage == 0) {
+    			System.out.println("NO LUMBERJACKS");
+    		}
+    		System.out.println("WILL NOT DIE FROM LUMBERJACK DAMAGE");
+    		currHealth -= totalLumberjackDamage;
+    		return currHealth;
+    	}
+    }
+    
+    public static float healthLeftBullets(ArrayList<BulletInfo> bullets, float currHealth) {
+    	// This function determines how much health left after bullets hit
+    	float totalBulletDamage = 0;
+    	
+		int i;
+		for (i=0; i < bullets.size(); i++) {
+		    totalBulletDamage += bullets.get(i).getDamage();
+		}
+		
+		// If the damage is larger then no health left 
+		// Otherwise, there will be some health left
+		if (totalBulletDamage >= currHealth) {
+			// There is enough damage to kill the unit
+			System.out.println("GG I WILL DIE FROM BULLETS");
+			float health = 0;
+			return health;
+			
+		} else {
+			currHealth -= totalBulletDamage;
+			System.out.println("WILL NOT DIE FROM BULLETS");
+			return currHealth;
+		}
     }
 
     // Determines the bullets that will hit current unit
