@@ -1092,7 +1092,7 @@ public class ScoutBot extends GlobalVars {
 	
 	
 	//Get the nearest enemy to the last updated location of base (i.e. closest ally)
-	// TODO
+	// TODOrr 
 	
 	private static MapLocation getNearestEnemytoBase(RobotInfo[] enemies, boolean update){
 		
