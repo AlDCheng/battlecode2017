@@ -4,10 +4,8 @@ import java.util.Arrays;
 
 
 import battlecode.common.*;
-
+import naclbot.units.motion.Yuurei;
 import naclbot.variables.GlobalVars;
-
-import naclbot.units.motion.dodge.Yuurei;
 
 
 /* Short List of Things to Do...............
@@ -288,7 +286,7 @@ public class ScoutBot extends GlobalVars {
             	// Get nearby enemies and allies and bulletsfor use in other functions            	
             	RobotInfo[] enemyRobots = NearbyUnits(enemy);
             	RobotInfo[] alliedRobots = NearbyUnits(allies);
-            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets(5);
+            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	
         		// Get information on all trees that are able to be sensed    	
             	TreeInfo[] sensedTrees = addTrees(treeSenseDistance);
@@ -301,7 +299,7 @@ public class ScoutBot extends GlobalVars {
             	
             	// Update the location of the nearest noncombatant allied location and sdore into the variable Nearest Ally - which is null if no nearby ally exists
             	if (alliedRobots.length > 0){            		
-                 	NearestAlly = getNearestAlly(alliedRobots);
+                 	NearestAlly = getNearestCivilian(alliedRobots);
             	}
             	else{
             		NearestAlly = null;
@@ -344,34 +342,40 @@ public class ScoutBot extends GlobalVars {
             	move(enemyRobots);
             	
               	// SYSTEM CHECK - See if move function has been completed
-            	// System.out.println("Move Completed");
+            	// System.out.println("Move Completed");            	
+            	
+            	// Check if the initially selected position was out of bounds...
+            	if (!rc.canMove(desiredMove)){
+            		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+            		
+            		lastDirection = new Direction(myLocation, newLocation);
+            		
+            		desiredMove = newLocation;
+            	}
             	
             	// Check if the initial desired move can be completed
-            	if(!rc.canMove(desiredMove)){
-            		
-            		// If it cannot, attempt to correct out of bounds errors, or slightly shift angle...
-            		correctMove();
-            		
-            		// If that still doesn't work, attempt to try running the path finding from the reverse angle...
-            		if (!rc.canMove(desiredMove)){
-            			// Obtain the reverse direfction
-            			Direction newTestDirection = new Direction(myDirection.radians + (float) Math.PI);
-            			
-            			if (rc.canMove(myLocation.add(newTestDirection))){            				
-            				// Attempt to run the open path finding check
-            				MapLocation testMove = tryMoveScout(newTestDirection);
-            				if (testMove != null){
-            					desiredMove = testMove;
-            				}
+            	if(!rc.canMove(desiredMove)){            		
+            	
+        			// Obtain the reverse direction
+        			Direction newTestDirection = new Direction(myDirection.radians + (float) Math.PI);
+        			
+        			if (rc.canMove(myLocation.add(newTestDirection))){            				
+        				// Attempt to run the open path finding check
+        				MapLocation testMove = Yuurei.tryMoveInDirection(newTestDirection, strideRadius, myLocation);
+        				if (testMove != null){
+        					desiredMove = testMove;
             			}
             		}
             	}
+            	
+            	
             	// May use this later idk...
             	MapLocation dodgeLocation = desiredMove;
             	
             	boolean canDodge = false;
-
-            	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, -1, bodyRadius, strideRadius, rotationDirection, canDodge);
+            	System.out.println("Calling Dodge Function....");
+            	
+            	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
             	
             	// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright red
     			rc.setIndicatorDot(desiredMove,0, 255, 0);
@@ -589,9 +593,7 @@ public class ScoutBot extends GlobalVars {
     			
     			// SYSTEM Check - Set light grey line indicating where the scout would wish to go
     			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
-    			
-    			System.out.println(myDirection);
-    			
+       			
         		// SYSTEM CHECK - Notify that nothing to be scouted has been found
         		// System.out.println("The scout cannot find anything to track");     			
     				
@@ -645,40 +647,37 @@ public class ScoutBot extends GlobalVars {
 	    		// If the object was set to be rotating go clockwsie in an increasing manner away from robot
 	    		if (rotationDirection){	    			
 	    			// Rotate 15 degrees clockwise
-	    			Direction newDir = new Direction(dir.radians - (float) (Math.PI/18));
+	    			Direction newDir = new Direction(dir.radians - (float) (Math.PI/3));
 	    			
 	    			// Set new move point
 	    			desiredMove = trackedRobot.location.add(newDir, (float) (6));
 	    			
-	    			// Set rotation direction to be clockwise
-	    			rotationDirection = false;	    			
 	    		}
 	    		else{
 	    			// Rotate 15 degrees counterclockwise
-	    			Direction newDir = new Direction(dir.radians + (float) (Math.PI/18));
+	    			Direction newDir = new Direction(dir.radians + (float) (Math.PI/3));
 	    			
 	    			// Set new move point
 	    			desiredMove = trackedRobot.location.add(newDir, (float) (6));
-	    			
-	    			// Set rotation direction to be counterclockwise
-	    			rotationDirection = true;	    				    			
+  				    			
 	    		}	    		
 	    	}
 	    	else{
 	    		// If the robot is far enough away, get to the outer limit of the range away from the robot
 	    		if (rotationDirection){
 	    			// Calculate the direction from the target that you want to end up at
-	    			Direction fromDir = new Direction(dir.radians - (float) (Math.PI/12));
+	    			Direction fromDir = new Direction(dir.radians - (float) (Math.PI/6));
 	    			
 	    			// Obtain the desired target location
-	    			desiredMove = trackedRobot.location.add(fromDir, (float) (15));
+	    			desiredMove = trackedRobot.location.add(fromDir, (float) (12));
 	    			
 	    		} else{
 	    			// Calculate the direction from the target that you want to end up at
-	    			Direction fromDir = new Direction(dir.radians + (float) (Math.PI/12));
+	    			Direction fromDir = new Direction(dir.radians + (float) (Math.PI/6));
 	    			
 	    			// Obtain the desired target location
-	    			desiredMove = trackedRobot.location.add(fromDir, (float) (15));	    			
+	    			desiredMove = trackedRobot.location.add(fromDir, (float) (12));	   
+
 	    		}		    
 	    	} 	    
 	    	
@@ -709,79 +708,7 @@ public class ScoutBot extends GlobalVars {
         	move(enemyRobots);
     	}    	
 	}	   	
-    
-	
-    // Function to run if the initial move idea was flawed
-    // Corrects out of bounds errors, or attempts 15 degree offsets from the currently chosen direction of motion
-    
-	private static void correctMove() throws GameActionException{		
 
-		// Obtain the location the scout initially desired to travel to
-		Direction desiredDirection = new Direction(myLocation, desiredMove);		
-		
-		// SYSTEM CHECK - See if the robot recognizes that it cannot currently move to the desired location
-		// System.out.println("Cannot move to desired location");
-		
-		// If for some reason the desired location isn't on the map
-		if (!rc.onTheMap(desiredMove, battlecode.common.RobotType.SCOUT.bodyRadius)){
-			
-			// SYSTEM CHECK - Make sure that the scouts determination of the incorrect map location is accurate...
-			System.out.println("Your current selection of Chitoge Kirisaki as best girl is incorrect.... please select Onodera to continue!!!");
-			
-			// If the scout is attempting to move above the map bounds...
-			if (!rc.onTheMap(new MapLocation(myLocation.x, myLocation.y + 3))){
-				// Correct the discrepancy in the y coordinates
-				float yCorrect = desiredMove.y - myLocation.y;				
-				MapLocation newMove = new MapLocation(desiredMove.x, desiredMove.y - 2 * yCorrect);
-				desiredMove = newMove;		
-			}
-			// If the scout is attempting to move to the left of the map bounds...
-			else if (!rc.onTheMap(new MapLocation(myLocation.x - 3, myLocation.y))){				
-				// Correct the discrepancy in the y coordinates
-				float xCorrect = desiredMove.x - myLocation.x;
-				MapLocation newMove = new MapLocation(desiredMove.x - 2 * xCorrect, desiredMove.y);
-				desiredMove = newMove;				
-			}
-			// If the scout is attempting to move below the map bounds...
-			else if ((!rc.onTheMap(new MapLocation(myLocation.x, myLocation.y - 3)))){				
-				// Correct the discrepancy in the y coordinates
-				float yCorrect = desiredMove.y - myLocation.y;
-				MapLocation newMove = new MapLocation(desiredMove.x, desiredMove.y - 2 * yCorrect);
-				desiredMove = newMove;				
-			}
-			// If the scout is attempting to move to the right of the map bounds...
-			else{	
-				// Correct the discrepancy in the y coordinates
-				float xCorrect = desiredMove.x - myLocation.x;
-				MapLocation newMove = new MapLocation(desiredMove.x - 2 * xCorrect, desiredMove.y);
-				desiredMove = newMove;			
-			}			
-			
-			// If it is possible to move to the fixed location....
-			if (rc.canMove(desiredMove)){
-
-				// Alter myDirection to match new desired general path
-				myDirection = new Direction(myLocation, desiredMove);
-				
-				// If the robot was rotating around another robot change the direction...
-				if (isTracking){
-					rotationDirection = !rotationDirection;
-				}
-				// SYSTEM CHECK - Display the corrected move on screen as an orange line
-				rc.setIndicatorLine(myLocation, desiredMove, 255, 165, 0);
-			}
-		}
-		else{
-			// Vary away from the current impossible location and attempt to move in that direction???
-    		MapLocation newLocation = tryMoveScout(desiredDirection);
-    		
-    		if (newLocation != null){
-    			// Update myDirection to reflect the slightly altered course
-    			myDirection = new Direction(myLocation, newLocation);
-    		}
-		}
-	}
-		
 	
 	// Wrapper function for finding a new enemy to track
     
@@ -837,7 +764,6 @@ public class ScoutBot extends GlobalVars {
     		
 	    	// Get distance and direction between scout and the Gardener
 	    	float gap = myLocation.distanceTo(trackedRobot.location);
-	    	Direction dir = myLocation.directionTo(trackedRobot.location);
 	    	
 	    	// Prevent null pointer exception, assert that the gardener's location has been seen before attempting to access 
 	    	if(gardenerLocation == null){
@@ -1043,49 +969,7 @@ public class ScoutBot extends GlobalVars {
     	// SYSTEM CHECK Print line from current location to intended move location - light blue green
     	rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			
     	}   		
-	}	
-	
-
-	// Function to attempt to move in a target direction
-	
-    private static MapLocation tryMoveScout(Direction dir) throws GameActionException {
-    	// If only a direction is given  use arbitrary values
-        return tryMoveScout(dir,30, 3, (float) strideRadius);
-    }    
-
-    
-    // Function to attempt to move in a target direction (with inputed values), returns true if it actually can move in that direction
-    
-    private static MapLocation tryMoveScout(Direction dir, float degreeOffset, int checksPerSide, float distance) throws GameActionException {
-    	
-    	// Generate distances to test 
-    	for (int i = 0; i < 5; i++){
-    		
-    		float testDistance = (float)(distance - (i * distance / 5));    		
-	        // Try going the test distance in the targeted direction
-	        if (rc.canMove(dir, testDistance)) {	            
-	            return myLocation.add(dir, testDistance);
-	        }
-        }
-
-    	// Now check with 30 degree offsets to either side of the intended direction
-        int currentCheck = 1;
-        while(currentCheck<=checksPerSide) {
-            // Try the offset of the left side
-            if(rc.canMove(dir.rotateLeftDegrees(degreeOffset*currentCheck))) {
-                return myLocation.add(dir.rotateLeftDegrees(degreeOffset*currentCheck), (float) distance);
-            }
-            // Try the offset on the right side
-            if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck))) {
-                return myLocation.add(dir.rotateRightDegrees(degreeOffset*currentCheck), (float) distance);
-            }
-            // No move performed, try slightly further to either direction
-            currentCheck+=1;
-        }
-        // A move through the checks cannot happen, so return a null to express this
-        return null;
-    }    
-    
+	}   
 		
 	/*****************************************************************************
 	 ******************* Miscellaneous Functions************** ********************
@@ -1143,7 +1027,7 @@ public class ScoutBot extends GlobalVars {
 	
 	// Function to obtain the data for the nearest ally to the robot currently (only gardeners and archons)
 	
-	private static RobotInfo getNearestAlly(RobotInfo[] currentAllies){
+	private static RobotInfo getNearestCivilian(RobotInfo[] currentAllies){
     	
     	float minimum = Integer.MAX_VALUE;
 		
@@ -1193,7 +1077,8 @@ public class ScoutBot extends GlobalVars {
 			} else{		
 				// Otherwise search for the closest one that has not recently been tracked
 				float dist = myLocation.distanceTo(enemyRobots[i].location);
-				if (dist < minimum ){
+				
+				if (dist < minimum && dist < 7){
 					// If the robot has not been tracked recently
 					if (!arrayContainsInt(noTrack, enemyRobots[i].ID)){
 						

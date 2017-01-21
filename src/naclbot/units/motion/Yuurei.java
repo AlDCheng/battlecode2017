@@ -1,5 +1,5 @@
 // Dodging collisions with bullets
-package naclbot.units.motion.dodge;
+package naclbot.units.motion;
 import battlecode.common.*;
 
 import naclbot.variables.GlobalVars;
@@ -10,8 +10,8 @@ import java.util.ArrayList;
 
 public class Yuurei extends GlobalVars {
 	
-	public static final float scanGranularity = (float) 0.25;
-	public static final int scanAngleNumber = 24;
+	public static final float scanGranularity = (float) 0.5;
+	public static final int scanAngleNumber = 9;
 	public static final float scanningAngleDiff = (float)(Math.PI * 2 / scanAngleNumber);
 	
 	// Do all wrapper for the functions.....
@@ -38,9 +38,13 @@ public class Yuurei extends GlobalVars {
 		boolean canDodge // Final verdict of the function - outputs true if can dodge or doesn't need to
 						 // Outputs false if it cannot dodge the bullets at all
 		){			
-				
+		
 		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
-		float scanRadius = strideRadius + bodyRadius;
+		float scanRadius = strideRadius + bodyRadius;		
+		
+		// SYSTEM CHECK - Make sure variables are being called correctly
+		System.out.println("Inputs are..... nearbyBullets: " + nearbyBullets);
+		System.out.println("bodyRadius: " + bodyRadius + "strideRadius" + strideRadius);
 		
 		// Obtain the locations of all bullets within the scanRadius centered at the robot's current location
 		ArrayList <MapLocation> newBulletLocations = getNextBulletLocations(nearbyBullets, scanRadius, startingLocation);
@@ -141,6 +145,8 @@ public class Yuurei extends GlobalVars {
 			
 			// Obtain the direction created by the offset
 			Direction testDir = new Direction(desiredDir.radians - (i * scanAngleOffset));
+			
+			System.out.println(i);
 			
 			// Iterate through a number of points determined by the granularity of the search
 			for(int j = 0; searchRadius - (scanGranularity * j) > 0; j++){
@@ -268,21 +274,21 @@ public class Yuurei extends GlobalVars {
 		System.out.println("Your current selection of Chitoge Kirisaki as best girl is incorrect.... please select Onodera to continue!!!");
 		
 		// If the robot is attempting to move above the map bounds...
-		if (!rc.onTheMap(new MapLocation(startingLocation.x, startingLocation.y + bodyRadius))){
+		if (!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y + bodyRadius))){
 			// Correct the discrepancy in the y coordinates
 			float yCorrect = desiredLocation.y - startingLocation.y;				
 			MapLocation newMove = new MapLocation(desiredLocation.x, desiredLocation.y - 2 * yCorrect);
 			newLocation = newMove;		
 		}
 		// If the robot is attempting to move to the left of the map bounds...
-		else if (!rc.onTheMap(new MapLocation(startingLocation.x - bodyRadius, startingLocation.y))){				
+		else if (!rc.onTheMap(new MapLocation(desiredLocation.x - bodyRadius, desiredLocation.y))){				
 			// Correct the discrepancy in the y coordinates
 			float xCorrect = desiredLocation.x - startingLocation.x;
 			MapLocation newMove = new MapLocation(desiredLocation.x - 2 * xCorrect, desiredLocation.y);
 			newLocation = newMove;				
 		}
 		// If the robot is attempting to move below the map bounds...
-		else if ((!rc.onTheMap(new MapLocation(startingLocation.x, startingLocation.y - bodyRadius)))){				
+		else if ((!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y - bodyRadius)))){				
 			// Correct the discrepancy in the y coordinates
 			float yCorrect = desiredLocation.y - startingLocation.y;
 			MapLocation newMove = new MapLocation(desiredLocation.x, desiredLocation.y - 2 * yCorrect);
@@ -307,6 +313,9 @@ public class Yuurei extends GlobalVars {
 		
 		// Otherwise if the correction is not on the map (the robot is then in a corner.... reverse directions feelsbadman
 		else{
+			// SYSTEM CHECK - See if object is returning the oppostite line or not
+			System.out.println("Turnin all the way around....");
+			
 			Direction oppositeDirection = new Direction(desiredLocation, startingLocation);
 			
 			newLocation = startingLocation.add(oppositeDirection, strideRadius);
@@ -317,5 +326,67 @@ public class Yuurei extends GlobalVars {
 			
 			return newLocation;			
 		}		
-	}		
+	}
+	
+	// Function to attempt to move in a target direction
+	
+    public static MapLocation tryMoveInDirection(Direction dir, float distance, MapLocation myLocation) throws GameActionException {
+    	
+    	// If only a direction is given  use arbitrary values
+    		// Arbitrary values are 30 degree offsets with 4 sweeps per side... 
+    		// A sweep in one direction and its opposite will cover nearly all possibilities
+    	
+        return tryMoveInDirection(dir, 20, 4, distance, myLocation);
+    }    
+
+    
+    // Function to attempt to move in a target direction (with inputed values), returns true if it actually can move in that direction
+    
+    private static MapLocation tryMoveInDirection(
+    		
+		// Input Variables    		
+		Direction dir, // Target Direction of the robot
+		
+		float degreeOffset, // Number of degrees from the target direction that each check is done...
+		int checksPerSide, // Number of checks per side of the target direction that are done...
+		
+		float distance, // Maximal distance away from the current robot that is supposed to be checked...
+		
+		MapLocation myLocation // Current Location of the robot....
+		
+		) throws GameActionException {
+    	
+    	// Generate distances to test - prioritize initial input direction
+    	for (int i = 0; i < 5; i++){
+    		
+    		float testDistance = (float)(distance - (i * distance / 5));    		
+	        // Try going the test distance in the targeted direction
+	        if (rc.canMove(dir, testDistance)) {	            
+	            return myLocation.add(dir, testDistance);
+	        }
+        }
+    	// Generate distances to test on all of the offsets
+		for (int i = 0; i < 5; i++){
+		    		
+		    float testDistance = (float)(distance - (i * distance / 5));    
+		    // Current number of degree offsets off of original being checked
+	        int currentCheck = 1;
+	        
+	        while(currentCheck <= checksPerSide) {
+	        	
+	            // Try the offset of the left side
+	            if(rc.canMove(dir.rotateLeftDegrees(degreeOffset * currentCheck), testDistance)) {
+	                return myLocation.add(dir.rotateLeftDegrees(degreeOffset * currentCheck), testDistance);
+	            }
+	            // Try the offset on the right side
+	            if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck), testDistance)) {
+	                return myLocation.add(dir.rotateRightDegrees(degreeOffset * currentCheck), testDistance);
+	            }
+	            // Since no move has been performed, check to a higher offset on either side....
+	            currentCheck+=1;
+	        }
+		}
+	    // A move through the checks cannot happen, so return a null to express this
+        return null;
+    }    
 }
