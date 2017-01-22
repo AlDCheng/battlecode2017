@@ -38,7 +38,7 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    SoldierBot.init();
 			    break;
 			case TANK:
-			    TankBot.entry();
+			    TankBot.init();
 			case LUMBERJACK:
 			    LumberjackBot.init();
 			    break;
