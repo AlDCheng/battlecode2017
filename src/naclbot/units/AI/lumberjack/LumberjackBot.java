@@ -196,6 +196,7 @@ public class LumberjackBot extends GlobalVars {
 				    		iFeed.willFeed(newLoc);
 				    		System.out.println("MOVING AWAY FROM CLOSEST ALLY");
 				    	}
+				    	System.out.println("Disperse is null");
 				    	
 				    } else {
 						Direction testDir = Move.randomDirection();
