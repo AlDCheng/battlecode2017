@@ -285,10 +285,6 @@ public class LumberjackBot extends GlobalVars {
 				    	rc.move(move);
 				    	System.out.println("TRYING TO MOVE TO TREE");
 				    }
-				    /*
-				    Move.tryMove(move);
-				    System.out.println("MOVE TO TREE");
-				    */
 				}
 		    }
 		
@@ -310,10 +306,6 @@ public class LumberjackBot extends GlobalVars {
 				    	rc.move(move);
 				    	System.out.println("TRYING TO MOVE TO TREE");
 				    }
-				    /*
-				    Move.tryMove(move);
-				    System.out.println("MOVE TO TREE");
-				    */
 				}
     		}
     	} else {
@@ -333,10 +325,7 @@ public class LumberjackBot extends GlobalVars {
 				    	rc.move(move);
 				    	System.out.println("TRYING TO MOVE TO TREE");
 				    }
-				    /*
-				    Move.tryMove(move);
-				    System.out.println("MOVE TO TREE");
-				    */
+
 				}
 		    }
     	}
