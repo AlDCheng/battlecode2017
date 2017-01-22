@@ -132,7 +132,7 @@ public class GlobalVars {
 		
 		SCOUT_RATIO = 10; 
 		
-		START_SCOUT_COUNT = 5;
+		START_SCOUT_COUNT = 5; //builds 5 scouts before other units
 		
 		LUMBERJACK_CHANNEL = 140;
 		START_LUMBERJACK_COUNT = 10; //builds 10 lumberjacks before soldiers/tanks
