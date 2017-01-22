@@ -5,10 +5,13 @@ import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.units.interact.iFeed;
+import naclbot.units.motion.Chirasou;
+import naclbot.units.motion.Yuurei;
 import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.DataVars.basicTreeInfo;
 import naclbot.variables.DataVars.binarySearchTree;
+
 import java.util.ArrayList;
 
 public class LumberjackBot extends GlobalVars {	
@@ -41,7 +44,6 @@ public class LumberjackBot extends GlobalVars {
     public static boolean foundPrize = false;
 
     public static ArrayList<TreeInfo> nearbyNeutralTrees;
-    //public static ArrayList<MapLocation> nearbyBulletTrees;
 	
     public static Direction lastDirection;
     
@@ -95,13 +97,24 @@ public class LumberjackBot extends GlobalVars {
 			
 				if(!rc.hasMoved()){
 				    if (currentAllies.length > 0){
-				    	RobotInfo closestAlly = getNearestAlly();
-				    	tryMoveAway(closestAlly);
+				    	//RobotInfo closestAlly = getNearestAlly();
+				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation);
+				    	if (newLoc != null) {
+				    		iFeed.willFeed(newLoc);
+				    		System.out.println("MOVING AWAY FROM CLOSEST ALLY");
+					    }
 				    }
-				    if (!rc.hasMoved()){
-				    	Direction testDir = Move.randomDirection();
-				    	tryMoveLumberjack(testDir);
-				    }
+					// If it didn't move before
+				    if (!rc.hasMoved()) {
+						Direction testDir = Move.randomDirection();
+						MapLocation newLoc = tryMoveLumberjack(testDir);
+						if (newLoc != null) {
+							iFeed.willFeed(newLoc);
+							System.out.println("MOVING IN A RANDOM DIR");
+						} else {
+							System.out.println("TRIED MOVING IN A RANDOM DIR");
+						}
+					}
 				}
 			
 				Clock.yield();
@@ -179,16 +192,32 @@ public class LumberjackBot extends GlobalVars {
 				// If hasn't moved yet then get away from ally or move randomly
 				if(!rc.hasMoved() && !foundPrize){
 				    if (currentAllies.length > 0){
-				    	RobotInfo closestAlly = getNearestAlly();
-				    	tryMoveAway(closestAlly);
-				    	System.out.println("MOVING AWAY FROM CLOSEST ALLY");
+				    	//RobotInfo closestAlly = getNearestAlly();
+				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation);
+				    	if (newLoc != null) {
+				    		iFeed.willFeed(newLoc);
+				    		System.out.println("MOVING AWAY FROM CLOSEST ALLY");
+				    	}
+				    	
 				    } else {
 						Direction testDir = Move.randomDirection();
-						tryMoveLumberjack(testDir);
-						System.out.println("MOVING IN A RANDOM DIR");
+						MapLocation newLoc = tryMoveLumberjack(testDir);
+						if (newLoc != null) {
+							iFeed.willFeed(newLoc);
+							System.out.println("MOVING IN A RANDOM DIR");
+						} else {
+							System.out.println("TRIED MOVING IN A RANDOM DIR");
+						}
 				    }
 		    
 				}
+				
+				// This means the lumberjack found the prize and isn't moving until he gets it
+				if (foundPrize) {
+					iFeed.willFeed(myLocation);
+					System.out.println("DIGGING PRIZE");
+				}
+				
 				// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
 				Clock.yield();
 		
@@ -310,20 +339,21 @@ public class LumberjackBot extends GlobalVars {
     	}
     }
     
-    private static boolean tryMoveLumberjack(Direction dir) throws GameActionException {
+    private static MapLocation tryMoveLumberjack(Direction dir) throws GameActionException {
     	return tryMoveLumberjack(dir,15,4);
     }
     
     
-    private static boolean tryMoveLumberjack(Direction dir, float degreeOffset, int checksPerSide) throws GameActionException {
+    private static MapLocation tryMoveLumberjack(Direction dir, float degreeOffset, int checksPerSide) throws GameActionException {
 	
+    	MapLocation newLoc = null;
 		float testDistance = (float) Math.random() * (float) 2;
 		// First, try intended direction
 		if (rc.canMove(dir, testDistance)){
 		    rc.move(dir, testDistance);
-		    
+		    newLoc = rc.getLocation().add(dir, testDistance);
 		    lastDirection = dir;
-		    return true;
+		    return newLoc;
 		}
 	
 		int currentCheck = 1;
@@ -333,20 +363,22 @@ public class LumberjackBot extends GlobalVars {
 		    if(rc.canMove(dir.rotateLeftDegrees(degreeOffset*currentCheck))) {
 				rc.move(dir.rotateLeftDegrees(degreeOffset*currentCheck));
 				lastDirection = dir.rotateLeftDegrees(degreeOffset*currentCheck);
-				return true;
+				newLoc = rc.getLocation().add(dir.rotateLeftDegrees(degreeOffset*currentCheck));
+				return newLoc;
 		    }
 		    // Try the offset on the right side
 		    if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck))) {
 				rc.move(dir.rotateRightDegrees(degreeOffset*currentCheck));
 				lastDirection = dir.rotateRightDegrees(degreeOffset*currentCheck);
-				return true;
+				newLoc = rc.getLocation().add(dir.rotateRightDegrees(degreeOffset*currentCheck));
+				return newLoc;
 		    }
 		    // No move performed, try slightly further
 		    currentCheck+=1;
 		}
 	
 		// A move never happened, so return false.
-		return false;
+		return newLoc;
     }
     
     private static RobotInfo getNearestAlly(){
@@ -369,7 +401,7 @@ public class LumberjackBot extends GlobalVars {
 		return currentAllies[index];
     }
 
-    
+    /*
     private static void tryMoveAway(RobotInfo ally) throws GameActionException{
 	
 		float gap = myLocation.distanceTo(ally.location);
@@ -388,6 +420,6 @@ public class LumberjackBot extends GlobalVars {
 		    }			
 		}
     }
-    
+    */
     
 }
