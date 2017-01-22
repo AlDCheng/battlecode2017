@@ -81,10 +81,27 @@ public class Plant extends GlobalVars {
 		}
 	}
 	
-	public static boolean nearbyGardenersAndArchons(float radius) {
+	public static Direction[] generateHexagonalDirections() {
+		Direction[] outputArray = new Direction[6];
+		outputArray[0] = Direction.getEast();
+		outputArray[1] = outputArray[0].rotateLeftDegrees(60);
+		outputArray[2] = outputArray[1].rotateLeftDegrees(60);
+		outputArray[3] = outputArray[2].rotateLeftDegrees(60);
+		outputArray[4] = outputArray[3].rotateLeftDegrees(60);
+		outputArray[5] = outputArray[4].rotateLeftDegrees(60);
+		
+		return outputArray;
+	}
+	
+	public static boolean checkNearbyTreesAndArchons(float radius) {
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(radius);
+		
+		if (nearbyTrees.length > 0) {
+			return true;
+		}
 		for (RobotInfo robot: nearbyRobots) {
-			if (robot.getType() == RobotType.GARDENER || robot.getType() == RobotType.ARCHON) {
+			if (robot.getType() == RobotType.ARCHON) {
 				return true;
 			}
 		}

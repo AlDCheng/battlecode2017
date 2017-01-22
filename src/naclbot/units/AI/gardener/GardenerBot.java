@@ -124,27 +124,21 @@ public class GardenerBot extends GlobalVars {
         // plants trees around itself in 6 directions
         if (rc.canPlantTree(hexDirArray[0]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
         	rc.plantTree(hexDirArray[0]);
-        	plantedTrees.add(rc.getLocation().add(hexDirArray[0],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;
         } else if (rc.canPlantTree(hexDirArray[1]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(hexDirArray[1]);
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[1],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;
         } else if (rc.canPlantTree(hexDirArray[2]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(hexDirArray[2]);
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[2],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;
         } else if (rc.canPlantTree(hexDirArray[3]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(hexDirArray[3]);
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[3],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;   
         } else if (rc.canPlantTree(hexDirArray[4]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(hexDirArray[4]);
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[4],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;   
         } else if (rc.canPlantTree(hexDirArray[5]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(hexDirArray[5]);
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[5],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;   
         }
 	}
@@ -154,23 +148,18 @@ public class GardenerBot extends GlobalVars {
         // plants trees around itself in 5 directions, leaving one opening
     	if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 6) {
         	rc.plantTree(Direction.getEast());
-        	plantedTrees.add(rc.getLocation().add(hexDirArray[0],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;
         } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(60)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(Direction.getEast().rotateLeftDegrees(60));
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[1],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;
         } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(120)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(Direction.getEast().rotateLeftDegrees(120));
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[2],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;
         } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(180)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
     		rc.plantTree(Direction.getEast().rotateLeftDegrees(180));
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[3],1+GameConstants.BULLET_TREE_RADIUS));
             treeCount++;   
         } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(240)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(Direction.getEast().rotateLeftDegrees(240));
-    		plantedTrees.add(rc.getLocation().add(hexDirArray[4],1+GameConstants.BULLET_TREE_RADIUS));
+    		rc.plantTree(Direction.getEast().rotateLeftDegrees(240));;
             treeCount++;
         } else {
         	buildUnits(dirToOpening);
