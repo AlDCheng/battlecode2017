@@ -195,6 +195,7 @@ public class LumberjackBot extends GlobalVars {
 				    	//RobotInfo closestAlly = getNearestAlly();
 				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation);
 				    	if (newLoc != null) {
+				    		rc.move(newLoc);
 				    		iFeed.willFeed(newLoc);
 				    		System.out.println("MOVING AWAY FROM CLOSEST ALLY");
 				    	}
