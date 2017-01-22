@@ -5,6 +5,7 @@ import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 import java.util.ArrayList;
 
+// ~~ by Illiyia
 
 // This is a class that contains functions related to dodging and positional correction....
 
@@ -17,6 +18,7 @@ public class Yuurei extends GlobalVars {
 	// Do all wrapper for the functions.....
 	// ONLY Use if there are bullets nearby.. Otherwise there is no point in calling this function
 	// Note this ASSUMES that there is nothing at the desired location the robot is currently attempting to move to....
+	// TODO Fix a few errors related to dodging bullets at sharp angles - reduce time complexity if there are many bullets nearby...
 	
 	public static MapLocation attemptDodge(
 			
@@ -43,8 +45,8 @@ public class Yuurei extends GlobalVars {
 		float scanRadius = strideRadius + bodyRadius;		
 		
 		// SYSTEM CHECK - Make sure variables are being called correctly
-		System.out.println("Inputs are..... nearbyBullets: " + nearbyBullets);
-		System.out.println("bodyRadius: " + bodyRadius + "strideRadius" + strideRadius);
+		// System.out.println("Inputs are..... nearbyBullets: " + nearbyBullets);
+		// System.out.println("bodyRadius: " + bodyRadius + "strideRadius" + strideRadius);
 		
 		// Obtain the locations of all bullets within the scanRadius centered at the robot's current location
 		ArrayList <MapLocation> newBulletLocations = getNextBulletLocations(nearbyBullets, scanRadius, startingLocation);
@@ -95,8 +97,7 @@ public class Yuurei extends GlobalVars {
 			canDodge = true;
 			return desiredLocation;
 		}
-	}
-	
+	}	
 	
 	// Function to find the optimal dodging point given a location of bullets....
 	

@@ -5,8 +5,10 @@ import java.util.Arrays;
 
 import battlecode.common.*;
 import naclbot.units.motion.Yuurei;
+import naclbot.units.motion.shoot.Korosenai;
 import naclbot.variables.GlobalVars;
 
+//~~ by Illiyia
 
 /* Short List of Things to Do...............
  * 
@@ -257,7 +259,7 @@ public class ScoutBot extends GlobalVars {
         while (true) {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	// Allow the scout to move by default - would be prety dumb if being stupid was original staste Q________Q...
+            	// Allow the scout to move by default - would be pretty dumb if being stupid was original state Q________Q...
             	wantsToMove = true;
             	
             	// Force base to be null at start of round - rest closest ally
@@ -278,7 +280,7 @@ public class ScoutBot extends GlobalVars {
             	// Update Location and location of base as well as refresh the desired travel location
             	myLocation = rc.getLocation();         	
                 
-            	// Get nearby enemies and allies and bulletsfor use in other functions            	
+            	// Get nearby enemies and allies and bullets for use in other functions            	
             	RobotInfo[] enemyRobots = NearbyUnits(enemy);
             	RobotInfo[] alliedRobots = NearbyUnits(allies);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
@@ -286,7 +288,8 @@ public class ScoutBot extends GlobalVars {
         		// Get information on all trees that are able to be sensed    	
             	TreeInfo[] sensedTrees = addTrees(treeSenseDistance);
             	
-            	// Param to store the direction that the robot wants to move to
+            	// Param to store the direction that the robot wants to move to 
+            		// Initialize every round to the last direction traveled - if possible have the scout continue in that direction for as long as possible...
             	myDirection = lastDirection;
             	
             	// Param to store the location of the nearest ally for the current turn            	
@@ -323,15 +326,18 @@ public class ScoutBot extends GlobalVars {
             	 *************************** Actions to be Completed ******************************
             	 **********************************************************************************/
             	
-            	// Broadcast Tree Data
-            	
-            	// Currently on hold until we find use for it... D:
-            	// broadcastTree(TOTAL_TREE_BROADCAST_LIMIT, sensedTrees);
-            	
-            	// Other broadcasts -> Only do if the unit is 10 units away from any ally #TODO
-            	
-            	// SYSTEM CHECK - See if Broadcasting is completed
-            	// System.out.println("Broadcasting Completed");
+            	// Useless code for now....             	
+            	if (alliedRobots.length > 1000){
+	            	// Broadcast Tree Data
+	            	
+	            	// Currently on hold until we find use for it... D:
+            		broadcastTree(TOTAL_TREE_BROADCAST_LIMIT, sensedTrees);
+	            	
+	            	// Other broadcasts -> Only do if the unit is 10 units away from any ally #TODO
+	            	
+	            	// SYSTEM CHECK - See if Broadcasting is completed
+	            	// System.out.println("Broadcasting Completed");
+            	}
             	
             	// Update the desired place to move to
             	move(enemyRobots);
@@ -339,16 +345,19 @@ public class ScoutBot extends GlobalVars {
               	// SYSTEM CHECK - See if move function has been completed
             	// System.out.println("Move Completed");            	
             	
+            	// -------------------- MMOVE CORRECTION ---------------------//
+            	
             	// Check if the initially selected position was out of bounds...
+            	
             	if (!rc.canMove(desiredMove)){
             		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
             		
-            		lastDirection = new Direction(myLocation, newLocation);
+            		myDirection = new Direction(myLocation, newLocation);
             		
             		desiredMove = newLocation;
             	}
             	
-            	// Check if the initial desired move can be completed
+            	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
             	if(!rc.canMove(desiredMove)){            		
             	
         			// Obtain the reverse direction
@@ -357,31 +366,45 @@ public class ScoutBot extends GlobalVars {
         			if (rc.canMove(myLocation.add(newTestDirection))){            				
         				// Attempt to run the open path finding check
         				MapLocation testMove = Yuurei.tryMoveInDirection(newTestDirection, strideRadius, myLocation);
+        				
         				if (testMove != null){
         					desiredMove = testMove;
             			}
             		}
-            	}
+            	}     	
             	
+            	// Placeholder Variable for any dodge that the dodge function creates....
+            	MapLocation dodgeLocation;
             	
-            	// May use this later idk...
-            	MapLocation dodgeLocation = desiredMove;
-            	
+            	// Currently does nothing may use later XD
             	boolean canDodge = false;
-            	System.out.println("Calling Dodge Function....");
             	
+            	// SYSTEM CHECK - Make sure that the dodge function is called...
+            	// System.out.println("Calling Dodge Function....");
+            	
+            	// Call the dodge function
             	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
             	    			
-            	
+            	// If there is a location that the unit can dodge to..
             	if (dodgeLocation != null){
             		desiredMove = dodgeLocation;
             	}
             	
+            	// See whether or not the robot can move to the current desired move, and move if it does
             	if(rc.canMove(desiredMove) && wantsToMove){
             		rc.move(desiredMove);
             	}
+            	// Unit cannot dodge something so... It cannot move Q__Q            	
             	else{
+            		
             		System.out.println("This scout cannot find anywhere to go and is sad Q____Q)");
+            	}
+            	
+            	
+            	// ------------------------ Shooting -----------------------------//
+            	
+            	if (trackID >= 0){
+            		Korosenai.tryShootAtEnemy(trackedRobot.location, myLocation, 0, alliedRobots);
             	}
     
             	// Make sure to show appreciation for the one and only best girl in the world.
@@ -732,7 +755,7 @@ public class ScoutBot extends GlobalVars {
     		// Make sure that it is possible to reach the new considered location
     		if (myLocation.distanceTo(newCheck) < strideRadius){    			
     			// Make sure the location has a clear line of sight
-    			if (!isLineBLocked(trackedRobot.location, newCheck, obstacleCheck)){
+    			if (!Korosenai.isLineBLockedByTree(trackedRobot.location, newCheck, obstacleCheck)){
     				return newCheck;
     			}
     		}
@@ -741,6 +764,8 @@ public class ScoutBot extends GlobalVars {
     	return null;    	
     }
     
+    
+ 
     
     // Function to execute when the robot is attempting to track down a gardener
     
@@ -773,10 +798,14 @@ public class ScoutBot extends GlobalVars {
 	    	// Otherwise if the gardener is fairly close...
 	    	else{
 	    		// See if it is possible for the gardener to shoot at the robot from where it is
-	    		boolean noShoot = isLineBLocked(myLocation,trackedRobot.location, obstacleCheck);
+	    		boolean noShoot = Korosenai.isLineBLockedByTree(trackedRobot.location, myLocation, obstacleCheck);
 	    		
 	    		// If the robot was unable to shoot, attempt to find a shooting location
 	    		if (noShoot){
+	    			
+	    			// SYSTEM CHECK - Print out that the scout wants to shoot a robot but there is a tree in the way...
+	    			System.out.println("Attempting to shoot from currentlocation is impossible - path blocked to target");
+	    			
 	    			// Get the direction to the robot FROM the target - should be opposed to dir
 	    			Direction dirFromTarget = new Direction(trackedRobot.location, myLocation);
 	    			
@@ -966,47 +995,6 @@ public class ScoutBot extends GlobalVars {
 	/*****************************************************************************
 	 ******************* Miscellaneous Functions************** ********************
 	 ****************************************************************************/   
-	
-    // Function to determine if there is any tree in the line between one location and the other
-    
-    private static boolean isLineBLocked(MapLocation start, MapLocation end, float spacing) throws GameActionException {
-    	
-    	// Find the direction from the starting point to the end
-    	Direction search = start.directionTo(end);
-    	
-    	// Iterate up through the length of the gap between the two selected points
-    	for(int i = 0; i * spacing < start.distanceTo(end); i++){
-    		
-    		// If there is a tree in the way, say so..,
-    		if (rc.isLocationOccupiedByTree(start.add(search, (float)  (i * spacing)))){
-    			
-    			blockingTree = rc.senseTreeAtLocation(myLocation.add(search, (float) (i * spacing)));
-    			
-    		   	// SYSTEM CHECK print light pink dot at where the blocking tree is located...
-    	    	rc.setIndicatorDot(blockingTree.location, 255, 180, 190);
-    			
-    			return true;
-    		}
-    	// If by the end of the for loop nothing is there, then we return false, meaning that the line isn't blocked
-    	}
-    	return false;
-    }
-
-    
-    // Get location of home Archon if it has broadcasted previously
-	// TODO
-    
-	private static MapLocation updateArchon() throws GameActionException{
-		
-		MapLocation base = new MapLocation(rc.readBroadcast(1 + homeArchon * ARCHON_OFFSET), rc.readBroadcast(2 + homeArchon * ARCHON_OFFSET));
-		
-		// If no base has yet been broadcasted
-		if (base.x ==  0 && base.y == 0){
-			return null;
-		} else{ // If they have been broadcasted
-			return base;
-		}	
-	}
 	
 	
 	// Function to obtain the robot info units in the specified team

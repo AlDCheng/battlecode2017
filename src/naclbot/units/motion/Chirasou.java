@@ -1,8 +1,9 @@
 // Dodging collisions with bullets
 package naclbot.units.motion;
 import battlecode.common.*;
-
 import naclbot.variables.GlobalVars;
+
+//~~ by Illiyia
 
 // This is a class that contains functions related to group movement and dispersion
 
