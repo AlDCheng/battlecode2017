@@ -24,10 +24,11 @@ public class GlobalVars {
 	
 	public static int SCOUT_CHANNEL;
 	public static int SCOUT_MESSAGE_OFFSET;
-	public static int START_SCOUT_LIMIT;
+	public static int SCOUT_LIMIT;
 	public static int SCOUT_UPDATE_FREQUENCY;
 	public static int SCOUT_TRACKING;
 	public static int SCOUT_RATIO;
+	public static int START_SCOUT_COUNT;
 	
 	public static int TANK_CHANNEL;
 	
@@ -123,13 +124,15 @@ public class GlobalVars {
 			// Type 4: Update of tracked object
 			// ...
 		
-		START_SCOUT_LIMIT = 5; // Limit to number of Scouts
+		SCOUT_LIMIT= 5; // Limit to number of Scouts
 
 		SCOUT_UPDATE_FREQUENCY = 4; // How often Scouts regularly display that they are alive
 		
 		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_LIMIT * SCOUT_UPDATE_FREQUENCY + 1;
 		
 		SCOUT_RATIO = 10; 
+		
+		START_SCOUT_COUNT = 5;
 		
 		LUMBERJACK_CHANNEL = 140;
 		START_LUMBERJACK_COUNT = 10; //builds 10 lumberjacks before soldiers/tanks
