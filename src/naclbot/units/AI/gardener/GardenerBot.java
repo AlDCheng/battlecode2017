@@ -80,7 +80,10 @@ public class GardenerBot extends GlobalVars {
                 if (canMove) {
                 	if (Chirasou.Disperse(rc.getTeam(),rc.getLocation()) != null) {
                 		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation());
-                		Move.tryMove(rc.getLocation().directionTo(destination));
+                		Direction dirToDestination = rc.getLocation().directionTo(destination);
+                		if (rc.canMove(dirToDestination)) {
+                			Move.tryMove(dirToDestination);
+                		}
                 	}
                 }
 
@@ -146,20 +149,20 @@ public class GardenerBot extends GlobalVars {
 	public static void incompleteSurroundTrees(float spacing) throws GameActionException {
         
         // plants trees around itself in 5 directions, leaving one opening
-    	if (rc.canPlantTree(Direction.getEast()) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-        	rc.plantTree(Direction.getEast());
+    	if (rc.canPlantTree(hexDirArray[0]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
+        	rc.plantTree(hexDirArray[0]);
             treeCount++;
-        } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(60)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(Direction.getEast().rotateLeftDegrees(60));
+        } else if (rc.canPlantTree(hexDirArray[1]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
+    		rc.plantTree(hexDirArray[1]);
             treeCount++;
-        } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(120)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(Direction.getEast().rotateLeftDegrees(120));
+        } else if (rc.canPlantTree(hexDirArray[2]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
+    		rc.plantTree(hexDirArray[2]);
             treeCount++;
-        } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(180)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(Direction.getEast().rotateLeftDegrees(180));
+        } else if (rc.canPlantTree(hexDirArray[3]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
+    		rc.plantTree(hexDirArray[3]);
             treeCount++;   
-        } else if (rc.canPlantTree(Direction.getEast().rotateLeftDegrees(240)) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(Direction.getEast().rotateLeftDegrees(240));;
+        } else if (rc.canPlantTree(hexDirArray[4]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
+    		rc.plantTree(hexDirArray[4]);;
             treeCount++;
         } else {
         	buildUnits(dirToOpening);
