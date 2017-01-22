@@ -21,21 +21,20 @@ import naclbot.variables.BroadcastChannels;
 
 /* Brief Overview of Indicator Lines.....
  * 
- *  Yellow Line - Robot is currently RUNNING AWAY - Yellow line indicates the position it wishes to flee from
- *  Black Dot - Any enemy the scout deems as too hostile to track will be marked by a black dot
+ *  ORANGE DOT - Tree not to be broadcasted this turn
+ *  BLUE DOT - Tree to be broadcasted this turn
+ *   
+ *  LIGHT GREY LINE - Line that the scout initially wishes to go if it is not tracking anything....
  *  
- *  Pink Dot - Any tree blocking a line of fire of the scout
+ *  BLACK DOT  - Any enemy the scout deems as too hostile to track will be marked by a black dot
+ *  YELLOW LINE - Robot is currently running away from unit with black dot... indicates the position it wishes to flee from
+ * 
+ *  VIOLET LINE - Line to the location of the robot that the scout is tracking.....
  *  
- *  Grey Line - Under normal operation, the scout chooses to display a grey line for the location it wishes to travel to
- *  Orange Line - If the scout originally intended to move in a manner that doesn't work display this line
- *  
- *  Purple Line - While the scout is tracking, this shows the enemy the scout is currently tracking...
- *  Light Blue Line - While the scout is tracking, this shows where the scout originally intended to go
- *  Green-Yellow Line - If the scout wishes to shoot at something but cant, green yellow line indicates change of position the scout wants to do
- *  
- *  TO WORK ON
- *  Bright Red Line - Display any correction for dodging
+ *  GREEN-YELLOW LINE - Correction to a non-movement from the scout whilst following a gardener - moves to a new location where it can actually shoot
+ *  LIGHT BLUE GREEN LINE - Location to move to if the gardener has moved that turn....
  */
+
 
 public class ScoutBot extends GlobalVars {
 	
@@ -46,7 +45,7 @@ public class ScoutBot extends GlobalVars {
 	
 	// Variables for self and team recognition
 	public static int id;
-	public static int scout_number;
+	public static int scoutNumber;
 	private static Team enemy;
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.SCOUT.strideRadius;
@@ -129,6 +128,9 @@ public class ScoutBot extends GlobalVars {
     public static int[] noTrack = new int[3];   
     public static int noTrackUpdateIndex; 
     
+    // Variable to see how long the robot has not tracked another unit for
+    public static int hasNotTracked;
+    
     // ------------- SHOOTING VARIABLES -------------//
   
 	// Separation distance of shoot check...
@@ -184,14 +186,16 @@ public class ScoutBot extends GlobalVars {
         allies = rc.getTeam();
         id = rc.getID();       
         
-        scout_number = rc.readBroadcast(SCOUT_NUMBER_CHANNEL);
-        currentNumberofScouts = scout_number + 1;
+        // Get own scoutNumber - important for broadcasting 
+        scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
+        currentNumberofScouts = scoutNumber + 1;
         
+        // Get the current round number......
         Rem_is_better = rc.getRoundNum();
         initRound = Rem_is_better;
         
         // Get archon count and set home archon as one of those archons currently in service
-        int archonCount = rc.readBroadcast(ARCHON_NUMBER_CHANNEL);
+        int archonCount = rc.readBroadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL);
         homeArchon = (int) (Math.random() *archonCount);
         
         // SYSTEM CHECK to see if init() is completed   
@@ -212,7 +216,7 @@ public class ScoutBot extends GlobalVars {
         
         
         // Update SCOUT_CHANNEL
-        rc.broadcast(SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
+        rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
                 
         // SYSTEM CHECK to see if init() is completed   
         // System.out.println("Scout successfully initialized!");		
@@ -238,6 +242,12 @@ public class ScoutBot extends GlobalVars {
         while (true) {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
+            	// If the robot has not tracked anything for a long time fill the no track with -1 so it can track something again
+            	if (hasNotTracked > 25){
+            		Arrays.fill(noTrack, -1);
+            	}
+            	
             	// Allow the scout to move by default - would be pretty dumb if being stupid was original state Q________Q...
             	wantsToMove = true;
             	
@@ -296,7 +306,7 @@ public class ScoutBot extends GlobalVars {
              	}             	
                 
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
-            	desiredMove = null;
+            	desiredMove = myLocation;
             	            	
              	/***********************************************************************************
             	 *************************** Actions to be Completed ******************************
@@ -314,6 +324,8 @@ public class ScoutBot extends GlobalVars {
 	            	// SYSTEM CHECK - See if Broadcasting is completed
 	            	// System.out.println("Broadcasting Completed");
             	}
+            	
+            	broadcastNearestEnemyLocation(enemyRobots);
             	
             	// Update the desired place to move to
             	move(enemyRobots);
@@ -391,6 +403,11 @@ public class ScoutBot extends GlobalVars {
                 lastPosition =  rc.getLocation();
                 lastDirection = new Direction(myLocation, lastPosition);
                 
+                // If the robot was not tracking, increment the value by one round....
+                if (!isTracking){
+                	hasNotTracked += 1;
+                }
+                
                 Clock.yield();
 
             } catch (Exception e) {
@@ -451,8 +468,8 @@ public class ScoutBot extends GlobalVars {
 					// System.out.println("Will attempt to update info about tree with ID: " + canSend[canSendCounter-1]);
 				}
 			}
-			// SYSTEM CHECK draw a red dot to notify which trees are not even attempted to be broadcasted this turn
-			rc.setIndicatorDot(newTrees[i].location, 200, 200, 200);	
+			// SYSTEM CHECK draw an ORANGE DOT to notify which trees are not even attempted to be broadcasted this turn
+			rc.setIndicatorDot(newTrees[i].location, 255, 165, 200);	
 		}
 		
 		// SYSTEM CHECK to see which trees are currently stored within the dynamic memory of the robot
@@ -512,7 +529,7 @@ public class ScoutBot extends GlobalVars {
 							// SYSTEM CHECK to make sure the scout is actually sending trees
 							System.out.println("Currently broadcasting the location of the tree with ID: " + canSend[i].ID);						
 							
-							// SYSTEM CHECK draw a blue dot to notify which tree is currently being broadcasted
+							// SYSTEM CHECK draw a BLUE DOT to notify which tree is currently being broadcasted
 							rc.setIndicatorDot(canSend[i].location, 0, 0, 200);
 							
 							// Broadcast Information
@@ -529,8 +546,8 @@ public class ScoutBot extends GlobalVars {
 							sentThisTurn += 1;						
 						}
 					} else{						
-						// SYSTEM CHECK draw a red dot to notify which trees are not broadcasted this turn
-						rc.setIndicatorDot(canSend[i].location, 200, 0, 0);					
+						// SYSTEM CHECK draw an ORANGE DOT to notify which trees are not broadcasted this turn
+						rc.setIndicatorDot(canSend[i].location, 255, 165, 0);					
 					}				
 					// If the number sent thus far is equivalent to the cap of trees sent per turn				
 					if(sentThisTurn == totalBroadcastLimit - otherSent){						
@@ -552,15 +569,59 @@ public class ScoutBot extends GlobalVars {
     
     // Get the location of the nearest enemy and broadcast.... Clearly if you can see the enemy it is likely that they can see you as well
     
-	private static void broadcastNearestEnemyLocation(RobotInfo[] enemyRobots){
+	private static void broadcastNearestEnemyLocation(RobotInfo[] enemyRobots) throws GameActionException{
 		
+		// Get information and the closest enemy
 		RobotInfo nearestEnemy = getNearestEnemy(enemyRobots);
 		
+		// See who last updated the scout index
+		int lastUpdatedScoutNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS);
+			
+		// SYSTEM CHECK - Check who last updated the channel....
+		// System.out.println("The last scout to have updated this channel has scoutNumber: " + lastUpdatedScoutNumber);
+		if (lastUpdatedScoutNumber >= scoutNumber){ 
+			
+			// Clear the number of signals sent this turn
+			rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, 0);
+			rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, -1);
+			// SYSTEM CHECK - Tell that the channel has been cleared
+			System.out.println("Updater channel for enemy locations reset");				
+		}
 		
-		
+		// Make sure there is an enemy nearby before attempting to broadcast information.....
+		if (nearestEnemy != null){
+			
+			// SYSTEM CHECK.. - Since there was an enemy nearby... Notify that something may be sent
+			System.out.println("Enemy nearby - will attempt to broadcast location");
+			
+			int x = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL);
+			
+			// Check to see if not too many enemy locations have already been broadcasted......
+			if (x < BroadcastChannels.ENEMY_LOCATION_LIMIT){
+				
+				// Get the current offset...
+				int y = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_TOTAL_CHANNEL);
+				
+				// Compute the channel to broadcast at.....
+				int channelToBroadcast = BroadcastChannels.ENEMY_LOCATION_START_CHANNEL + y * BroadcastChannels.ENEMY_INFORMATION_OFFSET;
+				
+				// Inform others of the offset, that a new scout has updated the number and the total that have been updated this turn
+				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_TOTAL_CHANNEL, (y + 1) % BroadcastChannels.ENEMY_LOCATION_LIMIT);
+				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, x + 1);
+				rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, scoutNumber);
+				
+				// Broadcast all relevant information
+				rc.broadcast(channelToBroadcast, nearestEnemy.ID);
+				rc.broadcast(channelToBroadcast + 1, (int) (nearestEnemy.location.x * 100));
+				rc.broadcast(channelToBroadcast + 2, (int) (nearestEnemy.location.y * 100));
+				rc.broadcast(channelToBroadcast + 3, BroadcastChannels.getRobotTypeToInt(nearestEnemy));
+				
+				// SYSTEM CHCK - If information has been sent, give overview
+				System.out.println("This scout with scoutNumber:"  + scoutNumber + " has updated the channel " + channelToBroadcast);
+				System.out.println("The broadcast have information on the enemy with ID: " + nearestEnemy.ID + " which has type number" + BroadcastChannels.getRobotTypeToInt(nearestEnemy));
+			}				
+		}		
 	}
-    
-    
     
     /*****************************************************************************
 	 ****************** Tracking and Motion Related Functions ********************
@@ -595,7 +656,7 @@ public class ScoutBot extends GlobalVars {
     			// Posit the desired move location as a forward movement along the last direction
     			desiredMove = myLocation.add(myDirection, (float) (Math.random() * 0.5  + 1));
     			
-    			// SYSTEM Check - Set light grey line indicating where the scout would wish to go
+    			// SYSTEM Check - Set LIGHT GREY LINE indicating where the scout would wish to go
     			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
        			
         		// SYSTEM CHECK - Notify that nothing to be scouted has been found
@@ -619,7 +680,7 @@ public class ScoutBot extends GlobalVars {
     		
     		else{ // Otherwise the enemy is a soldier/tank/lumberjack and it would be wise to run away!!
     			
-    			// SYSTEM CHECK - Display black indicator dot on nearest hostile to run away from...
+    			// SYSTEM CHECK - Display BLACK DOT on nearest hostile to run away from...
     			rc.setIndicatorDot(trackedRobot.location, 0, 0, 0);
     			
     			runAway(enemyRobots);
@@ -690,13 +751,13 @@ public class ScoutBot extends GlobalVars {
 	    	
 	    	desiredMove = myLocation.add(targetDir, (float) strideRadius);
 	    	
-	    	// SYSTEM CHECK Print line from current location to intended move location - yellow line...
+	    	// SYSTEM CHECK Print a YELLOW LINE from current location to intended move location
 	    	rc.setIndicatorLine(myLocation, desiredMove, 255, 255, 0);   
 	    	
 	    	// Reset the enemy track ID, since it is not something that the robot would like to follow at the moment
 	    	trackID = -1;
         	roundsCurrentlyTracked = 0;	 
-        	isTracking = true;
+        	isTracking = false;
     	}
     	
     	// If the scout has lost sight of the scary enemy right after seeing it (shouldn't happen at all but if it does here is code to handle it
@@ -764,8 +825,8 @@ public class ScoutBot extends GlobalVars {
     		// Update location of tracked robot - the Gardener...
     		trackedRobot = rc.senseRobot(trackID);
     		
-    	   	// SYSTEM CHECK Print line from current location to intended move location violet line
-        	rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);   	
+    	   	// SYSTEM CHECK Print a VIOLET LINE from current location to the gardener's location
+        	// rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);   	
     		
 	    	// Get distance and direction between scout and the Gardener
 	    	float gap = myLocation.distanceTo(trackedRobot.location);
@@ -777,11 +838,11 @@ public class ScoutBot extends GlobalVars {
 	    	}
 	    		
 	    	// If the gap between the scout and the gardener is too large, move towards the gardener....
-	    	if (gap > 6){
+	    	if (gap > 4){
 		    	// Update the gardener's location
 	    		gardenerLocation = trackedRobot.location;
 	    		// Elect to just move towards the gardener
-	    		Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove);     		
+	    		desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove);     		
 	    	}
 	    	// Otherwise if the gardener is fairly close...
 	    	else{
@@ -811,7 +872,7 @@ public class ScoutBot extends GlobalVars {
 	    					
 	    			    	desiredMove = tryFiringLocation;
 	    			    	
-	    			    	// SYSTEM CHECK print green-yellow to new location to fire from
+	    			    	// SYSTEM CHECK print GREEN_YELLOW to new location to fire from
 	    			    	rc.setIndicatorLine(myLocation, tryFiringLocation, 175, 255, 50);
 	    		    	}	    			
 	    			}
@@ -819,7 +880,7 @@ public class ScoutBot extends GlobalVars {
 	    		    	// Update the gardener's location
 	    	    		gardenerLocation = trackedRobot.location;
 	    				// If no firing location can be found simply utilize the tracking portion of the algorithm
-	    	    		Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove);   
+	    	    		desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove);   
 	    			}
 	    		}
 	    		else{
@@ -835,7 +896,7 @@ public class ScoutBot extends GlobalVars {
 		    		
 		    		desiredMove = new MapLocation(myLocation.x + delX * ranX, myLocation.y + delY * ranY);
 		    		
-		    	   	// SYSTEM CHECK Print line from current location to intended move location - light blue green
+		    	   	// SYSTEM CHECK Print LIGHT BLUE GREEN LINE from current location to intended move location when tracking gardener
 		        	rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			    		
 		    		
     		    	// Update the gardener's location
@@ -869,20 +930,23 @@ public class ScoutBot extends GlobalVars {
 	private static void track(RobotInfo[] enemyRobots, float distance) throws GameActionException{
 		
 		// If the robot can currently sense the robot it is tracking and if it has not been tracking this robot for too long
-    	if (rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 15){
+    	if (rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 25){
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		System.out.println("I am currently tracking a robot with ID: " + trackID);
     		
     		// Update location of tracked robot 
     		trackedRobot = rc.senseRobot(trackID);
-    		// SYSTEM CHECK - Draw a violet line between current position and position of robot
-    		rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
+    		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
+    		// rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
     		
     		// Increment number of rounds tracked
         	roundsCurrentlyTracked +=1;
         	
-        	Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, distance);    
+        	desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, distance);
+        	
+        	isTracking = true;
+        	hasNotTracked = 0;
         	
         // If the robot has been tracking its current prey for too long or has lost sight of its target
     	} else {

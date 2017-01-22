@@ -7,22 +7,31 @@ import battlecode.common.RobotType;
 // Enumeration of all broadcast channels that we will be using
 public class BroadcastChannels {
 	
+	// ----------------------- ARCHON INFORMATION -------------------------//
+	
+	// Stores how many channels have been updated with information this turn
+	public final static int ARCHON_NUMBER_CHANNEL = 0;
+
+	// ----------------------- SCOUT INFORMATION -------------------------//
+	
+	// Stores how many channels have been updated with information this turn
+	public final static int SCOUT_NUMBER_CHANNEL = 9995;
+	
 	
 	// ----------------------- TREE INFORMATION -------------------------//
 	
-	// STores how many trees have been updated this turn.... (should be sent by the first
-	public final int TREES_SENT_THIS_TURN_CHANNEL = 2000;
-	public final int TOTAL_TREE_NUMBER_CHANNEL = 2001;
-	public final int TREE_DATA_START_CHANNEL = 2002;
+	// STores how many trees have been updated this turn.... (should be sent by the first scout)
+	public final static int TREES_SENT_THIS_TURN_CHANNEL = 2000;
+	public final static int TOTAL_TREE_NUMBER_CHANNEL = 2001;
+	public final static int TREE_DATA_START_CHANNEL = 2002;
 	
 	// ------------------------  ENEMY INFORMATION ----------------------//
 	
 	// Enemy Information from Scouts
-		// Bit 0 - Tells whether or not this channel has been updated this turn or not
-		// Bit 1 - Gives Enemy ID
-		// Bit 2 - Gives Enemy X
-		// Bit 3 - Gives Enemy Y
-		// BIT 4 - Gives Enemy Type
+		// Bit 0 - Gives Enemy ID
+		// Bit 1 - Gives Enemy X
+		// Bit 2 - Gives Enemy Y
+		// BIT 3 - Gives Enemy Type
 			// Type Conversion: 
 			// Type 0 - Archon
 			// Type 1 - Gardener
@@ -31,20 +40,23 @@ public class BroadcastChannels {
 			// Type 4 - Lumberjack
 			// Type 5 - Tank	
 	
+	// Stores whoever last updated the channel (their scout number)...	
+	public final static int LAST_UPDATER_ENEMY_LOCATIONS = 1000;
+	
 	// Stores how many channels have been updated with information this turn
-	public final int ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL = 1000;
+	public final static int ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL = 1001;
 	
 	// Placeholder for however many enemy locations we would like to store - indexes which ones to read
-	public final int ENEMY_LOCATIONS_TOTAL_CHANNEL = 1001;
+	public final static int ENEMY_LOCATIONS_TOTAL_CHANNEL = 1002;
 	
 	// First channel to actually store data for enemy locations
-	public final int ENEMY_LOCATION_START_CHANNEL = 1002;
+	public final static int ENEMY_LOCATION_START_CHANNEL = 1003;
 		
 	// Sincere there are five ints needed to convey one unit of information
-	public final int ENEMY_INFORMATION_OFFSET = 5;
+	public final static int ENEMY_INFORMATION_OFFSET = 4;
 	
 	// Upper bound on the number of enemies that can be sent in one turn (to prevent excess information levels
-	public final int ENEMY_LOCATION_LIMIT = 5;
+	public final static int ENEMY_LOCATION_LIMIT = 5;
 	
 	// Convert a robot's type converted to an int for transmission...
 	

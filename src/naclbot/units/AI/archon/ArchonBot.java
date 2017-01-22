@@ -2,64 +2,92 @@
 package naclbot.units.AI.archon;
 import battlecode.common.*;
 
-import naclbot.variables.ArchonVars;
+import naclbot.variables.GlobalVars;
 import naclbot.variables.DataVars;
 import naclbot.variables.DataVars.*;
 
+import naclbot.variables.BroadcastChannels;
+
+
 import naclbot.units.motion.*;
 import naclbot.units.motion.search.TreeSearch;
-import naclbot.units.motion.routing.PathPlanning;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ArchonBot extends ArchonVars {
-	public static int current_round = 0;
+//~~ Updated by Illiyia~~
 
-	public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
-	public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};	
-
-	public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
+public class ArchonBot extends GlobalVars {
 	
+	// Variable for storing the current round of the game
+	public static int current_round = 0;
+	
+	// Variables important to self and team recognition
 	public static int archonNumber;
 	public static int ID;
-	public static Team enemy;
-	public static Team allies;
-	
+	private static Team enemy;
+	private static Team allies;	
+	private static final float strideRadius = battlecode.common.RobotType.ARCHON.strideRadius;
+	private static final float bodyRadius = battlecode.common.RobotType.ARCHON.bodyRadius;
+
+
+	// Locations to store data on enemy archons....
 	public static Tuple[] archonLocations = new Tuple[5];
 	public static int[] archonIDs = new int[5];
-	public static int lastAttackArchon;
 	
+	// Parameters to store location of self (at beginning of round)
+	public static MapLocation myLocation;
+
+	// Direction at which the archon traveled last
+	private static Direction lastDirection;
+	private static MapLocation lastPosition;
+	
+	// Direction for use each round
+	private static Direction myDirection;
+	
+	
+	
+	// ------ TO BE CHANGED ------ //
+	
+	// List of bullet trees
 	public static MapLocation treeLoc;
 	public static ArrayList<MapLocation> bulletTreeList = new ArrayList<MapLocation>();
 	
-	public static MapLocation myLocation;
-	public static int lastClumpAlert;
 	
 	public static int numBroadcasted;
 	public static int currentTreeSize; 
+	
+
+	// dummyTree variable for initializing the BST of tree information as well as BST initialization
+	public static final basicTreeInfo dummyTree = new basicTreeInfo(-1, -1, -1, -1);
+	public static final basicTreeInfo[] dummyTreeInfo = {dummyTree};
+	public static binarySearchTree treeList = new binarySearchTree(dummyTreeInfo);
 	
 	public static int lastCount;
 	
 	public static int[] givenIDs = new int [TOTAL_TREE_NUMBER];
 	
+	public static int lastAttackArchon;
+	
+	// ------ TO BE CHANGED ------ //
+	
+	
 	// Starting game phase
 	
 	public static void init() throws GameActionException {
+		
+		// SYSTEM CHECK Initialization start check
 		System.out.println("Archon initialized!");
 		
-		// Initialize unit count
-		archonVarInit();
-		
+		// Initialize unit count		
 		rc.broadcast(GARDENER_BUILDER_CHANNEL, 0);
-		rc.broadcast(GARDENER_WATERER_CHANNEL, 0);
-		
-
-		
+		rc.broadcast(GARDENER_WATERER_CHANNEL, 0);		
 		
 		// Receive archonNumber from the channel and update
-		archonNumber = rc.readBroadcast(ARCHON_CHANNEL);
-		rc.broadcast(ARCHON_CHANNEL, archonNumber + 1);
+		archonNumber = rc.readBroadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL);
+		rc.broadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL, archonNumber + 1);
+		
+		// SYSTEM CHECK Make sure that the archon correctly identifies its number
 		System.out.println("my Archon number is: " + archonNumber);
 		
 		ID = rc.getID();
@@ -69,8 +97,7 @@ public class ArchonBot extends ArchonVars {
 		Arrays.fill(archonIDs, -1);
 		lastAttackArchon = Integer.MIN_VALUE;
 		
-		numBroadcasted = 0;
-		
+		numBroadcasted = 0;		
 		start();		
 	}
 	
@@ -92,10 +119,7 @@ public class ArchonBot extends ArchonVars {
             	if(current_round > 100) {
             		checkStatus = false;
             	}            	
-            	// Check for all broadcasts
-            	
-            	ArrayList<MapLocation> broadcastingEnemyUnits = getEnemyBroadcastLocations();
-            	
+          	
 
             	// Generate a random direction
                 Direction dir = Move.randomDirection();
@@ -411,15 +435,7 @@ public class ArchonBot extends ArchonVars {
 	    }
 		
 	}
-	
-	
-	private static ArrayList<MapLocation> getEnemyBroadcastLocations(){
-		
-		MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
-    	ArrayList<MapLocation> broadcastingEnemyUnits = enemyBroadcasts(broadcastLocations);
-    	return broadcastingEnemyUnits;
-	}
-	
+
 
 	
 	private static Tuple[] detectEnemyGroup() throws GameActionException{
@@ -477,8 +493,7 @@ public class ArchonBot extends ArchonVars {
 			}
 			
 		}
-		return newUpdate;
-		
+		return newUpdate;		
 	}
 	
 	public static Node getTerm(Node root, int index){
