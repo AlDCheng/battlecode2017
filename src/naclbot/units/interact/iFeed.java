@@ -26,9 +26,8 @@ public class iFeed extends GlobalVars {
     	}
     	
     	// If robot did not die, then determine if they will die from lumberjack strikes
-    	//float strikeRadius = rc.getType().bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS;
-    	float strikeRadius = GameConstants.LUMBERJACK_STRIKE_RADIUS;
-    	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(strikeRadius,rc.getTeam().opponent());
+    	
+    	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS,rc.getTeam().opponent());
     	
     	if (nearbyRobots.length > 0) {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
@@ -40,17 +39,13 @@ public class iFeed extends GlobalVars {
     		}
     		
     	} else {
-    		System.out.println("WILL NOT DIE THIS TIME TEEHEE");
     		return false;
     	}
-    	
-    	
     }
     
     public static float healthLeftLumberjacks(RobotInfo[] nearbyRob, float currHealth) {
     	float totalLumberjackDamage = 0;
     	
-    	int i;
     	for (RobotInfo robot: nearbyRob) {
     		if (robot.getType() == RobotType.LUMBERJACK) {
     			totalLumberjackDamage += 2;

@@ -100,6 +100,7 @@ public class LumberjackBot extends GlobalVars {
 				    	//RobotInfo closestAlly = getNearestAlly();
 				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation);
 				    	if (newLoc != null) {
+				    		rc.move(newLoc);
 				    		iFeed.willFeed(newLoc);
 				    		System.out.println("MOVING AWAY FROM CLOSEST ALLY");
 					    }
@@ -182,11 +183,7 @@ public class LumberjackBot extends GlobalVars {
 				    	rc.move(toEnemy);
 				    	System.out.println("TRYING TO MOVE TO ENEMY");
 				    }
-				    /*
-				    Move.tryMove(toEnemy);
-				    willFeed();
-				    System.out.println("TRYING TO MOVE TO ENEMY");
-				    */
+
 				}			    
 		    
 				// If hasn't moved yet then get away from ally or move randomly
@@ -381,7 +378,7 @@ public class LumberjackBot extends GlobalVars {
 		// A move never happened, so return false.
 		return newLoc;
     }
-    
+    /*
     private static RobotInfo getNearestAlly(){
 		
 		float minimum = Integer.MAX_VALUE;
@@ -402,7 +399,7 @@ public class LumberjackBot extends GlobalVars {
 		return currentAllies[index];
     }
 
-    /*
+    
     private static void tryMoveAway(RobotInfo ally) throws GameActionException{
 	
 		float gap = myLocation.distanceTo(ally.location);
