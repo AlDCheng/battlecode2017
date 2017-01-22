@@ -76,13 +76,20 @@ public class GardenerBot extends GlobalVars {
                 //check if there are trees or archons nearby
                 nearbyTreesAndArc = Plant.checkNearbyTreesAndArchons(6);
                 
+                //check if there are nearby allied units
+                RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
+                
                 //default motion
                 if (canMove) {
-                	if (Chirasou.Disperse(rc.getTeam(),rc.getLocation()) != null) {
+                	if (nearbyAllies.length > 0) {
+                		System.out.println("before");
                 		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation());
+                		System.out.println(destination);
                 		Direction dirToDestination = rc.getLocation().directionTo(destination);
                 		if (rc.canMove(dirToDestination)) {
+                			System.out.println("after");
                 			Move.tryMove(dirToDestination);
+                			System.out.println("after2");
                 		}
                 	}
                 }
