@@ -130,6 +130,8 @@ public class GardenerBot extends GlobalVars {
 	
 	
 	public static void completeSurroundTrees(float spacing) throws GameActionException {
+		//hexDirArray is an array with 6 Direction objects that point to 0, 60, 120, 180, 240, 300 degrees
+		//these are the directions that the gardeners will plant trees in to surround themselves
 		
         // plants trees around itself in 6 directions
         if (rc.canPlantTree(hexDirArray[0]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
@@ -154,7 +156,9 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void incompleteSurroundTrees(float spacing) throws GameActionException {
-        
+		//hexDirArray is an array with 6 Direction objects that point to 0, 60, 120, 180, 240, 300 degrees
+		//these are the directions that the gardeners will plant trees in to surround themselves
+		
         // plants trees around itself in 5 directions, leaving one opening
     	if (rc.canPlantTree(hexDirArray[0]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
         	rc.plantTree(hexDirArray[0]);
@@ -177,6 +181,7 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void waterSurroundingTrees() throws GameActionException {
+		//first checks if there are trees it can water, then waters
 		if (lowHealthTrees.size() > 0) {
             if (rc.canWater(lowHealthTrees.get(0))) {
             	rc.water(lowHealthTrees.get(0));
@@ -185,11 +190,9 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void buildUnits(Direction dirToBuild) throws GameActionException {
-		//default moving status
-	    //Move.tryMove(Move.randomDirection());
 	    
-	    //try to build SCOUT, make sure not over SCOUT_LIMIT
-	    if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild) && rc.isBuildReady() && scoutCount < SCOUT_LIMIT) {
+	    //try to build SCOUT, make sure to build START_SCOUT_LIMIT scouts first, then subject to ratio limitations
+	    if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild) && rc.isBuildReady() && (SCOUT_RATIO*scoutCount < soldierCount || scoutCount < START_SCOUT_COUNT)) {
 	        rc.buildRobot(RobotType.SCOUT, dirToBuild);
 	        rc.broadcast(SCOUT_CHANNEL, scoutCount+1);
 	    }
@@ -198,7 +201,7 @@ public class GardenerBot extends GlobalVars {
 	        rc.buildRobot(RobotType.SOLDIER, dirToBuild);
 	        rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
 	    } 
-	    //try to build LUMBERJACK, "
+	    //try to build LUMBERJACK, make sure to build START_LUMBERJACK_COUNT lumberjacks first, then subject to ratio limitations
 	    else if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild) && rc.isBuildReady() && (LUMBERJACK_RATIO*lumberjackCount < soldierCount || lumberjackCount < START_LUMBERJACK_COUNT)) {
 	        rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
 	        rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
