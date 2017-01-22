@@ -26,8 +26,8 @@ public class iFeed extends GlobalVars {
     	}
     	
     	// If robot did not die, then determine if they will die from lumberjack strikes
-    	//float strikeRadius = rc.getType().bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS;
-    	float strikeRadius = GameConstants.LUMBERJACK_STRIKE_RADIUS;
+    	float strikeRadius = rc.getType().bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS;
+    	//float strikeRadius = GameConstants.LUMBERJACK_STRIKE_RADIUS;
     	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(strikeRadius,rc.getTeam().opponent());
     	
     	if (nearbyRobots.length > 0) {
