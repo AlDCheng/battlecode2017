@@ -265,12 +265,16 @@ public class LumberjackBot extends GlobalVars {
 			System.out.println("DIGGING FOR PRIZE");
 			rc.chop(nearestTree.getLocation());
 		        foundPrize = true;
-				if (nearestTree.getHealth() < 5) {
+				if (nearestTree.getHealth() <= 5) {
 				    foundPrize = false;
+				    System.out.println("NOT DIGGING FOR PRIZE ANYMORE");
 				}
 		
 		    } else {
 				// If can't chop then move towards the tree (most likely it means it is too far away)
+		    	if (foundPrize) {
+		    		foundPrize = false;
+		    	}
 				if (!rc.hasMoved()) {
 				    Direction move = new Direction(myLocation,nearestTree.getLocation());
 				    if (rc.canMove(move)) {
