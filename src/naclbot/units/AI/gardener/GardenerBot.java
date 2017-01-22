@@ -4,6 +4,7 @@ import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.variables.GlobalVars;
+import naclbot.units.motion.*;
 
 import java.util.ArrayList;
 
@@ -32,7 +33,7 @@ public class GardenerBot extends GlobalVars {
 	public static int yPos;
 	public static MapLocation archonLoc;
 	
-	public static Direction dir;
+	public static MapLocation destination;
 	
 	public static ArrayList<MapLocation> lowHealthTrees;
 	
@@ -77,7 +78,10 @@ public class GardenerBot extends GlobalVars {
                 
                 //default motion
                 if (canMove) {
-                	Move.tryMove(Move.randomDirection());
+                	if (Chirasou.Disperse(rc.getTeam(),rc.getLocation()) != null) {
+                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation());
+                		Move.tryMove(rc.getLocation().directionTo(destination));
+                	}
                 }
 
                 //ROLE DESIGNATION
