@@ -16,52 +16,6 @@ public class Aim extends GlobalVars {
 	
 	Team enemyTeam = rc.getTeam().opponent();
 
-	/*
-	RobotInfoShoot nearestEnemy = null;
-	float nearestEnemyDistance = -1;
-	int nearestEnemies = 0;
-
-	
-	// Look over all robots and find nearest enemy that has already been seen
-	for (RobotInfo robot: currentEnemies) {
-	    int robotID = robot.getID();
-	    for (int x=0; x<pastEnemies.size(); x++) {
-		
-		// If robot detected was also detected last turn ...
-		if (pastEnemies.get(x).getID() == robotID) {
-		    System.out.println("FOUND SEEN UNIT");
-		    nearestEnemies += 1;
-		    MapLocation newLoc = robot.getLocation();
-		    MapLocation oldLoc = pastEnemies.get(x).getCurrentLocation();
-		    RobotType robType = robot.getType();
-		    
-		    // Hasn't found one yet so set it
-		    if (nearestEnemyDistance == -1) {
-			// Tanks only shoot at soldiers, archons or tanks
-			if (isTank && (robType != RobotType.SOLDIER || robType != RobotType.ARCHON || robType != RobotType.TANK)) {
-			    continue;
-			} else {
-			    RobotInfoShoot newNearestEnemy = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
-			    nearestEnemy = newNearestEnemy;
-			    nearestEnemyDistance = myLoc.distanceTo(newLoc);
-			} 
-		    } else {
-			if (isTank && (robType != RobotType.SOLDIER || robType != RobotType.ARCHON || robType != RobotType.TANK)) {
-			    continue;
-			} else {
-			    // If the distance is less than prev distance then update the nearest enemy
-			    if (myLoc.distanceTo(newLoc) < nearestEnemyDistance) {
-				RobotInfoShoot newNearestEnemy = new RobotInfoShoot(robotID,robType,newLoc,oldLoc);
-				nearestEnemy = newNearestEnemy;
-				nearestEnemyDistance = myLoc.distanceTo(newLoc);
-			    }
-			}
-		    }
-		}
-	    }
-	    }
-	*/
-
 	RobotInfoShoot nearestEnemy = ExtraFunctions.findNearestEnemyShooting(pastEnemies,currentEnemies,isTank);
 	
 	// If no enemies are found then return null

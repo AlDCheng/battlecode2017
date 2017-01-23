@@ -83,7 +83,7 @@ public class GardenerBot extends GlobalVars {
                 if (canMove) {
                 	if (nearbyAllies.length > 0) {
                 		System.out.println("before");
-                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation());
+                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
                 		System.out.println(destination);
                 		Direction dirToDestination = rc.getLocation().directionTo(destination);
                 		if (rc.canMove(dirToDestination)) {
