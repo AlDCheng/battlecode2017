@@ -7,8 +7,7 @@ import naclbot.variables.DataVars;
 import naclbot.variables.DataVars.*;
 
 import naclbot.variables.BroadcastChannels;
-
-
+import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
 import naclbot.units.motion.search.TreeSearch;
 
@@ -190,11 +189,6 @@ public class ArchonBot extends GlobalVars {
     				}
             
             	}
-          		
-
-            	
-            	
-            	
             	
             	detectEnemyGroup();
             	// Notify & Create Group
@@ -206,14 +200,12 @@ public class ArchonBot extends GlobalVars {
             				lastAttackArchon = 0;        
             			}
             		}
-            	if (lastAttackArchon >= 100){
-            		boolean made = generateCommand(1,archonLocations[0], archonIDs[0]);
-            		if (made){
-        				lastAttackArchon = 0;        
-        			}   
-            	}
-                        		
-            		            		
+	            	if (lastAttackArchon >= 100){
+	            		boolean made = generateCommand(1,archonLocations[0], archonIDs[0]);
+	            		if (made){
+	        				lastAttackArchon = 0;        
+	        			}   
+	            	}            		
             	}
             	
             
@@ -243,7 +235,11 @@ public class ArchonBot extends GlobalVars {
                 }
 
                 // Move randomly
-                Move.tryMove(Move.randomDirection());
+                MapLocation newLoc = Yuurei.tryMoveInDirection(dir, strideRadius, myLocation);
+                if (newLoc != null) {
+                	rc.move(newLoc);
+                	iFeed.willFeed(newLoc);
+                }
 
                 // Broadcast archon's location for other robots on the team to know
                 

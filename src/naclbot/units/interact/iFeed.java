@@ -27,7 +27,7 @@ public class iFeed extends GlobalVars {
     	
     	// If robot did not die, then determine if they will die from lumberjack strikes
     	
-    	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS,rc.getTeam().opponent());
+    	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(rc.getType().bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS,rc.getTeam().opponent());
     	
     	if (nearbyRobots.length > 0) {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
