@@ -135,7 +135,7 @@ public class GlobalVars {
 		START_SCOUT_COUNT = 5; //builds 5 scouts before other units
 		
 		LUMBERJACK_CHANNEL = 140;
-		START_LUMBERJACK_COUNT = 10; //builds 10 lumberjacks before soldiers/tanks
+		START_LUMBERJACK_COUNT = 3; //builds 10 lumberjacks before soldiers/tanks
 		LUMBERJACK_RATIO = 3;
 		
 		/* Scout Channel is the placeholding value foir all scout channels. 
