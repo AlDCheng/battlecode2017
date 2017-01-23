@@ -3,6 +3,13 @@ package naclbot.variables;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
+/* ------------------   Overview ----------------------
+ * 
+ * Various constants controlling broadcasting hierarchy.....
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ ---------------------------------------------------- */
 
 // Enumeration of all broadcast channels that we will be using
 public class BroadcastChannels {
@@ -18,6 +25,11 @@ public class BroadcastChannels {
 	public final static int SCOUT_NUMBER_CHANNEL = 9995;
 	
 	public final static int SCOUT_HARVESTER_NUMBER_CHANNEL = 9996;
+	
+	// ---------------------- SOLDIER INFORMATION -------------------------//
+	
+	// Stores how many channels have been updated with information this turn
+	public final static int SOLDIER_NUMBER_CHANNEL = 9995;
 		
 	
 	// ----------------------- TREE INFORMATION -------------------------//

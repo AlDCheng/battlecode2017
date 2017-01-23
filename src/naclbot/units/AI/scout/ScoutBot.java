@@ -1,25 +1,25 @@
-// AI for soldier under normal control
 package naclbot.units.AI.scout;
+
 import java.util.Arrays;
-
-
 import battlecode.common.*;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
 import naclbot.units.motion.Todoruno;
 import naclbot.variables.GlobalVars;
-import naclbot.variables.BroadcastChannels;
+import naclbot.variables.BroadcastChannels;	
 
-//~~ by Illiyia
 
-/* Short List of Things to Do...............
- *
- * Get Scouts to Broadcast Locations of any enemies that are near allied non combatants...
+/* ------------------   Overview ----------------------
  * 
- */
+ * AI Controlling the functions of the ScoutBot
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ * Debug statements all begin with SYSTEM CHECK 
+ * 
+ ---------------------------------------------------- */
 
-
-/* Brief Overview of Indicator Lines.....
+/* Brief Overview of Indicator Debug Lines and Dots.....
  * 
  *  ORANGE DOT - Tree not to be broadcasted this turn
  *  BLUE DOT - Tree to be broadcasted this turn
@@ -35,9 +35,9 @@ import naclbot.variables.BroadcastChannels;
  *  LIGHT BLUE GREEN LINE - Location to move to if the gardener has moved that turn....
  *  
  *  WHITE LINE - Line to a bullet tree that the robot is going towards............
- *  MAROON DOTE - Bullet tree just shaken by the scout....
+ *  MAROON DOT - Bullet tree just shaken by the scout....
+ *  
  */
-
 
 public class ScoutBot extends GlobalVars {
 	
@@ -59,14 +59,11 @@ public class ScoutBot extends GlobalVars {
 	// Threshold value to determine the point at which the scout would decide to harvest trees rather than carry on normal operations.........
 	private static final int harvestThreshold = 80;
 	
-	// The archon number of the archon from which this scout will receive its information
-	public static int homeArchon;
-	
 	// The intial round in which the scout was constructed
 	public static int initRound;
 	
 	// Parameters to store locations of self and the nearest archon
-	private static MapLocation base;
+	private static MapLocation nearestCivilian;
 	public static MapLocation myLocation;	
 	
 	// The total number of scouts in active service
@@ -75,7 +72,6 @@ public class ScoutBot extends GlobalVars {
 	// ------------- TREE SEARCH VARIABLES -------------//
 	
 	// Parameter that asserts array storage of scout
-	private static final int unitMemorySize = 5;
 	private static final int staticMemorySize = 200;
 	private static final int dynamicMemorySize = TOTAL_TREE_BROADCAST_LIMIT;
 	
@@ -96,7 +92,7 @@ public class ScoutBot extends GlobalVars {
 	private static int receivedTotal;	
 	
 	// Max range at which the scout will scan for trees...
-	private static final int treeSenseDistance = 7;
+	private final static int treeSenseDistance = 7;
 	
 	// ------------- MOVEMENT VARIABLES -------------//
 	
@@ -108,21 +104,15 @@ public class ScoutBot extends GlobalVars {
 	private static Direction myDirection;
 	
 	// The ID of the robot the scout is currently tracking and its information
-	public static int trackID;	
+	public static  int trackID;	
 	public static RobotInfo trackedRobot;
 	public static boolean isTracking;
 	
 	// Placeholder for desired location to go to
     public static MapLocation desiredMove;
     
-    // Place holder to show where the robot had originally intended to go before the trajectory was altered by post-track/move functions
-    public static MapLocation lastDesiredMove;
-	
     // Boolean for rng rotation direction - true for counterclockwise, false for clockwise
     public static boolean rotationDirection = true;
-    
-    // Boolean for determining if the robot wants to move or no
-    private static boolean wantsToMove;    
     
     // ------------- TRACKING VARIABLES -------------//
     
@@ -133,8 +123,8 @@ public class ScoutBot extends GlobalVars {
 	public static boolean hasBroadcastedStatus;		
     
     // Array of the last three enemies tracked by the scouts 
-    public static int[] noTrack = new int[3];   
-    public static int noTrackUpdateIndex; 
+    private static int[] noTrack = new int[3];   
+    private static int noTrackUpdateIndex; 
     
     // Variable to see how long the robot has not tracked another unit for
     public static int hasNotTracked;
@@ -148,13 +138,6 @@ public class ScoutBot extends GlobalVars {
     
     // Store the last known location of the gardener...
     private static MapLocation gardenerLocation;    
-		
-	// Arrays to store information on enemy archons
-	private static RobotInfo[] enemyArchons= new RobotInfo[unitMemorySize];
-	private static int[] enemyArchonIDs = new int[unitMemorySize];
-	
-	// Parameter to determine at which index the archon data was updated #TODO
-	private static int archonIndex;	
     
     
 	/************************************************************************
@@ -182,28 +165,19 @@ public class ScoutBot extends GlobalVars {
         Rem_is_better = rc.getRoundNum();
         initRound = Rem_is_better;
         
-        // Get archon count and set home archon as one of those archons currently in service
-        int archonCount = rc.readBroadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL);
-        homeArchon = (int) (Math.random() *archonCount);
-        
-        // SYSTEM CHECK to see if init() is completed   
-        // System.out.println("My home archon has archonNumber of: " + homeArchon);	
-        
         // Initialize values relating to tree broadcasting
         seenTotal = 0;
         sentTotal = 0;
-        receivedTotal = 0;
-   
+        receivedTotal = 0;   
         
         // Initialize variables important to self
         myLocation = rc.getLocation();
         trackID = -1;
         noTrackUpdateIndex = 0;
         isTracking = false;
-        gardenerLocation = null;
+        gardenerLocation = null;        
         
-        
-        // Update SCOUT_CHANNEL
+        // Update the number of scouts so that other scouts can recognize....
         rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
                 
         // SYSTEM CHECK to see if init() is completed   
@@ -219,7 +193,7 @@ public class ScoutBot extends GlobalVars {
 	// Update team tree list every single turn
 	// Shoot enemies with high_priority	
 		
-	public static void main() throws GameActionException{	            
+	private static void main() throws GameActionException{	            
         
 		// Initialize other parameters for tracking
 	    roundsCurrentlyTracked = 0;
@@ -230,17 +204,15 @@ public class ScoutBot extends GlobalVars {
         while (true) {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	// ------------------------- RESET/UPDATE VARIABLES ----------------//            	
             	
             	// If the robot has not tracked anything for a long time fill the no track with -1 so it can track something again
             	if (hasNotTracked > 25){
             		Arrays.fill(noTrack, -1);
             	}
             	
-            	// Allow the scout to move by default - would be pretty dumb if being stupid was original state Q________Q...
-            	wantsToMove = true;
-            	
-            	// Force base to be null at start of round - closest gardener / Archon
-            	base = null;
+            	// Force nearestCivilian to be null at start of round - closest gardener / Archon
+            	nearestCivilian = null;
             	
             	// Update total number of scouts
             	currentNumberofScouts = rc.readBroadcast(SCOUT_CHANNEL);
@@ -248,10 +220,7 @@ public class ScoutBot extends GlobalVars {
             	// Since robot has not yet broadcasted this turn, set param to false by default
             	hasBroadcastedStatus = false;
             	
-            	// Initialize archon index to invalid value - becomes valid if something is updated
-            	archonIndex = -1;
-            	
-            	// Update Location and location of base as well as refresh the desired travel location
+            	// Update location of self
             	myLocation = rc.getLocation();         	
                 
             	// Get nearby enemies and allies and bullets for use in other functions            	
@@ -269,7 +238,7 @@ public class ScoutBot extends GlobalVars {
             	// Param to store the location of the nearest ally for the current turn            	
             	RobotInfo NearestAlly;
             	
-            	// Update the location of the nearest noncombatant allied location and sdore into the variable Nearest Ally - which is null if no nearby ally exists
+            	// Update the location of the nearest noncombatant allied location and store into the variable Nearest Ally - which is null if no nearby ally exists
             	if (alliedRobots.length > 0){            		
                  	NearestAlly = getNearestCivilian(alliedRobots);
             	}
@@ -280,11 +249,11 @@ public class ScoutBot extends GlobalVars {
              	// If there is a friendly noncombatant nearby
              	if(NearestAlly != null){
              		
-             		base = NearestAlly.location;
+             		nearestCivilian = NearestAlly.location;
              		
              		// For Initialization - have last direction originally point away from the closest ally, rounded to 30 degree intervals
              		int randOffset = (int)(Math.random() * 4 - 2);
-            		Direction awayAlly = new Direction(myLocation.directionTo(base).radians + (float) (Math.PI + randOffset * Math.PI/8));
+            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
             		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
             		
             		myDirection = new Direction(newRadians);
@@ -296,9 +265,7 @@ public class ScoutBot extends GlobalVars {
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
             	desiredMove = myLocation;
             	            	
-             	/***********************************************************************************
-            	 *************************** Actions to be Completed ******************************
-            	 **********************************************************************************/
+            	// ------------ ACTIONS TO BE COMPLETED -------------//
             	
             	// Useless code for now....             	
             	if (alliedRobots.length > 1000){
@@ -341,7 +308,7 @@ public class ScoutBot extends GlobalVars {
               	// SYSTEM CHECK - See if move function has been completed
             	// System.out.println("Move Completed");            	
             	
-            	// -------------------- MMOVE CORRECTION ---------------------//
+            	// -------------------- MOVE CORRECTION ---------------------//
             	
             	// Check if the initially selected position was out of bounds...
             	
@@ -366,6 +333,8 @@ public class ScoutBot extends GlobalVars {
 					desiredMove = newLocation;
             	}     	
             	
+            	// --------------------------- DODGING ------------------------ //
+            	
             	// Placeholder Variable for any dodge that the dodge function creates....
             	MapLocation dodgeLocation;
             	
@@ -384,7 +353,7 @@ public class ScoutBot extends GlobalVars {
             	}
             	
             	// See whether or not the robot can move to the current desired move, and move if it does
-            	if(rc.canMove(desiredMove) && wantsToMove){
+            	if(rc.canMove(desiredMove)){
             		rc.move(desiredMove);
             	}           	
             	else{
@@ -427,7 +396,7 @@ public class ScoutBot extends GlobalVars {
 	// Function for idle scout - does nothing until something triggers it to move
 	// TODO
 	
-	private static void  harvest(TreeInfo nearestBulletTree) throws GameActionException{
+	private static void harvest(TreeInfo nearestBulletTree) throws GameActionException{
 		
 		// SYSTEM CHECK - Inform that the scout has entered harvest mode.............
 		System.out.println("Team bullet total insufficient and nearby bullet tree found - entering harvest mode...............");
@@ -475,8 +444,7 @@ public class ScoutBot extends GlobalVars {
 				// SYSTEM CHECK - Should not happen.... but if the robot is close to the tree but cannot shake it print this fact....
 				System.out.println("ERROR: Within one unit of tree but for some reason cannot shake it...........");
 			}
-		}
-		
+		}		
 	}	
 	
 	
@@ -659,7 +627,7 @@ public class ScoutBot extends GlobalVars {
 	private static void broadcastNearestEnemyLocation(RobotInfo[] enemyRobots) throws GameActionException{
 		
 		// Get information and the closest enemy
-		RobotInfo nearestEnemy = getNearestEnemy(enemyRobots);
+		RobotInfo nearestEnemy = getNextTarget(enemyRobots);
 		
 		// See who last updated the scout index
 		int lastUpdatedScoutNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS);
@@ -709,6 +677,7 @@ public class ScoutBot extends GlobalVars {
 			}				
 		}		
 	}
+	
     
     /*****************************************************************************
 	 ****************** Tracking and Motion Related Functions ********************
@@ -869,7 +838,7 @@ public class ScoutBot extends GlobalVars {
     	// If there is actually an enemy robot nearby
     	if (enemyRobots.length > 0){
     		// Return the closest one or gardener    		
-    		return getNearestEnemy(enemyRobots);    		
+    		return getNextTarget(enemyRobots);    		
     	} else{
     		// Otherwise return that there is no enemy to be found
     		return null;    		
@@ -1017,7 +986,7 @@ public class ScoutBot extends GlobalVars {
 
     // Function to follow a unit and approach it
     
-	private static void track(RobotInfo[] enemyRobots, float distance) throws GameActionException{
+	private static void track(RobotInfo[] enemyRobots, float multiplier) throws GameActionException{
 		
 		// If the robot can currently sense the robot it is tracking and if it has not been tracking this robot for too long
     	if (rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 25){
@@ -1033,7 +1002,7 @@ public class ScoutBot extends GlobalVars {
     		// Increment number of rounds tracked
         	roundsCurrentlyTracked +=1;
         	
-        	desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, distance);
+        	desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, multiplier);
         	
         	isTracking = true;
         	hasNotTracked = 0;
@@ -1106,7 +1075,7 @@ public class ScoutBot extends GlobalVars {
 
 	// Function to retrieve the nearest enemy to the robot
 	
-	private static RobotInfo getNearestEnemy(RobotInfo[] enemyRobots){
+	private static RobotInfo getNextTarget(RobotInfo[] enemyRobots){
 
 		// Parameter to store the smallest distance to another robot
 		float minimum = Integer.MAX_VALUE;

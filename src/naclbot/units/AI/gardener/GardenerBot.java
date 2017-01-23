@@ -83,7 +83,7 @@ public class GardenerBot extends GlobalVars {
                 if (canMove) {
                 	if (nearbyAllies.length > 0) {
                 		System.out.println("before");
-                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation());
+                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
                 		System.out.println(destination);
                 		Direction dirToDestination = rc.getLocation().directionTo(destination);
                 		if (rc.canMove(dirToDestination)) {
@@ -191,7 +191,11 @@ public class GardenerBot extends GlobalVars {
 	
 	public static void buildUnits(Direction dirToBuild) throws GameActionException {
 		//try to build LUMBERJACK, make sure to build START_LUMBERJACK_COUNT lumberjacks first, then subject to ratio limitations
-		if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild) && rc.isBuildReady() && (LUMBERJACK_RATIO*lumberjackCount < soldierCount || lumberjackCount < START_LUMBERJACK_COUNT)) {
+		if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild) && rc.isBuildReady() && (SCOUT_RATIO*scoutCount < soldierCount || scoutCount < START_SCOUT_COUNT)) {
+	        rc.buildRobot(RobotType.SCOUT, dirToBuild);
+	        rc.broadcast(SCOUT_CHANNEL, scoutCount+1);
+	    }
+		else if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild) && rc.isBuildReady() && (LUMBERJACK_RATIO*lumberjackCount < soldierCount || lumberjackCount < START_LUMBERJACK_COUNT)) {
 	        rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
 	        rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
 	    }
@@ -215,4 +219,7 @@ public class GardenerBot extends GlobalVars {
 	        
 	}
 	
+	public static void buildOverwrite() throws GameActionException {
+		
+	}
 }

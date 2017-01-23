@@ -1,4 +1,3 @@
-// This class deals with interactions between unit and neighboring trees
 package naclbot.units.motion.shoot;
 import battlecode.common.*;
 import naclbot.variables.GlobalVars;
@@ -7,19 +6,31 @@ import naclbot.units.motion.other.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-//~~ by Illiyia
+/* ------------------   Overview ----------------------
+ * 
+ * Functions for controlling shooting and aiming
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ *  * Debug statements all begin with SYSTEM CHECK 
+ * 
+ ---------------------------------------------------- */
+
 
 // Class to contain some useful functions related to aiming and shooting....
 
 public class Korosenai extends GlobalVars {
 	
 	// Maximum distance away from current location that the functions will sweep in order to make sure that the robot will not hit the ally.....
-	public static final float maximumAllyCheckDistance = 4;
+	public static final float maximumAllyCheckDistance = 3;
 	
 	// Firing line offsets...
 	public static final float triadOffset = 20;
 	public static final float pentadOffset = 15;
 	
+	// Probability that if a robot has previous enemy data, it will shoot at the next location the enemy might travel at.....
+	public static final float probabilityPredict = (float) 0.6;
+
     // Function to determine if there is any tree in the line between one location and the other
     
     public static boolean isLineBLockedByTree(
@@ -74,7 +85,7 @@ public class Korosenai extends GlobalVars {
 			float distanceTo = allyData.location.distanceTo(start);
 			
 			// SYSTEM CHECK - Print out the distance to this ally...
-			System.out.println("distanceTo: " + distanceTo);
+			// System.out.println("distanceTo: " + distanceTo);
 			
 			// Obtain the direction to the ally
 			Direction directionTo = new Direction(start, allyData.location);
@@ -85,23 +96,22 @@ public class Korosenai extends GlobalVars {
     			float interceptRadians = allyData.getRadius() / distanceTo;
     			
     			// SYSTEM CHECK - Print out the distance to this ally...
-    			System.out.println("interceptRadians" + interceptRadians);
+    			// System.out.println("interceptRadians" + interceptRadians);
     			
     			// If the current direction to shoot will intercept the body of the currently considered ally
     			if(Math.abs(directionTo.radians - dir.radians) <= interceptRadians){
     				
     				// SYSTEM CHECK - Show which allies cannot be shot at... along with a dark blue dot....
     				System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
-    				rc.setIndicatorDot(allyData.location, 0, 0, 80); 
+    				// rc.setIndicatorDot(allyData.location, 0, 0, 80); 
     				
     				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
-    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 80, 0, 0);
-    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 80, 0, 0);
+    				// rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 80, 0, 0);
+    				// rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 80, 0, 0);
     				
     				return true;
     			}
-    		}
-    		
+    		}    		
     	}
     	return false;
     }
@@ -185,5 +195,143 @@ public class Korosenai extends GlobalVars {
     	// Desired shot is not possible, return false...
     	return false;
     }
-  
+    
+    
+    // Function to get the next location of an enemy based off of data from the previous turn....
+    
+    public static MapLocation getEnemyNextLocation(RobotInfo enemy, RobotInfo[] previousEnemyData){
+    	
+    	// Variable to store the data of the robot in question from the previous turn (if it exists)
+    	RobotInfo prevEnemyData = null;
+    	
+    	// Iterate through all of the previous enemy Data....
+    	for (RobotInfo enemyData: previousEnemyData){
+    		// If the enemy was seen previously....
+    		if (enemy.ID == enemyData.ID){
+    			
+    			// SYSTEM CHECK - Inform that the enemy the unit is attempting to shoot was seen last turn 
+    			// 				  and place BROWN LINE LINE between the previous location and current...
+    			System.out.println("Currently tracked enemy previously seen before");
+    			rc.setIndicatorLine(enemy.location, enemyData.location, 102, 51, 0);
+    			prevEnemyData = enemyData;
+    		}    		
+    	}
+    	// If the enemy data from the past was correctly loaded...........
+    	if (prevEnemyData != null){
+    		
+    		// Get the direction the robot is currently moving at
+    		Direction movingDirection = new Direction(prevEnemyData.location, enemy.location);
+    		
+    		// Get how far it was previously moving per turn
+    		float distancePreviouslyMoved = prevEnemyData.location.distanceTo(enemy.location);
+    		
+    		// Extrapolate the trajectory
+    		MapLocation newLocation = enemy.location.add(movingDirection, distancePreviouslyMoved);
+    		
+    		// SYSTEM CHECK - Place a DARK RED DOT on where the enemy will now be....
+    		// rc.setIndicatorDot(newLocation, 102, 0, 0); 
+    		
+    		return newLocation;   
+    	}
+    	
+    	// If there is no matching data return null as no future position can be extrapolated......    	
+    	return null;    	
+    }
+    
+    // Function to obtain a firing location for an enemy.... Does not take into account tree..
+    
+    public static MapLocation getFiringLocation(RobotInfo enemy, RobotInfo[] previousEnemyData, MapLocation myLocation){
+    	
+    	// Location to store the future location of the enemy (if it can be calculated)
+    	MapLocation enemyNextLocation; 
+    	
+    	// Make sure to not iterate through null array
+    	if (previousEnemyData != null){    		
+    		enemyNextLocation = getEnemyNextLocation(enemy, previousEnemyData);
+    	}
+    	else{
+    		enemyNextLocation = null;
+    	} 
+    	
+    	// If there was previous enemy data, attempt to use future location....
+    	if (enemyNextLocation != null){
+    		
+    		float randomChance = (float) Math.random();
+
+    		// With a great chance use the future location
+			if (randomChance <= probabilityPredict){
+    			
+    			// Obtain the distance to the enemy
+            	float distanceTo = myLocation.distanceTo(enemyNextLocation);		
+
+        		Direction directionTo = new Direction(myLocation, enemyNextLocation);		
+
+        		// Calculate the largest number of radians intercepted by the ally
+        		float interceptRadians = enemy.getRadius() / distanceTo;
+        		
+        		// Obtain a random offset from the current direction to be shooting in that does not exceed half the number of radians intercepted by the robot
+        		float randomOffset = (float) ((Math.random() * interceptRadians/2) - (interceptRadians / 4));
+        		
+        		// Obtain a direction to fire in...
+        		Direction firingDirection = new Direction(directionTo.radians + randomOffset);
+        		
+        		MapLocation firingLocation = myLocation.add(firingDirection, distanceTo);
+        		
+        		// SYSTEM CHECK show where the intended firing location is..... LIGHT GREEN LINE
+        		rc.setIndicatorLine(myLocation, firingLocation, 153, 255, 51);   
+        		System.out.println("Attempting to fire near the future location");
+        		
+        		return firingLocation;    			
+    		}		
+    	
+			// Utilize the current location
+    		else{
+    			
+    			// Obtain the distance to the enemy
+            	float distanceTo = myLocation.distanceTo(enemy.location);		
+
+        		Direction directionTo = new Direction(myLocation, enemy.location);		
+
+        		// Calculate the largest number of radians intercepted by the ally
+        		float interceptRadians = enemy.getRadius() / distanceTo;
+        		
+        		// Obtain a random offset from the current direction to be shooting in that does not exceed half the number of radians intercepted by the robot
+        		float randomOffset = (float) ((Math.random() * interceptRadians/2) - (interceptRadians / 4));
+        		
+        		// Obtain a direction to fire in...
+        		Direction firingDirection = new Direction(directionTo.radians + randomOffset);
+        		
+        		MapLocation firingLocation = myLocation.add(firingDirection, distanceTo);
+        		
+        		// SYSTEM CHECK show where the intended firing location is..... DARK GREEN LINE
+        		rc.setIndicatorLine(myLocation, firingLocation, 0, 102, 0);
+        		
+        		return firingLocation;        		
+    		}    		
+    	}
+    	// If there was no previous enemy data, just use the current location of the robot to shoot to...
+    	else{
+    		
+    		// Obtain the distance to the enemy
+        	float distanceTo = myLocation.distanceTo(enemy.location);		
+
+    		Direction directionTo = new Direction(myLocation, enemy.location);		
+
+    		// Calculate the largest number of radians intercepted by the ally
+    		float interceptRadians = enemy.getRadius() / distanceTo;
+    		
+    		// Obtain a random offset from the current direction to be shooting in that does not exceed half the number of radians intercepted by the robot
+    		float randomOffset = (float) ((Math.random() * interceptRadians/2) - (interceptRadians / 4));
+    		
+    		// Obtain a direction to fire in...
+    		Direction firingDirection = new Direction(directionTo.radians + randomOffset);
+    		
+    		MapLocation firingLocation = myLocation.add(firingDirection, distanceTo);
+    		
+    		// SYSTEM CHECK show where the intended firing location is..... DARK GREEN LINE
+    		rc.setIndicatorLine(myLocation, firingLocation, 0, 102, 0);
+    		
+    		return firingLocation;    		
+    	}		
+    }    
 }

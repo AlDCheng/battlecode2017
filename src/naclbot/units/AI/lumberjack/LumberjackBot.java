@@ -98,7 +98,7 @@ public class LumberjackBot extends GlobalVars {
 				if(!rc.hasMoved()){
 				    if (currentAllies.length > 0){
 				    	//RobotInfo closestAlly = getNearestAlly();
-				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation);
+				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation, battlecode.common.RobotType.LUMBERJACK.strideRadius);
 				    	if (newLoc != null) {
 				    		rc.move(newLoc);
 				    		iFeed.willFeed(newLoc);
@@ -190,7 +190,7 @@ public class LumberjackBot extends GlobalVars {
 				if(!rc.hasMoved() && !foundPrize){
 				    if (currentAllies.length > 0){
 				    	//RobotInfo closestAlly = getNearestAlly();
-				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation);
+				    	MapLocation newLoc = Chirasou.Disperse(rc.getTeam(), myLocation, battlecode.common.RobotType.LUMBERJACK.strideRadius);
 				    	if (newLoc != null) {
 				    		rc.move(newLoc);
 				    		iFeed.willFeed(newLoc);

@@ -5,15 +5,25 @@ import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 import java.util.ArrayList;
 
-// ~~ by Illiyia
-
+/* ------------------   Overview ----------------------
+ * 
+ * Functions for controlling Robot movement and dodging
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ *  * Debug statements all begin with SYSTEM CHECK 
+ * 
+ ---------------------------------------------------- */
 // This is a class that contains functions related to dodging and positional correction....
 
 public class Yuurei extends GlobalVars {
 	
 	public static final float scanGranularity = (float) 0.5;
-	public static final int scanAngleNumber = 9;
+	public static final int scanAngleNumber = 8;
 	public static final float scanningAngleDiff = (float)(Math.PI * 2 / scanAngleNumber);
+	
+	// Value after which units decide to give up trying to dodge......
+	public static final float maxIncomingBullets = 7;
 	
 	// Do all wrapper for the functions.....
 	// ONLY Use if there are bullets nearby.. Otherwise there is no point in calling this function
@@ -59,6 +69,13 @@ public class Yuurei extends GlobalVars {
 			newBulletLocations.add(nearbyBullets[i].location);	
 			}
 		}
+		
+		if (newBulletLocations.size() > maxIncomingBullets){
+			// SYSTEM CHECK - If there are too many bullets nearby, the robot will just give up......
+			System.out.println("Too many bullets nearby, will not attempt to dodge");			
+			return null;
+		}
+		
 		// If any of the bullets are near enough to warrant issue, proceed forwards
 		if (newBulletLocations.size() > 0){	
 			
@@ -79,7 +96,7 @@ public class Yuurei extends GlobalVars {
 				if(dodgeLocation != null){
 					
 					// SYSTEM CHECK - Tell everyone that you can dodge the bullet
-					System.out.println("Scout can dodge bullet yay!");	
+					System.out.println("Robot can dodge bullet yay!");	
 					
 					canDodge = true;
 				}
@@ -349,7 +366,8 @@ public class Yuurei extends GlobalVars {
 			
 			// SYSTEM CHECK - Display the corrected move on screen as an orange line
 			rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
-
+			
+			// TODO Check to see if switching rotation direction here is better
 			return newLocation;			
 		}
 		

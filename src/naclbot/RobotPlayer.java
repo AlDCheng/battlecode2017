@@ -4,7 +4,7 @@ import naclbot.units.AI.archon.ArchonBot;
 import naclbot.units.AI.gardener.GardenerBot;
 import naclbot.units.AI.lumberjack.LumberjackBot;
 import naclbot.units.AI.scout.ScoutBot;
-import naclbot.units.AI.soldier.SoldierBot;
+import naclbot.units.AI.soldier.Senshi;
 import naclbot.units.AI.tank.TankBot;
 import naclbot.variables.GlobalVars;
 
@@ -35,7 +35,7 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    GardenerBot.init();
 			    break;
 			case SOLDIER:
-			    SoldierBot.init();
+			    Senshi.init();
 			    break;
 			case TANK:
 			    TankBot.init();

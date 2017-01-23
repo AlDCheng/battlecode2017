@@ -1,9 +1,18 @@
-// Dodging collisions with bullets
 package naclbot.units.motion;
 import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 
-//~~ by Illiyia
+
+/* ------------------   Overview ----------------------
+ * 
+ * Functions for controlling Robot dispersion from allies
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ * Debug statements all begin with SYSTEM CHECK 
+ *  
+ ---------------------------------------------------- */
+
 
 // This is a class that contains functions related to group movement and dispersion
 
@@ -11,7 +20,7 @@ public class Chirasou extends GlobalVars {
 	
     // Function for the robot to move away from the nearest ally - returns a location that the robot would like to go to....
 	
-    public static MapLocation tryMoveAway(MapLocation myLocation, MapLocation allyLocation) throws GameActionException{
+    public static MapLocation tryMoveAway(MapLocation myLocation, MapLocation allyLocation, float strideDistance) throws GameActionException{
 
     	// Location to store where the robot will attempt to run away to
     	MapLocation newLocation = null;
@@ -19,11 +28,9 @@ public class Chirasou extends GlobalVars {
     	// Generate the direction towards the ally
      	Direction dir = myLocation.directionTo(allyLocation);
      	
-     	// Add some randomness - not always directly away...
-     	float keikaku = (float)(Math.random() *  Math.PI/2 - Math.PI/4);
-     	
      	// Generate a new direction to try to go to
-     	Direction testDir = new Direction(dir.radians+(float) Math.PI + keikaku);
+     	Direction testDir = new Direction(dir.radians+(float) Math.PI);
+     	MapLocation testLocation = myLocation.add(testDir, strideDistance);
      	
      	// Test a variety of distances in that direction
      	for (int i = 0; i < 4; i ++){
@@ -31,25 +38,16 @@ public class Chirasou extends GlobalVars {
 	     		newLocation = myLocation.add(testDir, (float)(2- 0.4*i));
 	     		return newLocation;
 	     	}		
-    	}
-     	
-     	// Try the same offset but in the opposite direction
-     	Direction testDir2 = new Direction(dir.radians+(float) Math.PI - keikaku);
-     	
-     	// Test a variety of distances in that direction
-     	for (int i = 0; i < 4; i ++){
-	     	if (rc.canMove(testDir, (float)(2- 0.4*i))){
-	     		newLocation = myLocation.add(testDir2, (float)(2- 0.4*i));
-	     		return newLocation;
-	     	}		
-    	}    	
-     	// If none of these work, return the default null value
+    	} 	
+ 		newLocation = Yuurei.attemptRandomMove(myLocation, testLocation, strideDistance);
+
+     	// Return the location created by the attemptRandomMove function, which may be null if no such location can be found....
+ 		
      	return newLocation;
-    }	
-    
+    }
     // Wrapper function to disperse units...
     
-    public static MapLocation Disperse(Team allies, MapLocation myLocation) throws GameActionException{
+    public static MapLocation Disperse(Team allies, MapLocation myLocation, float strideDistance) throws GameActionException{
     	
     	// Get all nearest allies
     	RobotInfo[]currentAllies = rc.senseNearbyRobots(-1, allies);
@@ -59,7 +57,7 @@ public class Chirasou extends GlobalVars {
     	
     	// Attempt to move away from it, if such an ally exists
     	if (nearestAlly != null){
-    		return tryMoveAway(myLocation, nearestAlly.location);
+    		return tryMoveAway(myLocation, nearestAlly.location, strideDistance);
     	}
     	// If no allies are nearby, simply return none!
     	else{
