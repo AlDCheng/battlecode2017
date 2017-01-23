@@ -133,9 +133,13 @@ public class Korosenai extends GlobalVars {
     	if (shotType == 0){
     		// If no allies are going to be instantly hit by the bullets... 
     		if (!isDirectionOccupiedByAlly(currentLocation, dirToShoot, nearbyAllies, maximumAllyCheckDistance)){
-    			// Fire!
-    			rc.fireSingleShot(dirToShoot);
-    			return true;    			
+    			
+    			// Make sure your team is rich enough for you to fire something at them......
+    			if(rc.canFireSingleShot()){
+	    			// Fire!
+	    			rc.fireSingleShot(dirToShoot);
+	    			return true;    	
+    			}
     		}    	
     	}
     	else if (shotType == 1){
@@ -146,9 +150,13 @@ public class Korosenai extends GlobalVars {
     			Direction fireDirection = new Direction (dirToShoot.radians + j * triadOffset);
     			// If no allies are going to be instantly hit by the bullets... 
 	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){
-	    			// Fire!
-	    			rc.fireTriadShot(fireDirection);
-	    			return true;    			
+	    			
+	    			// Make sure your team is rich enough for you to fire something at them......
+	    			if(rc.canFireTriadShot()){
+		    			// Fire!
+		    			rc.fireTriadShot(dirToShoot);
+		    			return true;    	
+	    			}
 	    		}    	
     		}
     	}
@@ -160,9 +168,13 @@ public class Korosenai extends GlobalVars {
     			Direction fireDirection = new Direction (dirToShoot.radians + j * pentadOffset);
     			// If no allies are going to be instantly hit by the bullets... 
 	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){
-	    			// Fire!
-	    			rc.firePentadShot(fireDirection);
-	    			return true;    			
+	    			
+	    			// Make sure your team is rich enough for you to fire something at them......
+	    			if(rc.canFirePentadShot()){
+		    			// Fire!
+		    			rc.firePentadShot(dirToShoot);
+		    			return true;    	
+	    			}  			
 	    		}    	
     		}
     	}

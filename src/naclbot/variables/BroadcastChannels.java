@@ -17,6 +17,8 @@ public class BroadcastChannels {
 	// Stores how many channels have been updated with information this turn
 	public final static int SCOUT_NUMBER_CHANNEL = 9995;
 	
+	public final static int SCOUT_HARVESTER_NUMBER_CHANNEL = 9996;
+		
 	
 	// ----------------------- TREE INFORMATION -------------------------//
 	
