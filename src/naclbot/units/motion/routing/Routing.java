@@ -77,22 +77,42 @@ public class Routing extends GlobalVars{
 	    	// This is as moving occurs below this
 	    	prevLoc = new MapLocation(curLoc.x,curLoc.y);
 	    	
-// 		   	System.out.println(path.size());
+ 		   	System.out.println(path.size());
 //    		System.out.println("ReRoute: " + Routing.reRoute);
 	    	
 	    	// Pathing:
 	    	// If there is a path to move through, then attempt moving to each point one at a time
 	    	if(!(path.isEmpty())) {
-	    		System.out.println("Path: " + path);
+	    		System.out.println("Path: " + path + ", Size: " + path.size());
 	    		
 	    		// Transfer the first point to nextLoc
 	    		// If point isn't reached, it will be re-added to Path later 
 	    		MapLocation nextLoc = path.remove(0);
+	    		
+	    		while(path.size() > 0) {
+	    			if(nextLoc.isWithinDistance(curLoc, (float)0.8)) {
+	    				nextLoc = path.remove(0);
+	    				System.out.println("Removed: " + nextLoc);
+		    		}
+	    			else {
+	    				break;
+	    			}
+	    		}
+	    		
 //    			System.out.println(nextLoc);
 	    		
 	    		// Calling function to attempt to move to point
 	    		ArrayList<MapLocation> newPath = Routing.moveToPoint(nextLoc);
+//	    		path = Routing.moveToPoint(nextLoc);
 	    		
+	    		if(!(newPath.isEmpty())) {
+	    			// Add entire newPath to path
+    				for (int i = newPath.size()-1; i > -1; i--) {
+    					path.add(0, newPath.get(i));
+    				}
+	    		}
+	    		
+	    		/*
 	    		// If there is a path resulting from the movement...
 	    		// - It is only empty when the robot is stuck
 	    		if(!(newPath.isEmpty())) {
@@ -126,7 +146,7 @@ public class Routing extends GlobalVars{
 	    		// No continuing path, so it is halted
 	    		else {
 	    			path = new ArrayList<MapLocation>();
-	    		}
+	    		}*/
 	    	}
 	    // Catch for all exceptions
 		} catch (Exception e) {
@@ -175,13 +195,12 @@ public class Routing extends GlobalVars{
 			if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc, (float)1.5*curType.bodyRadius)) || (distance < curType.sensorRadius)) {
 			//if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc, curType.sensorRadius/3)) || (distance < curType.sensorRadius)) {
 				System.out.println("Distance < sensorRadius: " + distance);
-				
-				if(tryMoveRouting(destDir, degreeOffset, checks, distDest, distDest)) {
+				if(tryMoveReturn(destDir, degreeOffset, checks, distDest, distDest, nextPoints)) {
 					// Movement successful with no edits
 					nextPoints.add(dest); // Append final destination to path
 					return nextPoints;
 				}
-				else if(tryMoveRouting(prevDir, degreeOffset, checks, distDest, distIntervals)) {
+				else if(tryMoveReturn(prevDir, degreeOffset, checks, distDest, distIntervals, nextPoints)) {
 					// Movement successful with no edits
 					nextPoints.add(dest); // Append final destination to path
 					return nextPoints;
@@ -201,7 +220,7 @@ public class Routing extends GlobalVars{
 			// Get angle of movement:
 			float angleDir = destDir.getAngleDegrees();
 			
-//				System.out.println("Blocked; Angle: " + angleDir);
+			System.out.println("Blocked; Angle: " + angleDir);
 			
 			// Case 0: If direction is in a cardinal direction:
 			if ((Math.abs(angleDir) % 90) <= 1) {
@@ -213,15 +232,14 @@ public class Routing extends GlobalVars{
 				// First try 90 degrees left
 				Direction newDir = destDir.rotateLeftDegrees(90);
 				
-				// Attempt movement left
-				if(!(tryMoveRouting(destDir, 90, checks, distDest, distIntervals))) {
+				if(!(tryMoveReturn(destDir, 90, checks, distDest, distIntervals, nextPoints))) {
 					// Failure to move left:
 					
 					// Then try 90 degrees right
 					newDir = destDir.rotateRightDegrees(90);
 					
 					// Attempt movement right
-					if(!(tryMoveRouting(newDir, 90, checks, distDest, distIntervals))) {
+					if(!(tryMoveReturn(newDir, 90, checks, distDest, distIntervals, nextPoints))) {
 						// Failure to move right:
 						// Jump to Stage 3 - search behind unit in perpendicular directions
 						
@@ -310,6 +328,7 @@ public class Routing extends GlobalVars{
 						return new ArrayList<MapLocation>();
 					}
 				}
+				
 			}
 			// Case 1: If direction at angle <= 45 relative to horizontal
 //			else if (((Math.abs(angleDir) % 90) <= 45)||((Math.abs(angleDir) % 90) >= 135)) {
@@ -328,9 +347,8 @@ public class Routing extends GlobalVars{
 				
 				// Create new direction to move to based off cardinal direction
 				Direction newDestDir = new Direction(newAngle);
-				
-				// Try moving in that direction
-				if(!(tryMoveRouting(newDestDir, degreeOffset, checks, distDest, distIntervals))) {
+
+				if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 					// Movement failure
 					
 					// Draw Red line to indicate failed direction
@@ -348,8 +366,7 @@ public class Routing extends GlobalVars{
 					// Update new direction to move to based off cardinal direction
 					newDestDir = new Direction(newAngle);
 					
-					// Try moving in that direction
-					if(!(tryMoveRouting(newDestDir, degreeOffset, checks, distDest, distIntervals))) {
+					if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 						
 						// Draw Red line to indicate failed direction
 						rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
@@ -409,8 +426,7 @@ public class Routing extends GlobalVars{
 				// Update new direction to move to based off cardinal direction
 				Direction newDestDir = new Direction(newAngle);
 				
-				// Try moving in that direction
-				if(!(tryMoveRouting(newDestDir, degreeOffset, checks, distDest, distIntervals))) {
+				if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 					
 					// Draw Red line to indicate failed direction
 					rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
@@ -427,7 +443,7 @@ public class Routing extends GlobalVars{
 					newDestDir = new Direction(newAngle);
 					
 					// Try moving in that direction
-					if(!(tryMoveRouting(newDestDir, degreeOffset, checks, distDest, distIntervals))) {
+					if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 						
 						// Draw Red line to indicate failed direction
 						rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
@@ -478,7 +494,6 @@ public class Routing extends GlobalVars{
 			e.printStackTrace(); // Print exception
 			return new ArrayList<MapLocation>(); // Return empty path
 		}
-		
 		// Movement successful with no edits
 		nextPoints.add(dest); // Append final destination to path
 		return nextPoints;
@@ -583,7 +598,7 @@ public class Routing extends GlobalVars{
 					distIntervals = maxMove / 3;
 					
 					// Attempt to move to intermediate point
-					tryMoveRouting(interDir, degreeOffset, checks, maxMove, distIntervals);
+					tryMoveReturn(interDir, degreeOffset, checks, maxMove, distIntervals, nextPoints);
 					
 					// Add re-routed path
 					nextPoints.add(interLoc);
@@ -619,7 +634,7 @@ public class Routing extends GlobalVars{
 					System.out.println(maxMove);
 					
 					// Attempt to move to intermediate point
-					tryMoveRouting(interDir, degreeOffset, checks, maxMove, distIntervals);
+					tryMoveReturn(interDir, degreeOffset, checks, maxMove, distIntervals, nextPoints);
 					
 					// Add re-routed path
 					nextPoints.add(interLoc);
@@ -658,7 +673,7 @@ public class Routing extends GlobalVars{
 					distIntervals = maxMove / 3;
 					
 					// Attempt to move to intermediate point
-					tryMoveRouting(interDir, degreeOffset, checks, maxMove, distIntervals);
+					tryMoveReturn(interDir, degreeOffset, checks, maxMove, distIntervals, nextPoints);
 					
 					// Add re-routed path
 					nextPoints.add(interLoc);
@@ -692,7 +707,7 @@ public class Routing extends GlobalVars{
 					distIntervals = maxMove / 3;
 					
 					// Attempt to move to intermediate point
-					tryMoveRouting(interDir, degreeOffset, checks, maxMove, distIntervals);
+					tryMoveReturn(interDir, degreeOffset, checks, maxMove, distIntervals, nextPoints);
 					
 					// Add re-routed path
 					nextPoints.add(interLoc);
@@ -778,7 +793,7 @@ public class Routing extends GlobalVars{
 			distIntervals = maxMove / 3;
 			
 			// Attempt to move to intermediate point
-			tryMoveRouting(interDir, degreeOffset, checks, maxMove, distIntervals);
+			tryMoveReturn(interDir, degreeOffset, checks, maxMove, distIntervals, nextPoints);
 			
 			// Add re-routed path
 			nextPoints.add(interLoc);
@@ -855,7 +870,7 @@ public class Routing extends GlobalVars{
 			distIntervals = maxMove / 3;
 			
 			// Attempt to move to intermediate point
-			tryMoveRouting(interDir, degreeOffset, checks, maxMove, distIntervals);
+			tryMoveReturn(interDir, degreeOffset, checks, maxMove, distIntervals, nextPoints);
 			
 			// Add re-routed path
 			nextPoints.add(interLoc);
@@ -873,7 +888,17 @@ public class Routing extends GlobalVars{
 	//--------------------------------------------------------------------------------------
 	//--------------------------------------[Movement]--------------------------------------
 	//--------------------------------------------------------------------------------------
-	
+	public static boolean tryMoveReturn(Direction dir, float degreeOffset, int checksPerSide, 
+										 float distance, float distanceInterval, ArrayList<MapLocation> newPath) throws GameActionException {
+		MapLocation moveLoc = tryMoveRouting(dir, degreeOffset, checksPerSide, distance, distanceInterval);
+		if(moveLoc != null) {
+			newPath.add(moveLoc);
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 	/**
 	 * Attempts to move in a given direction, while avoiding small obstacles direction in the path.
 	 *
@@ -881,7 +906,7 @@ public class Routing extends GlobalVars{
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
-	public static boolean tryMoveRouting(Direction dir) throws GameActionException {
+	public static MapLocation tryMoveRouting(Direction dir) throws GameActionException {
 		float maxMove = rc.getType().strideRadius; // Set default movement distance to max 
 	    return tryMoveRouting(dir, 1, 10, maxMove, maxMove);
 	}
@@ -895,7 +920,7 @@ public class Routing extends GlobalVars{
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
-	public static boolean tryMoveRouting(Direction dir, float distance, float distanceInterval) throws GameActionException {
+	public static MapLocation tryMoveRouting(Direction dir, float distance, float distanceInterval) throws GameActionException {
 	    return tryMoveRouting(dir, 1, 10, distance, distanceInterval);
 	}
 	
@@ -910,13 +935,13 @@ public class Routing extends GlobalVars{
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
-	public static boolean tryMoveRouting(Direction dir, float degreeOffset, int checksPerSide, 
+	public static MapLocation tryMoveRouting(Direction dir, float degreeOffset, int checksPerSide, 
 										 float distance, float distanceInterval) throws GameActionException {
 	
 	    // First, try intended direction
 	    if (rc.canMove(dir, distance)) {
-	        rc.move(dir, distance);
-	        return true;
+//	        rc.move(dir, distance);
+	        return curLoc.add(dir,distance);
 	    }
 	    
 	    // Intended direction not successful:
@@ -937,14 +962,16 @@ public class Routing extends GlobalVars{
 		        // Try the offset of the left side
 		        if(rc.canMove(dir.rotateLeftDegrees(degreeOffset*currentCheck),distanceCheck)) {
 		        	System.out.println("Moved on Left Side");
-		            rc.move(dir.rotateLeftDegrees(degreeOffset*currentCheck),distanceCheck);
-		            return true;
+//		            rc.move(dir.rotateLeftDegrees(degreeOffset*currentCheck),distanceCheck);
+//		            return true;
+		        	return curLoc.add(dir.rotateLeftDegrees(degreeOffset*currentCheck),distanceCheck);
 		        }
 		        // Try the offset on the right side
 		        if(rc.canMove(dir.rotateRightDegrees(degreeOffset*currentCheck),distanceCheck)) {
 		        	System.out.println("Moved on Right Side");
-		            rc.move(dir.rotateRightDegrees(degreeOffset*currentCheck),distanceCheck);
-		            return true;
+//		            rc.move(dir.rotateRightDegrees(degreeOffset*currentCheck),distanceCheck);
+//		            return true;
+		        	return curLoc.add(dir.rotateRightDegrees(degreeOffset*currentCheck),distanceCheck);
 		        }
 		        // No move performed, try slightly further
 		        currentCheck++;
@@ -956,6 +983,6 @@ public class Routing extends GlobalVars{
 	    }
 	    
 	    // A move never happened, so return false.
-	    return false;
+	    return null;
 	}
 }
