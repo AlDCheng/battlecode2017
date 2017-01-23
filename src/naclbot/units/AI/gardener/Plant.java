@@ -95,9 +95,9 @@ public class Plant extends GlobalVars {
 	
 	public static boolean checkNearbyTreesAndArchons(float radius) {
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
-		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(radius);
+		ArrayList<MapLocation> nearbyTeamTrees = TreeSearch.getNearbyTeamTrees(5);
 		
-		if (nearbyTrees.length > 0) {
+		if (nearbyTeamTrees.size() > 0) {
 			return true;
 		}
 		for (RobotInfo robot: nearbyRobots) {

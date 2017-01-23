@@ -96,9 +96,9 @@ public class TreeSearch extends GlobalVars {
 	return neutralList;
     }	
     
-    public static ArrayList<MapLocation> getNearbyTeamTrees() {
+    public static ArrayList<MapLocation> getNearbyTeamTrees(float radius) {
 	//variation of getNearbyBulletTrees(), gets nearby tree locations 
-	TreeInfo[] treeList = rc.senseNearbyTrees();
+	TreeInfo[] treeList = rc.senseNearbyTrees(radius);
 	ArrayList<MapLocation> nearList = new ArrayList<MapLocation>();
 	for (int i = 0; i < treeList.length; i++) {
 	    if (treeList[i].team == rc.getTeam()) {

@@ -74,7 +74,7 @@ public class GardenerBot extends GlobalVars {
                 lowHealthTrees = TreeSearch.getNearbyLowTrees();
 
                 //check if there are trees or archons nearby
-                nearbyTreesAndArc = Plant.checkNearbyTreesAndArchons(6);
+                nearbyTreesAndArc = Plant.checkNearbyTreesAndArchons(4);
                 
                 //check if there are nearby allied units
                 RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
@@ -190,21 +190,20 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void buildUnits(Direction dirToBuild) throws GameActionException {
-	    
+		//try to build LUMBERJACK, make sure to build START_LUMBERJACK_COUNT lumberjacks first, then subject to ratio limitations
+		if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild) && rc.isBuildReady() && (LUMBERJACK_RATIO*lumberjackCount < soldierCount || lumberjackCount < START_LUMBERJACK_COUNT)) {
+	        rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
+	        rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
+	    }
 	    //try to build SCOUT, make sure to build START_SCOUT_LIMIT scouts first, then subject to ratio limitations
-	    if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild) && rc.isBuildReady() && (SCOUT_RATIO*scoutCount < soldierCount || scoutCount < START_SCOUT_COUNT)) {
+		else if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild) && rc.isBuildReady() && (SCOUT_RATIO*scoutCount < soldierCount || scoutCount < START_SCOUT_COUNT) && lumberjackCount >= START_LUMBERJACK_COUNT) {
 	        rc.buildRobot(RobotType.SCOUT, dirToBuild);
 	        rc.broadcast(SCOUT_CHANNEL, scoutCount+1);
 	    }
 	    //try to build SOLDIER, make sure soldierCount:lumberjackCount < LUMBERJACK_RATIO
-	    else if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild) && rc.isBuildReady() && soldierCount <= LUMBERJACK_RATIO*lumberjackCount  && lumberjackCount >= START_LUMBERJACK_COUNT) {
+	    else if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild) && rc.isBuildReady()) {
 	        rc.buildRobot(RobotType.SOLDIER, dirToBuild);
-	        rc.broadcast(SOLDIER_CHANNEL, soldierCount+1);
-	    } 
-	    //try to build LUMBERJACK, make sure to build START_LUMBERJACK_COUNT lumberjacks first, then subject to ratio limitations
-	    else if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild) && rc.isBuildReady() && (LUMBERJACK_RATIO*lumberjackCount < soldierCount || lumberjackCount < START_LUMBERJACK_COUNT)) {
-	        rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
-	        rc.broadcast(LUMBERJACK_CHANNEL, lumberjackCount+1);
+	        rc.broadcast(SOLDIER_CHANNEL, soldierCount+1); 
 	    }
 	    //try to build TANK, make sure soldierCount:tankCount < TANK_RATIO
 	    /*
