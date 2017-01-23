@@ -130,7 +130,7 @@ public class GlobalVars {
 		
 		SCOUT_TRACKING = SCOUT_CHANNEL + SCOUT_LIMIT * SCOUT_UPDATE_FREQUENCY + 1;
 		
-		SCOUT_RATIO = 10; 
+		SCOUT_RATIO = 5; 
 		
 		START_SCOUT_COUNT = 5; //builds 5 scouts before other units
 		
