@@ -311,34 +311,36 @@ public class Yuurei extends GlobalVars {
 		
 			
 		// SYSTEM CHECK - Make sure that the scouts determination of the incorrect map location is accurate...
-		System.out.println("Your current selection of Chitoge Kirisaki as best girl is incorrect.... please select Onodera to continue!!!");
+		// System.out.println("Your current selection of Chitoge Kirisaki as best girl is incorrect.... please select Onodera to continue!!!");
 		
-		// If the robot is attempting to move above the map bounds...
+		// Generate some random element to make reflections imperfect
+		float addRandom = (float) ((Math.random() * strideRadius / 3) - (strideRadius / 6));
+		
 		if (!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y + bodyRadius))){
 			// Correct the discrepancy in the y coordinates
 			float yCorrect = desiredLocation.y - startingLocation.y;				
-			MapLocation newMove = new MapLocation(desiredLocation.x, desiredLocation.y - 2 * yCorrect);
+			MapLocation newMove = new MapLocation(desiredLocation.x + addRandom, desiredLocation.y - 2 * yCorrect);
 			newLocation = newMove;		
 		}
 		// If the robot is attempting to move to the left of the map bounds...
 		else if (!rc.onTheMap(new MapLocation(desiredLocation.x - bodyRadius, desiredLocation.y))){				
 			// Correct the discrepancy in the y coordinates
 			float xCorrect = desiredLocation.x - startingLocation.x;
-			MapLocation newMove = new MapLocation(desiredLocation.x - 2 * xCorrect, desiredLocation.y);
+			MapLocation newMove = new MapLocation(desiredLocation.x - 2 * xCorrect, desiredLocation.y + addRandom);
 			newLocation = newMove;				
 		}
 		// If the robot is attempting to move below the map bounds...
 		else if ((!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y - bodyRadius)))){				
 			// Correct the discrepancy in the y coordinates
 			float yCorrect = desiredLocation.y - startingLocation.y;
-			MapLocation newMove = new MapLocation(desiredLocation.x, desiredLocation.y - 2 * yCorrect);
+			MapLocation newMove = new MapLocation(desiredLocation.x + addRandom, desiredLocation.y - 2 * yCorrect);
 			newLocation = newMove;				
 		}
 		// If the robot is attempting to move to the right of the map bounds...
 		else{	
 			// Correct the discrepancy in the y coordinates
 			float xCorrect = desiredLocation.x - startingLocation.x;
-			MapLocation newMove = new MapLocation(desiredLocation.x - 2 * xCorrect, desiredLocation.y);
+			MapLocation newMove = new MapLocation(desiredLocation.x - 2 * xCorrect, desiredLocation.y + addRandom);
 			newLocation = newMove;			
 		}			
 		
@@ -382,7 +384,7 @@ public class Yuurei extends GlobalVars {
     
     // Function to attempt to move in a target direction (with inputed values), returns true if it actually can move in that direction
     
-    private static MapLocation tryMoveInDirection(
+    public static MapLocation tryMoveInDirection(
     		
 		// Input Variables    		
 		Direction dir, // Target Direction of the robot
@@ -428,5 +430,61 @@ public class Yuurei extends GlobalVars {
 		}
 	    // A move through the checks cannot happen, so return a null to express this
         return null;
-    }    
+    }
+    
+    // Function to return a location to move to if the robot has not yet found a place to attempt to go to........
+    
+    public static MapLocation attemptRandomMove(MapLocation myLocation, MapLocation desiredLocation, float strideDistance) throws GameActionException{
+    	
+    	// SYSTEM CHECK - Show that this function has been called.....................
+    	System.out.println("The robot cannot move even to the corrected desired move location... attempting to recalculate further.......");
+    	
+    	// Obtain the desired direction wanted to travel
+    	Direction directionTo = new Direction(myLocation, desiredLocation);
+    	
+    	// Random number to alternate which side the robot checks first.....
+    	float randomize = (float) Math.random();
+    	
+    	// Place holders for the centers of the directions that the robot decides to check....
+    	Direction firstCheck;
+    	Direction secondCheck;
+    	
+    	// Obtain the direction checks - are perpendicular to desired direction....
+    	if (randomize > 0.5){
+    		firstCheck = new Direction(directionTo.radians + (float)(Math.PI / 2));
+    		secondCheck = new Direction(directionTo.radians - (float)(Math.PI / 2));
+    	}
+    	else{
+    		firstCheck = new Direction(directionTo.radians - (float)(Math.PI / 2));
+    		secondCheck = new Direction(directionTo.radians + (float)(Math.PI / 2));    		
+    	}
+    	
+    	// Variable to hold the return of the checks for movement
+    	MapLocation attemptedMove = null;
+    	for(int i = -1; i <= 1; i++){    		
+    		
+    		attemptedMove = tryMoveInDirection(firstCheck, 20, 4, strideDistance, myLocation);
+    		
+    		if(attemptedMove != null){    			
+    			
+    			// SYSTEM CHECK - Since recalculation was successful notify...
+    			System.out.println("New direction recalculated.....");
+    			
+    			return attemptedMove;
+    		}
+
+    		attemptedMove = tryMoveInDirection(secondCheck, -20, 4, strideDistance, myLocation);
+    		
+    		if(attemptedMove != null){
+    			
+    			// SYSTEM CHECK - Since recalculation was successful notify...
+    			System.out.println("New direction recalculated.....");
+    			
+    			return attemptedMove;
+    		}
+    	}
+    	// If none of the direction checks were successful return null - the robot will not be able to move this turn.................   	
+    	return null;
+    }
+    
 }

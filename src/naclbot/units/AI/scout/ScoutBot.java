@@ -33,6 +33,9 @@ import naclbot.variables.BroadcastChannels;
  *  
  *  GREEN-YELLOW LINE - Correction to a non-movement from the scout whilst following a gardener - moves to a new location where it can actually shoot
  *  LIGHT BLUE GREEN LINE - Location to move to if the gardener has moved that turn....
+ *  
+ *  WHITE LINE - Line to a bullet tree that the robot is going towards............
+ *  MAROON DOTE - Bullet tree just shaken by the scout....
  */
 
 
@@ -50,6 +53,11 @@ public class ScoutBot extends GlobalVars {
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.SCOUT.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.SCOUT.bodyRadius;
+	private static final float senseRadius = battlecode.common.RobotType.SCOUT.sensorRadius;
+	private static float teamBullets;
+	
+	// Threshold value to determine the point at which the scout would decide to harvest trees rather than carry on normal operations.........
+	private static final int harvestThreshold = 80;
 	
 	// The archon number of the archon from which this scout will receive its information
 	public static int homeArchon;
@@ -152,28 +160,7 @@ public class ScoutBot extends GlobalVars {
 	/************************************************************************
 	 ***************** Runtime Functions and Initialization *****************
 	 ***********************************************************************/
- 
-	
-	// Function for idle scout - does nothing until something triggers it to move
-	// TODO
-	
-	private static void idle() throws GameActionException{
 		
-		// Code to be performed every turn
-		while (true){			
-			try{				
-				// Yield time for the next turn
-				Clock.yield();
-			}			
-			catch (Exception e) {
-				// SYSTEM CHECK for exceptions in the scout code
-                System.out.println("Scout Exception");
-                e.printStackTrace();
-			}
-		}		
-	}	
-	
-	
 	// Initialization function - makes the default values for most important parameters
 	
 	public static void init() throws GameActionException {
@@ -184,7 +171,8 @@ public class ScoutBot extends GlobalVars {
         // Important parameters for self
         enemy = rc.getTeam().opponent();
         allies = rc.getTeam();
-        id = rc.getID();       
+        id = rc.getID();
+        teamBullets = rc.getTeamBullets();
         
         // Get own scoutNumber - important for broadcasting 
         scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
@@ -251,7 +239,7 @@ public class ScoutBot extends GlobalVars {
             	// Allow the scout to move by default - would be pretty dumb if being stupid was original state Q________Q...
             	wantsToMove = true;
             	
-            	// Force base to be null at start of round - rest closest ally
+            	// Force base to be null at start of round - closest gardener / Archon
             	base = null;
             	
             	// Update total number of scouts
@@ -327,8 +315,28 @@ public class ScoutBot extends GlobalVars {
             	
             	broadcastNearestEnemyLocation(enemyRobots);
             	
-            	// Update the desired place to move to
-            	move(enemyRobots);
+            	
+            	// Update the team's bullet count - will determine if it attempts to search for bullet trees or no.....
+            	teamBullets = rc.getTeamBullets();
+            	
+        		// Check to find the nearest bullet tree.......
+        		TreeInfo nearestBulletTree = findNearestBulletTree();
+            	
+            	// If the team currently has too few bullets and there is a bullet tree nearby...
+            	if (teamBullets < harvestThreshold && nearestBulletTree != null){
+            		
+            		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
+            		System.out.println("Team requires additional bullets, so will attempt to find more");            		
+ 
+        			// Do the harvest function to attempt to get some bullets from some trees...
+        			harvest(nearestBulletTree);
+            		
+            	}
+            	
+            	// Otherwise just call the move function normally......
+            	else {
+            		move(enemyRobots);
+            	}
             	
               	// SYSTEM CHECK - See if move function has been completed
             	// System.out.println("Move Completed");            	
@@ -336,6 +344,11 @@ public class ScoutBot extends GlobalVars {
             	// -------------------- MMOVE CORRECTION ---------------------//
             	
             	// Check if the initially selected position was out of bounds...
+            	
+            	// Correct desiredMove to within one scout stride location of where the robot is right now....
+            	Direction desiredDirection = myLocation.directionTo(desiredMove);
+            	
+            	desiredMove = myLocation.add(desiredDirection, strideRadius);
             	
             	if (!rc.canMove(desiredMove)){
             		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
@@ -346,19 +359,11 @@ public class ScoutBot extends GlobalVars {
             	}
             	
             	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
-            	if(!rc.canMove(desiredMove)){            		
+            	if(!rc.canMove(desiredMove)){          		
             	
-        			// Obtain the reverse direction
-        			Direction newTestDirection = new Direction(myDirection.radians + (float) Math.PI);
-        			
-        			if (rc.canMove(myLocation.add(newTestDirection))){            				
-        				// Attempt to run the open path finding check
-        				MapLocation testMove = Yuurei.tryMoveInDirection(newTestDirection, strideRadius, myLocation);
-        				
-        				if (testMove != null){
-        					desiredMove = testMove;
-            			}
-            		}
+					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius);
+					
+					desiredMove = newLocation;
             	}     	
             	
             	// Placeholder Variable for any dodge that the dodge function creates....
@@ -381,15 +386,17 @@ public class ScoutBot extends GlobalVars {
             	// See whether or not the robot can move to the current desired move, and move if it does
             	if(rc.canMove(desiredMove) && wantsToMove){
             		rc.move(desiredMove);
-            	}
-            	// Unit cannot dodge something so... It cannot move Q__Q            	
+            	}           	
             	else{
-            		
-            		System.out.println("This scout cannot find anywhere to go and is sad Q____Q)");
+            		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
+            		System.out.println("This robot did not move because it did not want to....");
             	}
             	
             	
             	// ------------------------ Shooting -----------------------------//
+            	
+            	// SYSTEM CHECK - Notify that the scout is now attempting to shoot at something........
+            	System.out.println("Moving on to shooting phase...................");
             	
             	if (trackID >= 0){
             		Korosenai.tryShootAtEnemy(trackedRobot.location, myLocation, 0, alliedRobots);
@@ -415,13 +422,69 @@ public class ScoutBot extends GlobalVars {
                 e.printStackTrace();
             }
         }
-    }
+    }	
+
+	// Function for idle scout - does nothing until something triggers it to move
+	// TODO
+	
+	private static void  harvest(TreeInfo nearestBulletTree) throws GameActionException{
+		
+		// SYSTEM CHECK - Inform that the scout has entered harvest mode.............
+		System.out.println("Team bullet total insufficient and nearby bullet tree found - entering harvest mode...............");
+		
+		float distanceTo = myLocation.distanceTo(nearestBulletTree.location);
+		
+		Direction directionTo = new Direction(myLocation, nearestBulletTree.location);
+		
+		// If the robot is too far away from the tree.... move towards it....
+		if (distanceTo >= strideRadius){
+			
+			desiredMove = myLocation.add(directionTo, strideRadius);
+			
+			// SYSTEM CHECK - Draw a WHITE LINE to the tree to be moved towards
+			rc.setIndicatorLine(myLocation, nearestBulletTree.location, 255, 255, 255);			
+		}
+		// If the robot is within strideRadius of the tree, move to its center
+		else if(distanceTo > 1){
+			
+			desiredMove = myLocation.add(directionTo, distanceTo);
+			
+			
+			// SYSTEM CHECK - Draw a WHITE LINE to the tree to be moved towards
+			rc.setIndicatorLine(myLocation, nearestBulletTree.location, 255, 255, 255);
+		}
+		// If the robot is then within range to shake the bullets off of the tree............
+		else{
+			// Double check that the robot can interact with the tree print with MAROON DOT
+			if(rc.canInteractWithTree(nearestBulletTree.ID)){
+				
+				// SYSTEM CHECK - Indicate which tree was just shaken...
+				rc.setIndicatorDot(nearestBulletTree.location, 128, 0, 0);
+				
+				// Shake the tree to obtain the bullets.........
+				rc.shake(nearestBulletTree.ID);
+				
+				// Since the robot has not yet moved, find the next tree to be shaken
+				TreeInfo newTree = findNearestBulletTree();				
+				Direction newDirection = new Direction(myLocation, newTree.location);
+				
+				// Attempt to move towards it
+				desiredMove = myLocation.add(newDirection, strideRadius);
+			}
+			else{
+				// SYSTEM CHECK - Should not happen.... but if the robot is close to the tree but cannot shake it print this fact....
+				System.out.println("ERROR: Within one unit of tree but for some reason cannot shake it...........");
+			}
+		}
+		
+	}	
 	
 	
 	/*****************************************************************************
 	 ******************** Tree Search and Broadcast Functions ********************
 	 ****************************************************************************/
-			
+	
+	
     // Function to sense and return the information of all nearby trees
 	
     private static TreeInfo[] addTrees(float senseDistance){
@@ -436,6 +499,30 @@ public class ScoutBot extends GlobalVars {
     }
     
 	
+    // Function to find nearby bullet trees and go to them......
+    
+    private static TreeInfo findNearestBulletTree(){
+    	
+    	// Obtain a list of the nearest trees.......
+    	TreeInfo[] nearbyTrees = addTrees(senseRadius);
+    	
+    	// Value to store the minimum location to a bullet tree......
+    	float minimum = Integer.MAX_VALUE;
+    	
+    	for(TreeInfo tree: nearbyTrees){    		
+    		// If the tree is closer than the previously discovered valid tree
+    		if (tree.location.distanceTo(myLocation) < minimum){
+    		
+	    		if (tree.containedBullets > 0){
+	    			return tree;	    			
+	    		}    		
+    		}
+    	} 
+    	// If no bullet trees can be sensed....
+    	return null;
+    }
+    
+    
 	// Function to Broadcast the locations of all trees found this turn
 	
     private static void broadcastTree (int totalBroadcastLimit, TreeInfo[] newTrees) throws GameActionException {
@@ -820,6 +907,9 @@ public class ScoutBot extends GlobalVars {
     
     private static void trackGardener(RobotInfo[] enemyRobots) throws GameActionException{
     	
+    	// SYSTEM CHECK - Notify that the scout is following a gardenerr......
+    	System.out.println("Attempting to track a  gardener rn......");    
+    	
     	if(rc.canSenseRobot(trackID)){
     		
     		// Update location of tracked robot - the Gardener...
@@ -990,11 +1080,11 @@ public class ScoutBot extends GlobalVars {
 		
 		for (int i = 0; i < currentAllies.length; i++){
 			// Only consider allies that are archons or gardeners
-			if (currentAllies[i].type == battlecode.common.RobotType.ARCHON || currentAllies[i].type == battlecode.common.RobotType.GARDENER){
+			if (currentAllies[i].type == battlecode.common.RobotType.GARDENER){
 				
 				float dist = myLocation.distanceTo(currentAllies[i].location);
 
-				if (dist < minimum ){					
+				if (dist < minimum && dist < 3){					
 							
 					minimum = dist;
 					index = i;	
@@ -1055,7 +1145,3 @@ public class ScoutBot extends GlobalVars {
 		}		
 	}	
 }	
-  
-
-
-
