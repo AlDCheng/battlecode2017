@@ -19,7 +19,7 @@ import java.util.Arrays;
 public class ArchonBot extends GlobalVars {
 	
 	// Variable for storing the current round of the game
-	public static int current_round = 0;
+	public static int currentRound = 0;
 	
 	// Variables important to self and team recognition
 	public static int archonNumber;
@@ -29,7 +29,8 @@ public class ArchonBot extends GlobalVars {
 	private static final float strideRadius = battlecode.common.RobotType.ARCHON.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.ARCHON.bodyRadius;
 
-
+	// Variable storing number of additional victory points needed to win
+	public static float victoryPointsToWin;
 	// Locations to store data on enemy archons....
 	public static Tuple[] archonLocations = new Tuple[5];
 	public static int[] archonIDs = new int[5];
@@ -114,8 +115,8 @@ public class ArchonBot extends GlobalVars {
 		        // Broadcast archon's location for other robots on the team to know
 			    broadcastLocation();
             	// Check for condition to exit Starting Phase
-            	current_round = rc.getRoundNum();
-            	if(current_round > 100) {
+            	currentRound = rc.getRoundNum();
+            	if(currentRound > 100) {
             		checkStatus = false;
             	}            	
           	
@@ -162,22 +163,32 @@ public class ArchonBot extends GlobalVars {
         	
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	  rc.broadcast(TREES_SENT_THIS_TURN, 0);
-            	  
+            	rc.broadcast(TREES_SENT_THIS_TURN, 0);
+            	
+            	//get current round number
+            	currentRound = rc.getRoundNum();
+            	
+            	//get needed victory points to win
+            	victoryPointsToWin = (float) GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints();
+            	
             	// if enough bullets; win
-            	if(rc.getTeamBullets() >= 10000) {
+            	float currentVictoryPointCost = rc.getVictoryPointCost();
+            	if (rc.getTeamBullets() >= victoryPointsToWin*currentVictoryPointCost) {
             		rc.donate(rc.getTeamBullets());
+            	} else if (rc.getTeamBullets() >= currentVictoryPointCost && currentRound >= 700 && currentRound % 2 == 0) {
+            		System.out.println(currentVictoryPointCost);
+            		rc.donate(currentVictoryPointCost);
             	}
             	
             	lastCount = -1;
             	
             	currentTreeSize = treeList.size;
             	
-            	current_round = rc.getRoundNum();
+            	currentRound = rc.getRoundNum();
             	
                 broadcastLocation();
             	
-            	if (current_round % SCOUT_UPDATE_FREQUENCY == 3){
+            	if (currentRound % SCOUT_UPDATE_FREQUENCY == 3){
             		binarySearchTree.archonUpdateTrees(treeList);  
 					            		
             		for (int i = 0; i < DataVars.treeMapFormat.size(); i++) {
@@ -228,7 +239,7 @@ public class ArchonBot extends GlobalVars {
             	if ((rc.getRoundNum() % 50 == 0) || (prevNumGard < 3)) {
             		hireGard = false;
             	}
-                if (rc.canHireGardener(dir) && !hireGard) {
+                if (rc.canHireGardener(dir) && !hireGard && prevNumGard < 15) {
                     rc.hireGardener(dir);
                     rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
                     hireGard = true;
