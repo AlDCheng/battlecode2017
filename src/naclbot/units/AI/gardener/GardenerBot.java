@@ -61,6 +61,9 @@ public class GardenerBot extends GlobalVars {
 	
 	static int unitNumber;
 	
+	public static float buildDir, prevBuildDir;
+	public static Direction buildVec = new Direction(0);
+	public static Direction prevBuildVec = new Direction(0);
 	//--------------------------------------------------
 	
 	
@@ -81,13 +84,15 @@ public class GardenerBot extends GlobalVars {
         // Update soldier number for other soldiers to see.....
         rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
 
-		
+        
+		buildVec = dirAway(rc.getLocation()); 
 		main();
 	}
 		
 		
 	public static void main() throws GameActionException {
         // The code you want your robot to perform every round should be in this loop
+		
         while (true) {
         	//System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
@@ -120,8 +125,11 @@ public class GardenerBot extends GlobalVars {
                 RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
                 
                 // Find direction away from others
-                float buildDir = dirAway(rc.getLocation()).getAngleDegrees();
-                float buildDirOpp = dirAway(rc.getLocation()).opposite().getAngleDegrees();
+                
+                prevBuildDir = prevBuildVec.opposite().getAngleDegrees();
+                buildVec = dirAway(rc.getLocation());
+                buildDir = buildVec.getAngleDegrees();
+//                float buildDirOpp = dirAway(rc.getLocation()).opposite().getAngleDegrees();
                 System.out.println("Build Degrees: " + buildDir);
                 
                 // check for movement to more optimal space
@@ -137,13 +145,14 @@ public class GardenerBot extends GlobalVars {
                 	else {
 	                	// Find optimal location to move
 //	                	System.out.println(Clock.getBytecodeNum());
-	                	MapLocation destination = Plant.findOptimalSpace(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4, buildDirOpp);
+	                	MapLocation destination = Plant.findOptimalSpace(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4, prevBuildDir);
 //	                	System.out.println(Clock.getBytecodeNum());
 	                	rc.setIndicatorDot(destination, 255, 0, 255);
 	                	
 	                	// Move to location
 	                	Direction dirToDestination = rc.getLocation().directionTo(destination);
 	                	if (dirToDestination != null) {
+	                		prevBuildVec = dirToDestination;
 	                		float lengthTo = rc.getLocation().distanceTo(destination);
 	                		Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);
 	                	}

@@ -170,7 +170,16 @@ public class Plant extends GlobalVars {
 						// Unit weighting (for own Team)
 						openness += rc.senseNearbyRobots(potLoc, radius, us).length;
 						// Unit weighting (for enemy Team)
-						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
+//						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
+						RobotInfo[] themBots = rc.senseNearbyRobots(potLoc, radius, them);
+						for (int i = 0; i < themBots.length; i++) {
+							if (themBots[i].type == battlecode.common.RobotType.ARCHON) {
+								openness += 3;
+							}
+							else {
+								openness += 0.1;
+							}
+						}
 					}
 					
 //					System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);
