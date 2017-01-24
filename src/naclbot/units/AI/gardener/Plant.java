@@ -114,7 +114,7 @@ public class Plant extends GlobalVars {
 	
 	// Find largest nearby empty space for tree planting
 	// Also finds an empty space for unit/tree production
-	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength) throws GameActionException {
+	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength, float start) throws GameActionException {
 		
 //		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
 		
@@ -142,17 +142,14 @@ public class Plant extends GlobalVars {
 		minOpenness += 3*rc.senseNearbyRobots(radius, them).length;
 		
 //		System.out.println("Max Length: " + maxLength);
-		
-		// Declare angle/length modifiers
-		float angle = 0;
 		float length = lengthInterval;
-		
+		// Declare angle/length modifiers
 		// Check
 		while(length <= maxLength) {
-			angle = 0;
+			float angle = start;
+			float totalAngle = 0;
 			
-			while(angle < 360) {
-				
+			while(totalAngle < 360) {
 				// Get potential location
 				potLoc = curLoc.add((float)Math.toRadians(angle), length);
 				rc.setIndicatorDot(potLoc, 178, 102, 255);
@@ -184,8 +181,8 @@ public class Plant extends GlobalVars {
 					minOpenness = openness;
 					finalLoc = potLoc;
 				}
-				
 				angle += angleInterval;
+				totalAngle += angleInterval;
 			}
 			length += lengthInterval;
 		}

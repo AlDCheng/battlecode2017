@@ -119,6 +119,11 @@ public class GardenerBot extends GlobalVars {
                 //check if there are nearby allied units
                 RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
                 
+                // Find direction away from others
+                float buildDir = dirAway(rc.getLocation()).getAngleDegrees();
+                float buildDirOpp = dirAway(rc.getLocation()).opposite().getAngleDegrees();
+                System.out.println("Build Degrees: " + buildDir);
+                
                 // check for movement to more optimal space
                 if (canMove) {
                 	if (unitStart < 10) {
@@ -130,10 +135,9 @@ public class GardenerBot extends GlobalVars {
                 		unitStart++;
                 	}
                 	else {
-	                	destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
 	                	// Find optimal location to move
 //	                	System.out.println(Clock.getBytecodeNum());
-	                	MapLocation destination = Plant.findOptimalSpace(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4);
+	                	MapLocation destination = Plant.findOptimalSpace(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4, buildDirOpp);
 //	                	System.out.println(Clock.getBytecodeNum());
 	                	rc.setIndicatorDot(destination, 255, 0, 255);
 	                	
@@ -152,8 +156,7 @@ public class GardenerBot extends GlobalVars {
                 // Force minimum number of units
                 // Scout-Tree-Tree-Scout-Soldier-Trees
 //                System.out.println("Tree status: " + treeImpossible + ", Num Tree: " + rc.getTreeCount());
-                float buildDir = dirAway(rc.getLocation()).getAngleDegrees();
-                System.out.println("Build Degrees: " + buildDir);
+                
                 
                 float bulletNum = rc.getTeamBullets();
                 if (bulletNum > GameConstants.BULLET_TREE_COST) {

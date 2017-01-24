@@ -84,6 +84,9 @@ public class ArchonBot extends GlobalVars {
     // Value to store the length of tiem for which a gardener has not been constructed...
     public static int roundsNotConstructed = 0;
     
+    // Determines what is considered empty
+    public static float crowdThresh = (float)0.6;
+    
     // TO BE CHANGED
     // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CIRCLE
     public static int getGardenerLimit(int roundNumber){
@@ -133,15 +136,18 @@ public class ArchonBot extends GlobalVars {
 		
 		// Loop to terminate the starting phase of the robot
 		boolean checkStatus = true;		
-		
 		// Variable to store the number of gardeners hired in this phase....
 		int hiredGardeners = 0;
 		
         // Starting phase loop
-        while (hiredGardeners < maxGardeners) {
+        while ((hiredGardeners < maxGardeners)) {
 
             // Try/catch blocks stop unhandled exceptions, - print stacktrace upon exception error....
             try {
+            	// Scan surrounding first:
+            	boolean crowded = checkBuildRadius(30, crowdThresh);
+            	System.out.println("Crowded?: " + crowded);
+            	
             	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
             	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
             	
@@ -172,11 +178,16 @@ public class ArchonBot extends GlobalVars {
             	
             	// Update the current round number.....
             	remIsBestGirl = rc.getRoundNum();
+            	
+            	Direction testDirection = null;
+            	Direction gardenerDirection = null;
+            	
+            	// Build if not crowded
+            	if (!crowded) {
+            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+                	gardenerDirection = tryHireGardener(testDirection);
+            	}
   
-            	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
-            	
-            	Direction gardenerDirection = tryHireGardener(testDirection);
-            	
             	// If the archon can hire a gardener in a certain direction...
             	if (gardenerDirection != null && (roundsNotConstructed >= gardenerConstructionBreak || remIsBestGirl <= 20)){
             		// Assert that the archon can actually hire it (i.e. not limited by previous hiring
@@ -238,8 +249,11 @@ public class ArchonBot extends GlobalVars {
             	
             	// Get the total number of gardeners constructed thus far.....
             	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
-            	
-            	if (numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)){
+
+        		// Check surroundings
+        		boolean crowded = checkBuildRadius(30, crowdThresh);
+        		
+            	if ((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) && (!crowded)) {
             		constructGardeners(1);
             	}
             	
@@ -474,5 +488,57 @@ public class ArchonBot extends GlobalVars {
 		rc.setIndicatorLine(myLocation, myLocation.add(newDirection,10), 0, 125, 0);
 		
 		return newDirection;
+	}
+	
+	// Check build radius
+	public static boolean checkBuildRadius(float angleInterval, float threshold) throws GameActionException {
+		float crowdedFactor = 0;
+		
+		// Define direction variable
+		Direction dir = new Direction(0);
+		
+		// Get current location
+		MapLocation curLoc = rc.getLocation();
+		
+		// Make sure only one revolution is check
+		float totalAngle = 0;
+		
+		// Scan for 1 revolution
+		while (totalAngle < 360) {
+			
+			// Point to be scan
+			MapLocation newLoc = curLoc.add(dir,(float)2.5);
+			
+			// Check if space of radius 0.5 is clear 2.5 units away
+			// First check if on map
+			if(rc.onTheMap(newLoc, (float)0.5)) {
+				// Then check if occupied
+				if(rc.isCircleOccupiedExceptByThisRobot(newLoc,(float)0.5)) {
+					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,(float)0.5), 255, 128, 0);
+					
+					// Increase factor
+					crowdedFactor += angleInterval/360;
+				}
+				else {
+					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,(float)0.5), 0, 255, 255); 
+				}
+			}
+			else {
+				// Increase factor
+				crowdedFactor += angleInterval/360;
+			}
+			dir = dir.rotateLeftDegrees(angleInterval);
+			totalAngle += angleInterval; 
+		}
+		
+		System.out.println("Crowded Factor: " + crowdedFactor + ", Theshold: " + threshold);
+		
+		// Check if threshold is met (under)
+		if (crowdedFactor < threshold) {
+			return false;
+		}
+		else {
+			return true;
+		}
 	}
 }
