@@ -36,12 +36,24 @@ public class Routing extends GlobalVars{
 	// - Wall following:
 	// TODO: Comment later
 	public static Direction prevDir = new Direction(0);
-	public static int reRoute = 0; 
-	public static boolean newDest = false;
 	
 	public static MapLocation prevLoc = rc.getLocation();
 	public static MapLocation curLoc = new MapLocation(prevLoc.x,prevLoc.y);
 	public static MapLocation lastDest = new MapLocation(prevLoc.x,prevLoc.y);
+	public static MapLocation finalDest = new MapLocation(prevLoc.x,prevLoc.y);
+	
+	public static int rotL = 1;
+	public static int dy = 1;
+	public static int progX = 1; 
+	public static int progY = 0;
+	public static int timeStep = 0;
+	public static int timeOut = 5;
+	public static float wfOffset = 30;
+	public static boolean newDest = true;
+	public static boolean wallFollow = false;
+	public static MapLocation stuckLoc = rc.getLocation();
+	public static Direction startAngle = new Direction(0);
+	public static ArrayList<MapLocation> pastLoc = new ArrayList<MapLocation>();
 	
 	/**
 	 * Sets path to traverse and resets wall following variables
@@ -55,26 +67,45 @@ public class Routing extends GlobalVars{
 		// Reset wall following variables:
 		// TODO: Comment later
 		prevDir = new Direction(0);
-		reRoute = 0; 
-		newDest = false;
+		timeStep = 0;
+		newDest = true;
 		
+		pastLoc = new ArrayList<MapLocation>();
 		prevLoc = rc.getLocation();
+		stuckLoc = new MapLocation(prevLoc.x,prevLoc.y);
 		curLoc = new MapLocation(prevLoc.x,prevLoc.y);
 		lastDest = new MapLocation(prevLoc.x,prevLoc.y);
+		
+		if(pathNew.size() > 0) {
+			finalDest = pathNew.get(pathNew.size()-1);
+		}
+		
+		wallFollow = false;
 	}
 	
 	public static void resetRouting() {
 		prevDir = new Direction(0);
+		timeStep = 0;
 		
+		pastLoc = new ArrayList<MapLocation>();
 		prevLoc = rc.getLocation();
 		curLoc = new MapLocation(prevLoc.x,prevLoc.y);
 		lastDest = new MapLocation(prevLoc.x,prevLoc.y);
 		
+//		System.out.println("Path before: " + path);
+		
+		path = new ArrayList<MapLocation>();
+		path.add(finalDest);
+		/*
 		if (path.size() > 0) {
 			MapLocation dest = path.get(path.size()-1);
 			path = new ArrayList<MapLocation>();
 			path.add(dest);
-		}
+		}*/
+		
+//		System.out.println("Path after: " + path);
+		
+		wallFollow = false;
 	}
 	
 	/**
@@ -85,19 +116,40 @@ public class Routing extends GlobalVars{
 			// Wall following:
 			// TODO: Comment later
 	    	curLoc = rc.getLocation(); // Get current location
+	    	pastLoc.add(curLoc);
+	    	System.out.println("BP-1: " + pastLoc.size() + ", WF: " + wallFollow);
+	    	if (pastLoc.size() >= timeOut) {
+//	    		System.out.println(pastLoc);
+	    		//System.out.println(pastLoc.get(0).distanceTo(curLoc));
+	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
+	    			System.out.println("BP-0.5");
+		    		if(wallFollow) {
+		    			resetRouting();
+		    		}
+		    		else {
+		    			wallFollowingEntry();
+		    		}
+	    		}
+	    		else{
+	    			pastLoc.remove(0);
+	    		}
+	    		
+	    	}
+	    	System.out.println("BP0");
+	    	ArrayList<MapLocation> newPath = new ArrayList<MapLocation>();
 
-	    	Routing.prevDir = new Direction(prevLoc, curLoc);
+	    	prevDir = new Direction(prevLoc, curLoc);
 	    	// Update previous location
 	    	// This is as moving occurs below this
 	    	prevLoc = new MapLocation(curLoc.x,curLoc.y);
 	    	
- 		   	System.out.println(path.size());
+// 		   	System.out.println(path.size());
 //    		System.out.println("ReRoute: " + Routing.reRoute);
 	    	
 	    	// Pathing:
 	    	// If there is a path to move through, then attempt moving to each point one at a time
 	    	if(!(path.isEmpty())) {
-	    		System.out.println("Path: " + path + ", Size: " + path.size());
+//	    		System.out.println("Path: " + path + ", Size: " + path.size() + ", WallFollow: " + wallFollow);
 	    		
 	    		// Transfer the first point to nextLoc
 	    		// If point isn't reached, it will be re-added to Path later 
@@ -109,61 +161,52 @@ public class Routing extends GlobalVars{
 	    				System.out.println("Removed: " + nextLoc);
 		    		}
 	    			else {
+	    				if(wallFollow && (path.size() > 0)) {
+	    					nextLoc = path.get(path.size()-1);
+	    				}
 	    				break;
 	    			}
 	    		}
-	    		
+	    			
 //    			System.out.println(nextLoc);
 	    		
-	    		// Calling function to attempt to move to point
-	    		ArrayList<MapLocation> newPath = Routing.moveToPoint(nextLoc);
-//	    		path = Routing.moveToPoint(nextLoc);
 	    		
-	    		if(!(newPath.isEmpty())) {
+	    		// Calling function to attempt to move to point
+				if(!wallFollow) {
+		    		newPath = moveToPoint(nextLoc);
+				} else {
+					System.out.println("Wall Follow");
+					newPath = wallFollowMoveTo(nextLoc);
+				}
+				System.out.println("New Path: " + newPath);
+//	    		path = Routing.moveToPoint(nextLoc);
+				System.out.println("BP1");
+	    		if(newPath.size() > 0) {
 	    			// Add entire newPath to path
+	    			System.out.println("BP2");
     				for (int i = newPath.size()-1; i > -1; i--) {
     					path.add(0, newPath.get(i));
     				}
 	    		}
+	    		else if(!wallFollow) {
+	    			System.out.println("BP3");
+	    			wallFollowingEntry();
+	    		}
+	    		else {
+	    			resetRouting();
+	    			wallFollowingEntry();
+	    		}
 	    		
 	    		/*
-	    		// If there is a path resulting from the movement...
-	    		// - It is only empty when the robot is stuck
-	    		if(!(newPath.isEmpty())) {
-    				System.out.println("New Path: " + newPath);
-	    			
-	    			// Detect if we have not reached point
-	    			if(!(newPath.get(0).isWithinDistance(rc.getLocation(), (float)0.5))) {
-//    					System.out.println("Not at point");
-	    				
-	    				// Add entire newPath to path
-	    				for (int i = newPath.size()-1; i > -1; i--) {
-	    					path.add(0, newPath.get(i));
-	    				}
-	    			}
-	    			
-	    			// Point is reached
-	    			else
-	    			{
-	    				// Add newPath except for point just reached (at index 0)
-	    				for (int i = newPath.size()-1; i > 0; i--) {
-	    					path.add(0, newPath.get(i));
-	    				}
-	    				
-	    				// Wall following:
-	    				// Set signal that point is found, so new point will be taken
-	    				// and store this point that has been cleared
-	    				Routing.newDest = true;
-	    				lastDest = new MapLocation(newPath.get(0).x, newPath.get(0).y);
-	    			}
-	    		}
-	    		// No continuing path, so it is halted
-	    		else {
-	    			path = new ArrayList<MapLocation>();
-	    		}*/
+	    		float moveDist = curLoc.distanceTo(path.get(0));
+				if (moveDist > maxDist) {
+					Direction moveDir = curLoc.directionTo(path.get(0));
+					path.set(0, curLoc.add(moveDir, maxDist));
+				}*/
 	    	}
 	    // Catch for all exceptions
 		} catch (Exception e) {
+			System.out.println("Wrapper failure");
 			e.printStackTrace(); // Print exceptions
 		}
 	    	
@@ -199,7 +242,7 @@ public class Routing extends GlobalVars{
 			RobotType curType = rc.getType();
 			
 			// Draw pink line for reference
-			// rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+			 rc.setIndicatorLine(curLoc, dest, 203, 192, 255);
 			
 			// Get direction to point
 			Direction destDir = new Direction(curLoc, dest);
@@ -219,14 +262,7 @@ public class Routing extends GlobalVars{
 					nextPoints.add(dest); // Append final destination to path
 					return nextPoints;
 				}
-			} /*else if(rc.isCircleOccupiedExceptByThisRobot(curLoc, (float)1.5*curType.bodyRadius)) {
-				
-				if(tryMoveRouting(prevDir, degreeOffset, checks, distDest, distIntervals)) {
-					// Movement successful with no edits
-					nextPoints.add(dest); // Append final destination to path
-					return nextPoints;
-				}
-			}*/
+			}
 			// Used in Stage 3: determines what are the horizontal and vertical components
 			int rightMod = 1;
 			int upMod = 1;
@@ -261,7 +297,6 @@ public class Routing extends GlobalVars{
 						// nextPoints is empty if there are no space; otherwise append re-routing path
 						if(!(nextPoints.isEmpty())) {
 							nextPoints.add(dest); // Add final destination to path
-							reRoute = 3;
 							return nextPoints; // Return path to exit function
 						}
 						
@@ -283,7 +318,6 @@ public class Routing extends GlobalVars{
 								// nextPoints is empty if there are no space; otherwise append re-routing path
 								if(!(nextPoints.isEmpty())) {
 									nextPoints.add(dest); // Add final destination to path
-									reRoute = 3;
 									return nextPoints; // Return path to exit function
 								}
 							}
@@ -295,7 +329,6 @@ public class Routing extends GlobalVars{
 								// nextPoints is empty if there are no space; otherwise append re-routing path
 								if(!(nextPoints.isEmpty())) {
 									nextPoints.add(dest); // Add final destination to path
-									reRoute = 3;
 									return nextPoints; // Return path to exit function
 								}
 							}
@@ -319,7 +352,6 @@ public class Routing extends GlobalVars{
 								// nextPoints is empty if there are no space; otherwise append re-routing path
 								if(!(nextPoints.isEmpty())) {
 									nextPoints.add(dest); // Add final destination to path
-									reRoute = 3;
 									return nextPoints;
 								}
 							}
@@ -332,7 +364,6 @@ public class Routing extends GlobalVars{
 								// nextPoints is empty if there are no space; otherwise append re-routing path
 								if(!(nextPoints.isEmpty())) {
 									nextPoints.add(dest); // Add final destination to path
-									reRoute = 3;
 									return nextPoints; // Return path to exit function
 								}
 							}
@@ -391,7 +422,6 @@ public class Routing extends GlobalVars{
 						// nextPoints is empty if there are no space; otherwise append re-routing path
 						if(!(nextPoints.isEmpty())) {
 							nextPoints.add(dest); // Add final destination to path
-							reRoute = 3;
 							return nextPoints; // Return path to exit function
 						}
 						
@@ -403,7 +433,6 @@ public class Routing extends GlobalVars{
 							// nextPoints is empty if there are no space; otherwise append re-routing path
 							if(!(nextPoints.isEmpty())) {
 								nextPoints.add(dest); // Add final destination to path
-								reRoute = 3;
 								return nextPoints; // Return path to exit function
 							}
 						}
@@ -415,7 +444,6 @@ public class Routing extends GlobalVars{
 							// nextPoints is empty if there are no space; otherwise append re-routing path
 							if(!(nextPoints.isEmpty())) {
 								nextPoints.add(dest); // Add final destination to path
-								reRoute = 3;
 								return nextPoints; // Return path to exit function
 							}
 						}
@@ -468,7 +496,6 @@ public class Routing extends GlobalVars{
 						// nextPoints is empty if there are no space; otherwise append re-routing path
 						if(!(nextPoints.isEmpty())) {
 							nextPoints.add(dest); // Add final destination to path
-							reRoute = 3;
 							return nextPoints; // Return path to exit function
 						}
 						
@@ -480,7 +507,6 @@ public class Routing extends GlobalVars{
 							// nextPoints is empty if there are no space; otherwise append re-routing path
 							if(!(nextPoints.isEmpty())) {
 								nextPoints.add(dest); // Add final destination to path
-								reRoute = 3;
 								return nextPoints; // Return path to exit function
 							}
 						}
@@ -493,7 +519,6 @@ public class Routing extends GlobalVars{
 							// nextPoints is empty if there are no space; otherwise append re-routing path
 							if(!(nextPoints.isEmpty())) {
 								nextPoints.add(dest); // Add final destination to path
-								reRoute = 3;
 								return nextPoints; // Return path to exit function
 							}
 						}
@@ -570,6 +595,10 @@ public class Routing extends GlobalVars{
 				}
 			}
 			
+			if (blockTree == null) {
+				return new ArrayList<MapLocation>();
+			}
+			
 			MapLocation treeLoc = blockTree.location;
 			
 			// Draw tree point
@@ -591,7 +620,7 @@ public class Routing extends GlobalVars{
 				
 				// Check if horizontal path is clear
 				if(!(rc.isCircleOccupiedExceptByThisRobot(point2,bodyRadiusCheck))) {
-					
+					System.out.println("0");
 					// Point is free
 					// rc.setIndicatorDot(point2, 0, 0, 255); // Mark point blue
 					
@@ -624,6 +653,7 @@ public class Routing extends GlobalVars{
 				
 				// Check if vertical path is clear
 				else if(!(rc.isCircleOccupiedExceptByThisRobot(point1,bodyRadiusCheck))) {
+					System.out.println("1");
 	
 					// Point is free (but not previous)
 					// rc.setIndicatorDot(point1, 0, 0, 255); // Mark point blue
@@ -666,6 +696,7 @@ public class Routing extends GlobalVars{
 			else {
 				// Check if horizontal path is clear
 				if(!(rc.isCircleOccupiedExceptByThisRobot(point1,bodyRadiusCheck))) {
+					System.out.println("2");
 					
 					// Point is free
 					// rc.setIndicatorDot(point1, 0, 0, 255); // Mark point blue
@@ -699,6 +730,7 @@ public class Routing extends GlobalVars{
 				
 				// Check if vertical path is clear
 				else if(!(rc.isCircleOccupiedExceptByThisRobot(point1,bodyRadiusCheck))) {
+					System.out.println("3");
 					
 					// Point is free (but not previous)
 					// rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
@@ -899,6 +931,171 @@ public class Routing extends GlobalVars{
 		return nextPoints;
 		
 	}
+	//--------------------------------------------------------------------------------------
+	//-----------------------------------[Wall Following]-----------------------------------
+	//--------------------------------------------------------------------------------------
+	
+	public static void wallFollowingEntry() {
+		resetRouting();
+		stuckLoc = curLoc;
+		
+		try {
+			Direction toGoal = new Direction(curLoc, path.get(0));
+			progX = 1; progY = 0;
+			if (toGoal.getDeltaY(1) > toGoal.getDeltaX(1)) {
+				progX = 0; progY = 1;
+			}
+			if (toGoal.getDeltaX(1) < 0) {
+				progX = -1*progX;
+			}
+			if (toGoal.getDeltaY(1) < 0) {
+				progY = -1*progY;
+			}
+			
+			if (newDest) {
+				// Define starting checking angle
+				startAngle = Direction.NORTH;
+				dy = 1;
+				if (toGoal.getDeltaY(1) < 0) {
+					startAngle = Direction.SOUTH;
+					dy = -1;
+				}
+				
+				// Define rotation direction
+				rotL = 1;
+				if (toGoal.getDeltaX(1)*toGoal.getDeltaY(1) > 0) {
+					rotL = -1;
+				}
+				startAngle = startAngle.rotateLeftDegrees(rotL * 90);
+			}
+			else {
+				if (dy > 0) {
+					startAngle = Direction.NORTH;
+				}
+				else {
+					startAngle = Direction.SOUTH;
+				}
+				startAngle = startAngle.rotateLeftDegrees(rotL * 90);
+			}
+			
+			wallFollow = true;
+			
+			
+		} catch (Exception e) {
+			System.out.println("Error in Wall Following Entry");
+			e.printStackTrace(); // Print exceptions
+		}
+	}
+	
+	public static ArrayList<MapLocation> wallFollowMoveTo(MapLocation dest) {
+		
+		// Array to store the new path
+		ArrayList<MapLocation> nextPoints = new ArrayList<MapLocation>();
+		
+		try {
+			
+			rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+					
+			float distance = curLoc.distanceTo(dest);
+			float distDest = distance;
+			if (distDest > maxDist) {
+				distDest = maxDist;
+			}
+			distIntervals = distDest;
+			
+			Direction destDir = new Direction(curLoc, dest);
+			
+			// If can move in intended direction, exit
+			if (!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(destDir, maxDist), rc.getType().bodyRadius)) {
+				if (((progX * (curLoc.x - stuckLoc.x) > maxDist) && (progX != 0)) ||
+						((progY * (curLoc.y - stuckLoc.y) > maxDist) && (progY != 0))) {
+					if (tryMoveReturn(destDir, degreeOffset, checks, distDest, distIntervals, nextPoints)) {
+						nextPoints.add(dest); // Append final destination to path
+						wallFollow = false;
+						return nextPoints;
+					}					
+				}
+			}
+			
+			if (tryWallFollowReturn(startAngle, wfOffset, maxDist, maxDist/2, nextPoints)) {
+				nextPoints.add(dest); // Append final destination to path
+				return nextPoints;
+			}
+			else {
+				nextPoints.add(curLoc);
+				nextPoints.add(dest); 
+				return new ArrayList<MapLocation>();
+			}
+		
+		} catch (Exception e) {
+			System.out.println("Error in Wall Following Entry");
+			e.printStackTrace(); // Print exceptions
+			
+			
+		}
+		nextPoints = new ArrayList<MapLocation>();
+		nextPoints.add(curLoc);
+		nextPoints.add(dest); 
+		return nextPoints;
+	}
+
+	public static boolean tryWallFollowReturn(Direction dir, float degreeOffset, float distance, float distanceInterval, 
+																ArrayList<MapLocation> newPath) throws GameActionException {
+		
+		MapLocation moveLoc = tryWallFollow(dir, degreeOffset, distance, distanceInterval, rc.getType().bodyRadius);
+		rc.setIndicatorLine(curLoc, curLoc.add(dir,1), 255, 0, 0);
+		
+		if(moveLoc != null) {
+			newPath.add(moveLoc);
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	public static MapLocation tryWallFollow(Direction dir, float degreeOffset, float distance, float distanceInterval,
+											float bodyRadius) throws GameActionException {
+	
+	    
+	    // Set first distance length to check to be max	    
+	    float totalAngle = 0;
+	    
+//	    System.out.println();
+//	    System.out.println(dir + ", " + degreeOffset + ", " + distance + ", " + distanceInterval + ", " + bodyRadius);
+//	    System.out.println();
+	    
+	    while (totalAngle < 359) {
+	    	
+	    	float distanceCheck = distance;
+	    	
+	    	// While distance length is above a certain threshold, continue searching
+		    while(distanceCheck > 0.0001) {
+//		    	System.out.println(dir + ", " + distanceCheck);
+		    	
+		    	rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+		    	
+		    	if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist), bodyRadius)) {
+		    		if(rc.canMove(dir,distanceCheck)) {
+//		    			System.out.println(-rotL * 90);
+		    			startAngle = dir.rotateLeftDegrees(-rotL * 90);
+		    			System.out.println(dir + ", " + distanceCheck);
+			        	return curLoc.add(dir,distanceCheck);
+			        }
+		    	}
+			    // Set next distance to be check
+			    // Decrease by interval value set
+			    distanceCheck -= distanceInterval; 
+		    }
+
+	    	dir = dir.rotateLeftDegrees(rotL * degreeOffset);
+	    	totalAngle += degreeOffset;
+	    }
+	    
+	    // A move never happened, so return false.
+	    return curLoc;
+	}
+
 	//--------------------------------------------------------------------------------------
 	//--------------------------------------[Movement]--------------------------------------
 	//--------------------------------------------------------------------------------------
