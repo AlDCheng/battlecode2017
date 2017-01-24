@@ -199,7 +199,7 @@ public class Routing extends GlobalVars{
 			RobotType curType = rc.getType();
 			
 			// Draw pink line for reference
-			rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+			// rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
 			
 			// Get direction to point
 			Direction destDir = new Direction(curLoc, dest);
@@ -366,7 +366,7 @@ public class Routing extends GlobalVars{
 					// Movement failure
 					
 					// Draw Red line to indicate failed direction
-					rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
+					// rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
 					
 					// Not succesful; set up trying vertical
 					newAngle = (float)Math.PI/2; // Default is Up
@@ -383,7 +383,7 @@ public class Routing extends GlobalVars{
 					if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 						
 						// Draw Red line to indicate failed direction
-						rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
+						// rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
 						
 //						System.out.println(rightMod + ", " + upMod);
 						
@@ -443,7 +443,7 @@ public class Routing extends GlobalVars{
 				if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 					
 					// Draw Red line to indicate failed direction
-					rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
+					// rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
 					
 					// Not succesful; set up trying horizontal
 					newAngle = 0;
@@ -460,7 +460,7 @@ public class Routing extends GlobalVars{
 					if(!(tryMoveReturn(newDestDir, degreeOffset, checks, distDest, distIntervals, nextPoints))) {
 						
 						// Draw Red line to indicate failed direction
-						rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
+						// rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
 						
 //						System.out.println(rightMod + ", " + upMod);
 						
@@ -573,7 +573,7 @@ public class Routing extends GlobalVars{
 			MapLocation treeLoc = blockTree.location;
 			
 			// Draw tree point
-			rc.setIndicatorDot(treeLoc, 0, 255, 0); // Mark point green
+			// rc.setIndicatorDot(treeLoc, 0, 255, 0); // Mark point green
 			
 			float treeRad = blockTree.radius;
 			
@@ -593,7 +593,7 @@ public class Routing extends GlobalVars{
 				if(!(rc.isCircleOccupiedExceptByThisRobot(point2,bodyRadiusCheck))) {
 					
 					// Point is free
-					rc.setIndicatorDot(point2, 0, 0, 255); // Mark point blue
+					// rc.setIndicatorDot(point2, 0, 0, 255); // Mark point blue
 					
 					// Append to path
 					// Intermediate point along re-routed path
@@ -626,8 +626,8 @@ public class Routing extends GlobalVars{
 				else if(!(rc.isCircleOccupiedExceptByThisRobot(point1,bodyRadiusCheck))) {
 	
 					// Point is free (but not previous)
-					rc.setIndicatorDot(point1, 0, 0, 255); // Mark point blue
-					rc.setIndicatorDot(point2, 255, 0, 0); // Mark point red
+					// rc.setIndicatorDot(point1, 0, 0, 255); // Mark point blue
+					// rc.setIndicatorDot(point2, 255, 0, 0); // Mark point red
 					
 					// Append to path
 					// Intermediate point along re-routed path
@@ -658,8 +658,8 @@ public class Routing extends GlobalVars{
 				}
 				
 				// No points are clear
-				rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
-				rc.setIndicatorDot(point2, 255, 0, 0); // Mark point red
+				// rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
+				// rc.setIndicatorDot(point2, 255, 0, 0); // Mark point red
 			}
 			
 			// Case 2: If direction at angle > relative to horizontal
@@ -668,7 +668,7 @@ public class Routing extends GlobalVars{
 				if(!(rc.isCircleOccupiedExceptByThisRobot(point1,bodyRadiusCheck))) {
 					
 					// Point is free
-					rc.setIndicatorDot(point1, 0, 0, 255); // Mark point blue
+					// rc.setIndicatorDot(point1, 0, 0, 255); // Mark point blue
 					
 					// Append to path
 					// Intermediate point along re-routed path
@@ -701,8 +701,8 @@ public class Routing extends GlobalVars{
 				else if(!(rc.isCircleOccupiedExceptByThisRobot(point1,bodyRadiusCheck))) {
 					
 					// Point is free (but not previous)
-					rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
-					rc.setIndicatorDot(point2, 0, 0, 255); // Mark point blue
+					// rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
+					// rc.setIndicatorDot(point2, 0, 0, 255); // Mark point blue
 					
 					// Append to path
 					// Intermediate point along re-routed path
@@ -732,8 +732,8 @@ public class Routing extends GlobalVars{
 				}
 				
 				// No points are clear
-				rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
-				rc.setIndicatorDot(point2, 255, 0, 0); // Mark point red
+				// rc.setIndicatorDot(point1, 255, 0, 0); // Mark point red
+				// rc.setIndicatorDot(point2, 255, 0, 0); // Mark point red
 			}
 		// Catch all exceptions
 		} catch (Exception e) {
@@ -782,12 +782,12 @@ public class Routing extends GlobalVars{
 				
 				// Check if point is not free
 				if(rc.isCircleOccupiedExceptByThisRobot(potLoc,bodyRadius)) {
-					rc.setIndicatorDot(potLoc, 153, 0, 0); // Mark point red
+					// rc.setIndicatorDot(potLoc, 153, 0, 0); // Mark point red
 					return new ArrayList<MapLocation>(); // Return empty (no path)
 				}
 				
 				// Point is free
-				rc.setIndicatorDot(potLoc, 0, 204, 204); // Mark point blue
+				// rc.setIndicatorDot(potLoc, 0, 204, 204); // Mark point blue
 			}
 			potLoc = new MapLocation(rightMod * hLen/2 + curLoc.x, -upMod * vLen + curLoc.y);
 			
@@ -859,12 +859,12 @@ public class Routing extends GlobalVars{
 				
 				// Check if point is not free
 				if(rc.isCircleOccupiedExceptByThisRobot(potLoc,bodyRadius)) {
-					rc.setIndicatorDot(potLoc, 153, 0, 0); // Mark point red
+					// rc.setIndicatorDot(potLoc, 153, 0, 0); // Mark point red
 					return new ArrayList<MapLocation>(); // Return empty (no path)
 				}
 				
 				// Point is free
-				rc.setIndicatorDot(potLoc, 0, 204, 204);
+				// rc.setIndicatorDot(potLoc, 0, 204, 204);
 			}
 			potLoc = new MapLocation(-rightMod * hLen + curLoc.x, upMod * vLen/2 + curLoc.y);
 			

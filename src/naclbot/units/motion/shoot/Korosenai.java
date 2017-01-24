@@ -29,7 +29,7 @@ public class Korosenai extends GlobalVars {
 	public static final float pentadOffset = 15;
 	
 	// Probability that if a robot has previous enemy data, it will shoot at the next location the enemy might travel at.....
-	public static final float probabilityPredict = (float) 0.6;
+	public static final float probabilityPredict = (float) 0.8;
 
     // Function to determine if there is any tree in the line between one location and the other
     
@@ -102,7 +102,7 @@ public class Korosenai extends GlobalVars {
     			if(Math.abs(directionTo.radians - dir.radians) <= interceptRadians){
     				
     				// SYSTEM CHECK - Show which allies cannot be shot at... along with a dark blue dot....
-    				System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
+    				// System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
     				// rc.setIndicatorDot(allyData.location, 0, 0, 80); 
     				
     				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
@@ -211,7 +211,7 @@ public class Korosenai extends GlobalVars {
     			
     			// SYSTEM CHECK - Inform that the enemy the unit is attempting to shoot was seen last turn 
     			// 				  and place BROWN LINE LINE between the previous location and current...
-    			System.out.println("Currently tracked enemy previously seen before");
+    			// System.out.println("Currently tracked enemy previously seen before");
     			rc.setIndicatorLine(enemy.location, enemyData.location, 102, 51, 0);
     			prevEnemyData = enemyData;
     		}    		
@@ -278,8 +278,8 @@ public class Korosenai extends GlobalVars {
         		MapLocation firingLocation = myLocation.add(firingDirection, distanceTo);
         		
         		// SYSTEM CHECK show where the intended firing location is..... LIGHT GREEN LINE
-        		rc.setIndicatorLine(myLocation, firingLocation, 153, 255, 51);   
-        		System.out.println("Attempting to fire near the future location");
+        		// rc.setIndicatorLine(myLocation, firingLocation, 153, 255, 51);   
+        		// System.out.println("Attempting to fire near the future location");
         		
         		return firingLocation;    			
     		}		
@@ -304,7 +304,7 @@ public class Korosenai extends GlobalVars {
         		MapLocation firingLocation = myLocation.add(firingDirection, distanceTo);
         		
         		// SYSTEM CHECK show where the intended firing location is..... DARK GREEN LINE
-        		rc.setIndicatorLine(myLocation, firingLocation, 0, 102, 0);
+        		// rc.setIndicatorLine(myLocation, firingLocation, 0, 102, 0);
         		
         		return firingLocation;        		
     		}    		
@@ -329,7 +329,7 @@ public class Korosenai extends GlobalVars {
     		MapLocation firingLocation = myLocation.add(firingDirection, distanceTo);
     		
     		// SYSTEM CHECK show where the intended firing location is..... DARK GREEN LINE
-    		rc.setIndicatorLine(myLocation, firingLocation, 0, 102, 0);
+    		// rc.setIndicatorLine(myLocation, firingLocation, 0, 102, 0);
     		
     		return firingLocation;    		
     	}		

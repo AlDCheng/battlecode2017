@@ -10,8 +10,6 @@ import naclbot.units.motion.Yuurei;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
-import naclbot.variables.DataVars.basicTreeInfo;
-import naclbot.variables.DataVars.binarySearchTree;
 
 import java.util.ArrayList;
 

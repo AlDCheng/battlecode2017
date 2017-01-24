@@ -4,6 +4,7 @@ import java.util.Arrays;
 import battlecode.common.*;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
+import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.Todoruno;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.BroadcastChannels;	
@@ -49,6 +50,7 @@ public class ScoutBot extends GlobalVars {
 	// Variables for self and team recognition
 	public static int id;
 	public static int scoutNumber;
+	public static int unitNumber;
 	private static Team enemy;
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.SCOUT.strideRadius;
@@ -57,7 +59,7 @@ public class ScoutBot extends GlobalVars {
 	private static float teamBullets;
 	
 	// Threshold value to determine the point at which the scout would decide to harvest trees rather than carry on normal operations.........
-	private static final int harvestThreshold = 80;
+	private static final int harvestThreshold = 100;
 	
 	// The intial round in which the scout was constructed
 	public static int initRound;
@@ -94,6 +96,9 @@ public class ScoutBot extends GlobalVars {
 	// Max range at which the scout will scan for trees...
 	private final static int treeSenseDistance = 7;
 	
+	// Array to store the data of enemy robots from the previous turn.....
+	private static RobotInfo[] previousRobotData;
+	
 	// ------------- MOVEMENT VARIABLES -------------//
 	
 	// Direction at which the scout traveled last
@@ -129,6 +134,9 @@ public class ScoutBot extends GlobalVars {
     // Variable to see how long the robot has not tracked another unit for
     public static int hasNotTracked;
     
+    // Variable to determine whether or not a scout should defend a unit or not....
+    private static boolean mustDefend;
+    
     // ------------- SHOOTING VARIABLES -------------//
   
 	// Separation distance of shoot check...
@@ -157,9 +165,12 @@ public class ScoutBot extends GlobalVars {
         id = rc.getID();
         teamBullets = rc.getTeamBullets();
         
-        // Get own scoutNumber - important for broadcasting 
+        // Get own scoutNumber  and unitNumber- important for broadcasting 
         scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
         currentNumberofScouts = scoutNumber + 1;
+        
+        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
         // Get the current round number......
         Rem_is_better = rc.getRoundNum();
@@ -175,7 +186,8 @@ public class ScoutBot extends GlobalVars {
         trackID = -1;
         noTrackUpdateIndex = 0;
         isTracking = false;
-        gardenerLocation = null;        
+        gardenerLocation = null;    
+        previousRobotData = null;
         
         // Update the number of scouts so that other scouts can recognize....
         rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
@@ -213,6 +225,7 @@ public class ScoutBot extends GlobalVars {
             	
             	// Force nearestCivilian to be null at start of round - closest gardener / Archon
             	nearestCivilian = null;
+            	mustDefend = false;
             	
             	// Update total number of scouts
             	currentNumberofScouts = rc.readBroadcast(SCOUT_CHANNEL);
@@ -251,15 +264,26 @@ public class ScoutBot extends GlobalVars {
              		
              		nearestCivilian = NearestAlly.location;
              		
-             		// For Initialization - have last direction originally point away from the closest ally, rounded to 30 degree intervals
-             		int randOffset = (int)(Math.random() * 4 - 2);
-            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
-            		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
-            		
-            		myDirection = new Direction(newRadians);
-            		
-            		// SYSTEM CHECK - make sure direction is multiple of 30 degrees
-            		// System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + myDirection.getAngleDegrees());            		
+             		// For Initialization and for the future,- have last direction originally point away from the closest ally, rounded to 30 degree intervals             		
+             		if (myLocation.distanceTo(nearestCivilian) <= 2.5){
+	             		int randOffset = (int)(Math.random() * 4 - 2);
+	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
+	            		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
+	            		
+	            		myDirection = new Direction(newRadians);
+	            		
+	            		// SYSTEM CHECK - make sure direction is multiple of 30 degrees
+	            		// System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + myDirection.getAngleDegrees());  
+             		}
+             		// Get the nearest enemy to the scout..
+            		RobotInfo nearestEnemy = Chirasou.getNearestAlly(enemyRobots, myLocation);
+            		// If there is one...
+            		if (nearestEnemy != null){
+	            		// If the nearest enemy is close enough to the nearest ally....
+	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 10){
+	            			mustDefend = true;
+	            		}
+            		}
              	}             	
                 
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
@@ -282,6 +306,7 @@ public class ScoutBot extends GlobalVars {
             	
             	broadcastNearestEnemyLocation(enemyRobots);
             	
+            	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);            	
             	
             	// Update the team's bullet count - will determine if it attempts to search for bullet trees or no.....
             	teamBullets = rc.getTeamBullets();
@@ -289,11 +314,11 @@ public class ScoutBot extends GlobalVars {
         		// Check to find the nearest bullet tree.......
         		TreeInfo nearestBulletTree = findNearestBulletTree();
             	
-            	// If the team currently has too few bullets and there is a bullet tree nearby...
-            	if (teamBullets < harvestThreshold && nearestBulletTree != null){
+            	// If the team currently has too few bullets and there is a bullet tree nearby and no enemies currently threaten its workers
+            	if (teamBullets < harvestThreshold && nearestBulletTree != null && !mustDefend){
             		
             		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
-            		System.out.println("Team requires additional bullets, so will attempt to find more");            		
+            		// System.out.println("Team requires additional bullets, so will attempt to find more");            		
  
         			// Do the harvest function to attempt to get some bullets from some trees...
         			harvest(nearestBulletTree);
@@ -312,10 +337,13 @@ public class ScoutBot extends GlobalVars {
             	
             	// Check if the initially selected position was out of bounds...
             	
-            	// Correct desiredMove to within one scout stride location of where the robot is right now....
-            	Direction desiredDirection = myLocation.directionTo(desiredMove);
-            	
-            	desiredMove = myLocation.add(desiredDirection, strideRadius);
+            	// Correct desiredMove to within one soldier  stride location of where the robot is right now....
+            	if(myLocation.distanceTo(desiredMove) > strideRadius){
+            		
+	            	Direction desiredDirection = new Direction(myLocation, desiredMove);	
+	            	
+	            	desiredMove = myLocation.add(desiredDirection, strideRadius);
+            	}
             	
             	if (!rc.canMove(desiredMove)){
             		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
@@ -358,17 +386,21 @@ public class ScoutBot extends GlobalVars {
             	}           	
             	else{
             		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
-            		System.out.println("This robot did not move because it did not want to....");
+            		// System.out.println("This robot did not move because it did not want to....");
             	}
             	
             	
             	// ------------------------ Shooting -----------------------------//
             	
             	// SYSTEM CHECK - Notify that the scout is now attempting to shoot at something........
-            	System.out.println("Moving on to shooting phase...................");
+            	// System.out.println("Moving on to shooting phase...................");
             	
             	if (trackID >= 0){
-            		Korosenai.tryShootAtEnemy(trackedRobot.location, myLocation, 0, alliedRobots);
+            		
+            		// Obtain a location to shoot at
+            		MapLocation shootingLocation = Korosenai.getFiringLocation(trackedRobot, previousRobotData, myLocation);
+            		
+            		Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
             	}
     
             	// Make sure to show appreciation for the one and only best girl in the world.
@@ -383,6 +415,9 @@ public class ScoutBot extends GlobalVars {
                 if (!isTracking){
                 	hasNotTracked += 1;
                 }
+                
+                // Store the data for the locations of the enemies previously.....
+                previousRobotData = enemyRobots;
                 
                 Clock.yield();
 
@@ -399,7 +434,7 @@ public class ScoutBot extends GlobalVars {
 	private static void harvest(TreeInfo nearestBulletTree) throws GameActionException{
 		
 		// SYSTEM CHECK - Inform that the scout has entered harvest mode.............
-		System.out.println("Team bullet total insufficient and nearby bullet tree found - entering harvest mode...............");
+		// System.out.println("Team bullet total insufficient and nearby bullet tree found - entering harvest mode...............");
 		
 		float distanceTo = myLocation.distanceTo(nearestBulletTree.location);
 		
@@ -442,7 +477,7 @@ public class ScoutBot extends GlobalVars {
 			}
 			else{
 				// SYSTEM CHECK - Should not happen.... but if the robot is close to the tree but cannot shake it print this fact....
-				System.out.println("ERROR: Within one unit of tree but for some reason cannot shake it...........");
+				// System.out.println("ERROR: Within one unit of tree but for some reason cannot shake it...........");
 			}
 		}		
 	}	
@@ -547,7 +582,7 @@ public class ScoutBot extends GlobalVars {
 				int newTreeID = rc.readBroadcast(TREE_DATA_CHANNEL + (currentlyStored % TOTAL_TREE_NUMBER - j - 1) * TREE_OFFSET + 1);
 				
 				// System Check - Display new information received
-				System.out.println("Noting that Tree with ID: " + newTreeID + "has been broadcasted this turn");
+				// System.out.println("Noting that Tree with ID: " + newTreeID + "has been broadcasted this turn");
 				
 				receivedTreesIDs[receivedTotal] = newTreeID;
 				receivedTotal += 1;								
@@ -555,7 +590,7 @@ public class ScoutBot extends GlobalVars {
 		}		
 		
 		// SYSTEM CHECK check to see if scouts are reporting this parameter correctly
-		System.out.println("Trees sent this turn by other scouts: " + otherSent);
+		// System.out.println("Trees sent this turn by other scouts: " + otherSent);
 		
 		// Parameter to see if any more trees can be sent this turn or no
 		boolean filled = false;
@@ -582,7 +617,7 @@ public class ScoutBot extends GlobalVars {
 							TreeInfo toSend = canSend[i];
 							
 							// SYSTEM CHECK to make sure the scout is actually sending trees
-							System.out.println("Currently broadcasting the location of the tree with ID: " + canSend[i].ID);						
+							// System.out.println("Currently broadcasting the location of the tree with ID: " + canSend[i].ID);						
 							
 							// SYSTEM CHECK draw a BLUE DOT to notify which tree is currently being broadcasted
 							rc.setIndicatorDot(canSend[i].location, 0, 0, 200);
@@ -989,7 +1024,7 @@ public class ScoutBot extends GlobalVars {
 	private static void track(RobotInfo[] enemyRobots, float multiplier) throws GameActionException{
 		
 		// If the robot can currently sense the robot it is tracking and if it has not been tracking this robot for too long
-    	if (rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 25){
+    	if ((rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 50) || rc.canSenseRobot(trackID) && mustDefend){
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		System.out.println("I am currently tracking a robot with ID: " + trackID);
@@ -1053,7 +1088,7 @@ public class ScoutBot extends GlobalVars {
 				
 				float dist = myLocation.distanceTo(currentAllies[i].location);
 
-				if (dist < minimum && dist < 3){					
+				if (dist < minimum){					
 							
 					minimum = dist;
 					index = i;	
@@ -1088,6 +1123,7 @@ public class ScoutBot extends GlobalVars {
 			if (enemyRobots[i].type == battlecode.common.RobotType.GARDENER){
 				
 				return enemyRobots[i];
+				
 			} else{		
 				// Otherwise search for the closest one that has not recently been tracked
 				float dist = myLocation.distanceTo(enemyRobots[i].location);

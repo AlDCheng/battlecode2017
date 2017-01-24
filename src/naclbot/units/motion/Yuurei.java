@@ -47,10 +47,10 @@ public class Yuurei extends GlobalVars {
 		boolean rotationDirection, // Boolean representing the rotation direction of the robot currently, dodge will attempt to prioritize this...
 								   // True entails counterclockwise and clockwise rotation follows from false
 		
-		boolean canDodge // Final verdict of the function - outputs true if can dodge or doesn't need to
-						 // Outputs false if it cannot dodge the bullets at all
+		boolean canDodge // Final verdict of the function - outputs false if it won't correct with dodge...
+						 // Outputs true if the robot must move to dodge
 		){			
-		
+		 
 		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
 		float scanRadius = strideRadius + bodyRadius;		
 		
@@ -72,7 +72,7 @@ public class Yuurei extends GlobalVars {
 		
 		if (newBulletLocations.size() > maxIncomingBullets){
 			// SYSTEM CHECK - If there are too many bullets nearby, the robot will just give up......
-			System.out.println("Too many bullets nearby, will not attempt to dodge");			
+			// System.out.println("Too many bullets nearby, will not attempt to dodge");			
 			return null;
 		}
 		
@@ -80,13 +80,13 @@ public class Yuurei extends GlobalVars {
 		if (newBulletLocations.size() > 0){	
 			
 			// SYSTEM CHECK - Notify that this function has been called
-			System.out.println("Nearby bullets detected attempting to dodge");
+			// System.out.println("Nearby bullets detected attempting to dodge");
 			
 			// If there is a bullet that will collide with the robot in the current desired location
 			if (ifBulletWillCollide(newBulletLocations, desiredLocation, bodyRadius)){
 				
 				// SYSTEM CHECK - Notify that this function has been called
-				System.out.println("Nearby bullets may collide with my desired location next turn - attempting to find solution");
+				// System.out.println("Nearby bullets may collide with my desired location next turn - attempting to find solution");
 				
 				// Call the find optimal function...
 				MapLocation dodgeLocation = findOptimalLocation(newBulletLocations, true, desiredLocation, startingLocation, 
@@ -96,22 +96,25 @@ public class Yuurei extends GlobalVars {
 				if(dodgeLocation != null){
 					
 					// SYSTEM CHECK - Tell everyone that you can dodge the bullet
-					System.out.println("Robot can dodge bullet yay!");	
+					// System.out.println("Robot can dodge bullet yay!");	
 					
 					canDodge = true;
+					return dodgeLocation;
 				}
-				return dodgeLocation;
-	
+				else{
+					canDodge = false;
+					return dodgeLocation;
+				}	
 			}
 			// Otherwise if none of the bullets impede on the desired location....
 			else{
-				canDodge = true;
+				canDodge = false;
 				return desiredLocation;
 			}
 		}
 		// If there are no bullets within the scanDistance.. simply return the desiredLocation as there is no conflict
 		else{
-			canDodge = true;
+			canDodge = false;
 			return desiredLocation;
 		}
 	}	
@@ -187,8 +190,6 @@ public class Yuurei extends GlobalVars {
 			// Obtain the direction created by the offset
 			Direction testDir = new Direction(desiredDir.radians - (i * scanAngleOffset));
 			
-			System.out.println(i);
-			
 			// Iterate through a number of points determined by the granularity of the search
 			for(int j = 0; searchRadius - (scanGranularity * j) > 0; j++){
 				
@@ -239,7 +240,7 @@ public class Yuurei extends GlobalVars {
 		// If the function has not found a valid location, return nothing - there are no valid points for the robot.... 
 		
 		// SYSTEM CHECK - see if the robot has actually attempted to find a point and eventually didn't
-		System.out.println("Search for a new point with given parameters unsuccesful");
+		// System.out.println("Search for a new point with given parameters unsuccesful");
 		
 		return null;
 	}
