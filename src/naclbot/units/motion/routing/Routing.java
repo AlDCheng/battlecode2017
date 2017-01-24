@@ -61,6 +61,8 @@ public class Routing extends GlobalVars{
 	 * @param pathNew New path to follow
 	 */
 	public static void setRouting(ArrayList<MapLocation> pathNew) {
+		System.out.println("SET!");
+		
 		// Pathing:
 		path = new ArrayList<MapLocation>(pathNew); // Resets path to traverse with inputted path
 		
@@ -84,10 +86,12 @@ public class Routing extends GlobalVars{
 	}
 	
 	public static void resetRouting() {
-		prevDir = new Direction(0);
-		timeStep = 0;
+		System.out.println("RESET!");
 		
-		pastLoc = new ArrayList<MapLocation>();
+		prevDir = new Direction(0);
+		timeStep = timeOut;
+		
+//		pastLoc = new ArrayList<MapLocation>();
 		prevLoc = rc.getLocation();
 		curLoc = new MapLocation(prevLoc.x,prevLoc.y);
 		lastDest = new MapLocation(prevLoc.x,prevLoc.y);
@@ -117,25 +121,30 @@ public class Routing extends GlobalVars{
 			// TODO: Comment later
 	    	curLoc = rc.getLocation(); // Get current location
 	    	pastLoc.add(curLoc);
-	    	System.out.println("BP-1: " + pastLoc.size() + ", WF: " + wallFollow);
-	    	if (pastLoc.size() >= timeOut) {
+	    	System.out.println("BP-1: " + pastLoc.size() + ", WF: " + wallFollow + ", TS: " + timeStep);
+	    	if ((pastLoc.size() >= timeOut) && (timeStep == 0)) {
 //	    		System.out.println(pastLoc);
 	    		//System.out.println(pastLoc.get(0).distanceTo(curLoc));
 	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
-	    			System.out.println("BP-0.5");
+//	    			System.out.println("BP-0.5");
 		    		if(wallFollow) {
+		    			pastLoc.remove(0);
 		    			resetRouting();
 		    		}
 		    		else {
+		    			pastLoc.remove(0);
 		    			wallFollowingEntry();
 		    		}
 	    		}
 	    		else{
 	    			pastLoc.remove(0);
 	    		}
-	    		
 	    	}
-	    	System.out.println("BP0");
+	    	else if (timeStep > 0) {
+	    		timeStep--;
+	    		pastLoc.remove(0);
+	    	}
+//	    	System.out.println("BP0");
 	    	ArrayList<MapLocation> newPath = new ArrayList<MapLocation>();
 
 	    	prevDir = new Direction(prevLoc, curLoc);
@@ -939,6 +948,8 @@ public class Routing extends GlobalVars{
 		resetRouting();
 		stuckLoc = curLoc;
 		
+		System.out.println("Switch to Wall Following");
+		
 		try {
 			Direction toGoal = new Direction(curLoc, path.get(0));
 			progX = 1; progY = 0;
@@ -985,6 +996,8 @@ public class Routing extends GlobalVars{
 			System.out.println("Error in Wall Following Entry");
 			e.printStackTrace(); // Print exceptions
 		}
+		
+		timeStep = timeOut;
 	}
 	
 	public static ArrayList<MapLocation> wallFollowMoveTo(MapLocation dest) {
@@ -1073,14 +1086,19 @@ public class Routing extends GlobalVars{
 		    while(distanceCheck > 0.0001) {
 //		    	System.out.println(dir + ", " + distanceCheck);
 		    	
-		    	rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+//		    	rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 		    	
-		    	if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist), bodyRadius)) {
-		    		if(rc.canMove(dir,distanceCheck)) {
+		    	//if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+bodyRadius), bodyRadius)) {
+		    	if(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+2*bodyRadius), bodyRadius)) {
+//		    		if(rc.canMove(dir,distanceCheck)) {
+		    		Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
+		    		rc.setIndicatorLine(curLoc, curLoc.add(dirRot, 1), 0, 0, 255);
+		    		if(rc.canMove(dirRot,distanceCheck)) {
 //		    			System.out.println(-rotL * 90);
-		    			startAngle = dir.rotateLeftDegrees(-rotL * 90);
+//		    			startAngle = dir.rotateLeftDegrees(-rotL * 90);
+		    			startAngle = dir;
 		    			System.out.println(dir + ", " + distanceCheck);
-			        	return curLoc.add(dir,distanceCheck);
+			        	return curLoc.add(dirRot,distanceCheck);
 			        }
 		    	}
 			    // Set next distance to be check

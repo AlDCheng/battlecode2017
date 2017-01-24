@@ -298,7 +298,7 @@ public class Senshi extends GlobalVars {
             	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
             	 
             	// If the canDodge variable was modified, the robot did attempt to dodge....
-            	if(!canDodge){
+            	if(canDodge){
             		moveWasEdited = true;
             	}
             	
