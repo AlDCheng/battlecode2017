@@ -50,13 +50,16 @@ public class LumberjackBot extends GlobalVars {
 	
 	// Direction at which the soldier traveled last
 	private static Direction lastDirection;
-	private static MapLocation lastPosition;
+	private static MapLocation lastLocation;
 	
 	// Direction for use each round
 	private static Direction myDirection;
 	
 	// Placeholder for desired location to go to
     public static MapLocation desiredMove;
+    
+    // Keep track if it has not moved
+    public static int hasNotMoved = 0;
     
     // Location of wanted enemy
     public static Direction enemyDir = null;
@@ -92,6 +95,7 @@ public class LumberjackBot extends GlobalVars {
         
         myID = rc.getID();
         myLocation = rc.getLocation();
+        lastLocation = rc.getLocation();
         
         // Initialize lumberjack so that it does not have any commands initially;
         isCommanded = false;
@@ -122,7 +126,12 @@ public class LumberjackBot extends GlobalVars {
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
 
             	// Update location of self
-            	myLocation = rc.getLocation();         	
+            	myLocation = rc.getLocation();      
+            	
+            	// Check if robot has moved
+                if (myLocation == lastLocation) {
+                	hasNotMoved += 1;
+                } 
             	
             	// Initialize the direction the robot would like to go to at any given round as the direction the robot moved previously....     	
             	myDirection = lastDirection;
@@ -159,8 +168,8 @@ public class LumberjackBot extends GlobalVars {
                 roundNumber += 1;
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
-                lastPosition =  rc.getLocation();
-                lastDirection = new Direction(myLocation, lastPosition);
+                lastLocation =  rc.getLocation();
+                lastDirection = new Direction(myLocation, lastLocation);
                 
                 // SYSTEM CHECK  Make sure the robot finishes its turn
                 System.out.println("Turn completed.....");
@@ -197,16 +206,28 @@ public class LumberjackBot extends GlobalVars {
     	// MOVE
     	if (newLoc != null) {
     		rc.move(newLoc);
+    		hasNotMoved = 0;
     		
     		// Output that they moved
     		System.out.println("I MOVED TO AN OBJECTIVE!");
     		
     	} else if (!foundTree) {
-    		// Posit the desired move location as a forward movement along the last direction
-			desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
-			if (rc.canMove(desiredMove)) {
-				rc.move(desiredMove);
-			}
+    		if (hasNotMoved > 10) {
+    			Direction desiredDir = Move.randomDirection();
+    			if (rc.canMove(desiredDir)) {
+    				System.out.println("Has not moved in more than 10 turns so random dir");
+    				rc.move(desiredDir);
+    				hasNotMoved = 0;
+    			}
+    		} else {
+	    		// Posit the desired move location as a forward movement along the last direction
+				desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
+				if (rc.canMove(desiredMove)) {
+					System.out.println("Moving like soldier.");
+					rc.move(desiredMove);
+					hasNotMoved = 0;
+				}
+    		}
     	}
     	
     }
