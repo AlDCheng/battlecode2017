@@ -55,6 +55,12 @@ public class GardenerBot extends GlobalVars {
 	//--------------------------------------------------
 	public static int scanInt = 5;
 	
+	static int currentNumberofGardeners;
+	
+	static int gardenerNumber;
+	
+	static int unitNumber;
+	
 	//--------------------------------------------------
 	
 	
@@ -64,6 +70,17 @@ public class GardenerBot extends GlobalVars {
 		
 		//value of initial role, set to planting trees first
 		role = 1;
+		
+		 // Get own soldierNumber - important for broadcasting 
+        gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+        currentNumberofGardeners = gardenerNumber + 1;
+        
+        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+        
+        // Update soldier number for other soldiers to see.....
+        rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
+
 		
 		main();
 	}

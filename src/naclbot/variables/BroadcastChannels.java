@@ -28,6 +28,11 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
+	// Stores how many gardeners  exist
+	public final static int GARDENER_NUMBER_CHANNEL = 9991;
+	
+	// ----------------------- SCOUT INFORMATION -------------------------//
+	
 	// Stores how many lumber jacks exist
 	public final static int LUMBERJACK_NUMBER_CHANNEL = 9992;
 	 
