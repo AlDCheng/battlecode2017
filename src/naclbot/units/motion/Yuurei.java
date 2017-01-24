@@ -418,18 +418,18 @@ public class Yuurei extends GlobalVars {
 		) throws GameActionException {
     	
     	// Generate distances to test - prioritize initial input direction
-    	for (int i = 0; i < 5; i++){
+    	for (int i = 1; i <= 5; i++){
     		
-    		float testDistance = (float)(distance - (i * distance / 5));    		
+    		float testDistance = (float)(i * distance / 5);    		
 	        // Try going the test distance in the targeted direction
 	        if (rc.canMove(dir, testDistance)) {	            
 	            return myLocation.add(dir, testDistance);
 	        }
         }
     	// Generate distances to test on all of the offsets
-		for (int i = 0; i < 5; i++){
+		for (int i = 1; i <= 5; i++){
 		    		
-		    float testDistance = (float)(distance - (i * distance / 5));    
+		    float testDistance = (float)(i * distance / 5);    
 		    // Current number of degree offsets off of original being checked
 	        int currentCheck = 1;
 	        

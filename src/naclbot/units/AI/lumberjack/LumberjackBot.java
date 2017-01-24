@@ -3,10 +3,12 @@
 package naclbot.units.AI.lumberjack;
 import battlecode.common.*;
 import naclbot.units.motion.Move;
+import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.Yuurei;
+import naclbot.units.motion.routing.Routing;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
@@ -23,6 +25,7 @@ public class LumberjackBot extends GlobalVars {
 	// Variables for self and team recognition
 	public static int myID;
 	public static int lumberjackNumber;
+	public static int unitNumber;
 	private static Team enemy;
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.LUMBERJACK.strideRadius;
@@ -36,13 +39,17 @@ public class LumberjackBot extends GlobalVars {
 	public static int currentRound;
 	
 	// The total number of soldiers in active service
-	//private static int currentNumberofLumberjacks;
+	private static int currentNumberofLumberjacks;
 	
 	// Parameters to store locations of self
 	public static MapLocation myLocation;	
 	
 	// Boolean to store whether or not the soldier current has orders to go somewhere....
 	private static boolean isCommanded;
+	
+	private static int trackID;
+	
+	private static RobotInfo trackedRobot;
 	
 	// ------------- MOVEMENT VARIABLES -------------//
 	
@@ -52,15 +59,35 @@ public class LumberjackBot extends GlobalVars {
 	
 	// Direction for use each round
 	private static Direction myDirection;
-	
-	// Placeholder for desired location to go to
-    public static MapLocation desiredMove;
     
     // Keep track if it has not moved
     public static int hasNotMoved = 0;
     
     // Location of wanted enemy
     public static Direction enemyDir = null;
+    
+    // Arraylist to store path for routing....    
+    public static ArrayList<MapLocation> routingPath;
+    
+    // Maplocation to store a target location when being told to go to a location
+    public static MapLocation goalLocation;
+    
+    // Boolean to store whether or not the robot is tracking something
+    public static boolean isTracking;
+    
+    // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
+    public static final int giveUpOnRouting = 75;
+    
+    // Variable to store the amount of time currently in routing....
+    public static int roundsRouting = 0;
+    
+    // Variable to determine in which direction the soldier will rotate about a particular robot when tracking it....
+    public static boolean rotationDirection;
+    
+    public static TreeInfo treeToHarvest;
+    
+    public static int treeID;
+    
     
 	// ------------- TREE VARIABLES ------------------//
 	
@@ -72,11 +99,9 @@ public class LumberjackBot extends GlobalVars {
  
     // Location of regular tree
     public static Direction treeDir = null;
+
     
-    // ArrayList of all nearby neutral trees, regardless of prize/no prize/bullets/no bullets
-    public static ArrayList<TreeInfo> nearbyNeutralTrees;
-    
-	
+    // Function to call at the beginning...
     public static void init() throws GameActionException{
     	
     	// SYSTEM CHECK - See if the lumberjack has initialized...    	
@@ -84,28 +109,42 @@ public class LumberjackBot extends GlobalVars {
         
 		// Initialize variables important to self and team recognition
 		enemy = rc.getTeam().opponent();
-        allies = rc.getTeam();
+        allies = rc.getTeam();        
         
-    	lastDirection = Move.randomDirection();
+        roundNumber = rc.getRoundNum();
+        initRound = roundNumber;
         
-        currentRound = rc.getRoundNum();
         initRound = currentRound;
-        
+                
         myID = rc.getID();
         myLocation = rc.getLocation();
         lastLocation = rc.getLocation();
+        trackID = -1;
+        isTracking = false;
+        treeID = -1;
+        treeToHarvest = null;
+        		
+        trackedRobot = null;
         
+        // Initialize path list and goal location
+       	routingPath = new ArrayList<MapLocation>();    	
+       	Routing.setRouting(routingPath);
+       	
+    	// Goal location.....
+        goalLocation = null;        		
+       	
         // Initialize lumberjack so that it does not have any commands initially;
         isCommanded = false;
         
-        /*
         // Get own soldierNumber - important for broadcasting 
-        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-        currentNumberofSoldiers = soldierNumber + 1;
+        lumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
+        currentNumberofLumberjacks = lumberjackNumber + 1;
+        
+        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
         // Update soldier number for other soldiers to see.....
-        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
-        */
+        rc.broadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL, currentNumberofLumberjacks);
 
         main();
     }
@@ -116,49 +155,131 @@ public class LumberjackBot extends GlobalVars {
         while (true) {
 
             try {
-            	// ------------------------- RESET/UPDATE VARIABLES ----------------//          
-    			
-            	// Get nearby enemies and allies and bullets for use in other functions            	
-            	RobotInfo[] enemyRobots = NearbyUnits(enemy);
-            	RobotInfo[] alliedRobots = NearbyUnits(allies);
-            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+            	// ------------------------- RESET/UPDATE VARIABLES ----------------//      
+            	
 
             	// Update location of self
             	myLocation = rc.getLocation();      
+    			
+            	// Get nearby enemies and allies and bullets for use in other functions            	
+            	RobotInfo[] enemyRobots = NearbyUnits(enemy, 6);
+            	RobotInfo[] alliedRobots = NearbyUnits(allies, 10);
+            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+            	TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+            	RobotInfo nearestAlly = Chirasou.getNearestAlly(alliedRobots, myLocation);
             	
-            	// Check if robot has moved
-                if (myLocation == lastLocation) {
-                	hasNotMoved += 1;
-                } 
+            	if (lastDirection == null && nearestAlly != null){            
+            		Direction directionToAlly = new Direction(myLocation, nearestAlly.location);
+            		lastDirection = new Direction(directionToAlly.radians + (float) (Math.PI));
+            		
+            	}
+            	else if(lastDirection == null && nearestAlly == null){
+            		lastDirection = Move.randomDirection();
+            	}
             	
             	// Initialize the direction the robot would like to go to at any given round as the direction the robot moved previously....     	
             	myDirection = lastDirection;
             	
             	// Initialize the location the robot would like to go to as the location it is currently at..
-            	desiredMove = myLocation;
-            	
-            	nearbyNeutralTrees = TreeSearch.getNearbyNeutTrees();
-	        
-            	
-            	// --------------- ENEMY ROBOTS ---------------- //
-				if (enemyRobots.length > 0) {
-					enemyDir = manageEnemyUnits(enemyRobots);
-				}
-				
-				
-            	// ------------------------- TREES --------------------------- //
-            	// Shakes trees if there are bullets in it
-				// Chops trees if robot in it or there are no bullets in it
-				if (nearbyNeutralTrees.size() > 0) {
-				    treeDir = manageNeutralTrees();
-				}
+            	MapLocation desiredMove = myLocation;
+            		
 
+            	MapLocation newDesiredMove = move(enemyRobots, desiredMove, nearbyTrees);
+            	
+            	desiredMove = newDesiredMove;
+            	
+            	// SYSTEM CHECK - Show desired move after path planning
+    	    	// System.out.println("desiredMove before post-processing: " + desiredMove.toString());
+    	    	
+            	// Correct desiredMove to within one soldier  stride location of where the robot is right now....
+            	if(myLocation.distanceTo(desiredMove) > strideRadius){
+            		
+	            	Direction desiredDirection = new Direction(myLocation, desiredMove);	
+	            	
+	            	desiredMove = myLocation.add(desiredDirection, strideRadius);
+            	}
+            	
+               	// SYSTEM CHECK - Show desired move after path planning
+    	    	// System.out.println("desiredMove after rescaling: " + desiredMove.toString());
+            	
+            	// Hold uncorrected desired Move for routing purposes.........
+            	boolean moveWasEdited = false;
+            	
+            	// SYSTEM CHECK Make sure the new desired move is in the correct location LIGHT BLUE DOT
+            	// rc.setIndicatorDot(desiredMove, 102, 255, 255);
+            	
+            	// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
+            	if (!rc.canMove(desiredMove)){
+            		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+            		
+            		myDirection = new Direction(myLocation, newLocation);
+            		
+            		desiredMove = newLocation;
+            		moveWasEdited = true;
+            		
+            	   	// SYSTEM CHECK - Show desired move after path planning
+        	    	// System.out.println("desiredMove after out of bounds correction: " + desiredMove.toString());  
+            	}
+            	
+            	if(!rc.canMove(desiredMove) && treeID != -1 && enemyRobots.length == 0){
+            		desiredMove = myLocation;
+            	}
+             	
+            	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
+            	if(!rc.canMove(desiredMove)){          		
+            	
+					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius);
+					
+					// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
+					// System.out.println("Attempted to find a new location to move to randomly...");
+					
+					desiredMove = newLocation;
+					moveWasEdited = true;
+
+	    	       	// SYSTEM CHECK - Show desired move after path planning
+	    	    	// System.out.println("desiredMove after collision correcetion " + desiredMove.toString());
+            	}
+            	
+              	// See whether or not the robot can move to the completely processed desired move, and move if it does
+            	if(rc.canMove(desiredMove)){
+            		rc.move(desiredMove);
+            	}
+            	// If the robot wasn't able to move....
+            	else{
+            		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
+            		// System.out.println("This robot did not move because it forgot to show Rem appreciation........");
+            	}
+            	
+            	// If the robot post-processed its final given location, reset the routing function to clear waypoints
+            	if (isCommanded && moveWasEdited){
+            		Routing.resetRouting();
+            	}            	
+            	
+            	if(trackID != -1){
+            		
+            		rc.setIndicatorDot(trackedRobot.location, 128, 0, 0);
+            		if (myLocation.distanceTo(trackedRobot.location) <= bodyRadius + 1 + trackedRobot.getRadius()){
+            			if(myLocation.distanceTo(nearestAlly.location) >= bodyRadius + 1 + nearestAlly.getRadius()){
+            				rc.strike();
+            			}
+            			
+            		}
+            	}
+            	// Double check that the robot can interact with the tree 
+				if(rc.canInteractWithTree(treeID)){
+					
+					// SYSTEM CHECK - Indicate which tree was just interacted with......
+					rc.setIndicatorDot(treeToHarvest.location, 128, 0, 0);
+					
+					if (treeToHarvest.getContainedBullets() > 0){
+						rc.shake(treeID);
+						
+					}
+					else{
+						rc.chop(treeID);						
+					}			
+				}
 				
-				// ----------------- MOVEMENT ------------------ //
-            	
-				// Call the move function to move the robots
-            	move(treeDir,enemyDir);
-            	
 				
 				// ------------------  Round End Updates --------------------//
             	
@@ -169,8 +290,16 @@ public class LumberjackBot extends GlobalVars {
                 lastLocation =  rc.getLocation();
                 lastDirection = new Direction(myLocation, lastLocation);
                 
+                
                 // SYSTEM CHECK  Make sure the robot finishes its turn
                 System.out.println("Turn completed.....");
+                
+                if (!isCommanded){
+                	//lastCommanded += 1;
+                }
+                else{
+                	roundsRouting += 1;
+                }
 				
 				// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
 				Clock.yield();
@@ -184,78 +313,206 @@ public class LumberjackBot extends GlobalVars {
         }
     }
     
+    private static MapLocation moveTowardsTree(TreeInfo tree, MapLocation desiredMove){
+    	
+    	float distanceTo = myLocation.distanceTo(tree.location);
+    	if (distanceTo > tree.getRadius() + bodyRadius + 0.5){
+    		
+    		float random = (float)(Math.random() *  Math.PI/3 - Math.PI/6);
+    		Direction newDirection = new Direction(myLocation.directionTo(tree.location).radians + random);
+    		
+    		float remainingDistance = distanceTo - (tree.getRadius() + bodyRadius + (float) 0.5);
+    		
+    		return myLocation.add(newDirection, remainingDistance);
+    	}
+    	
+		else{
+			Direction directionFrom = tree.location.directionTo(myLocation);
+			
+			for(int i = 0; i <= 9; i++){
+				Direction testDirection1 = new Direction(directionFrom.radians - (float)(i * Math.PI/9));
+				MapLocation testLocation1 = tree.location.add(testDirection1, tree.getRadius() + (float) 0.5);
+				if (rc.canMove(testLocation1)){
+					return testLocation1;
+				}
+				Direction testDirection2 = new Direction(directionFrom.radians - (float)(i * Math.PI/9));
+				MapLocation testLocation2 = tree.location.add(testDirection1, tree.getRadius() + (float) 0.5);
+				if (rc.canMove(testLocation2)){
+					return testLocation2;
+				}		
+			}    		
+    	}
+    	return null;    	
+    }
+    
+    
+    
+    
 	/******************************************************************
 	******************* Functions for Movement  ***********************
 	*******************************************************************/  
-	
-    private static void move(Direction treeDir, Direction enemyDir) throws GameActionException {
-    	// Possible new location
-    	MapLocation newLoc = null;
+    private static MapLocation move(RobotInfo[] enemyRobots, MapLocation desiredMove, TreeInfo[] nearbyTrees) throws GameActionException{
+		// If the robot is currently not tracking anything
     	
-    	// If enemyDir is not null then more than 2 enemies found nearby. 
-    	// None of these units are within strike range so move towards nearest one. 
-    	if (enemyDir != null) {
-    		newLoc = Yuurei.tryMoveInDirection(enemyDir, strideRadius, myLocation);
-    	// If treeDir is not null then move to nearest tree.
-    	} else if (treeDir != null) {
-    		newLoc = Yuurei.tryMoveInDirection(treeDir, strideRadius, myLocation);
-    	}
-    	
-    	// MOVE
-    	if (newLoc != null) {
-    		rc.move(newLoc);
-    		hasNotMoved = 0;
-    		
-    		// Output that they moved
-    		System.out.println("I MOVED TO AN OBJECTIVE!");
-    		
-    	} else if (!foundTree) {
-    		if (hasNotMoved > 10) {
-    			Direction desiredDir = Move.randomDirection();
-    			if (rc.canMove(desiredDir)) {
-    				System.out.println("Has not moved in more than 10 turns so random dir");
-    				rc.move(desiredDir);
-    				hasNotMoved = 0;
-    			}
-    		} else {
-	    		// Posit the desired move location as a forward movement along the last direction
-				desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
-				if (rc.canMove(desiredMove)) {
-					System.out.println("Moving like soldier.");
-					rc.move(desiredMove);
-					hasNotMoved = 0;
-				}
-    		}
-    	}
-    	
-    }
-    
-    private static Direction manageEnemyUnits(RobotInfo[] enemyRobots) throws GameActionException {
-    	
-    	// Assumes that enemyRobots is not empty
-    	
-        RobotInfo nearestEnemy = enemyRobots[0];
-        
-        float strikeDistance = bodyRadius + strikeRadius;
-        
-        if (myLocation.distanceTo(nearestEnemy.getLocation()) <= strikeDistance) {
-            // Use strike() to hit all nearby robots!
-		    System.out.println("STRIKING ENEMIES GRRR");
-            rc.strike();
-            return null;
-        }
-       
-		// If there are more than two robots in sight, move to nearest one
-		if (enemyRobots.length > 2) {	
+		if(trackID == -1){ 
 			
-		    MapLocation enemyLocation = enemyRobots[0].getLocation();
-		    Direction toEnemy = myLocation.directionTo(enemyLocation);
-		    
-		    return toEnemy;
-		}		
+			
+			// See if a robot to be tracked can be found, allow soldier to track any and all units
+			trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true);
+			
+			// SYSTEM CHECK - see if the robot recognizes that it is currently not tracking anything
+			// System.out.println("Currently not tracking anything");
+			
+			// Switch over to the move command after getting a new unit to track.... if the unit is currently being told to go somewhere
+			if(isCommanded){    		
+		   		// If there is a robot
+				if (trackedRobot != null){
+					// Update the trackID
+					trackID = trackedRobot.ID;
+					isTracking = true;
+				}        		
+				return moveTowardsGoalLocation(enemyRobots, desiredMove, nearbyTrees);
+			}
+			
+			// If there is a robot
+			if (trackedRobot != null){
+				// Update the trackID
+				trackID = trackedRobot.ID;
+				isTracking = true;
+				
+				
+				// SYSTEM CHECK - Notify what the robot will now track and set an indicator RED DOT on it
+				System.out.println("The soldier has noticed the enemy Robot with ID: " + trackID);
+				
+				rc.setIndicatorDot(trackedRobot.location, 255, 0, 0);        		
+				
+				// Call move again with the updated information
+				return move(enemyRobots, desiredMove, nearbyTrees);    	
+			
+			} else{ // If there is no viable enemy to track, just continue harvesting trees.....
+    
+				System.out.println("Seeing if able to harvest....");
+				
+				if (treeID != -1){
+					if (rc.canSenseTree(treeID)){
+						treeToHarvest = rc.senseTree(treeID);
+						System.out.println("Can see the tree, will ateempt to harvest");
+						return harvest(treeToHarvest, desiredMove, nearbyTrees);	
+					}
+					else{
+
+						treeID = -1;
+						treeToHarvest = null;
+						return move(enemyRobots, desiredMove, nearbyTrees);	
+					}
+				}
+				else{
+					// Get the nearest tree
+	            	TreeInfo nearestNeutralTree = getNearestNonFriendlyTree(nearbyTrees, myLocation);    
+	            	
+	            	if (nearestNeutralTree != null){
+	            		treeToHarvest = nearestNeutralTree;
+	            		treeID = nearestNeutralTree.ID;
+	            		return harvest(nearestNeutralTree, desiredMove, nearbyTrees);
+	            	}
+	            	else{
+	            		// SYSTEM Check - Set LIGHT GREY LINE indicating where the soldier would wish to go
+	        			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
+	            	
+	            	
+	            		return myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
+	            	}	
+	        		
+				}
+          
+
+			}
+		// If the robot is actually currently tracking something
+		} else{
+			
+			if (!rc.canSenseRobot(trackID)){
+				trackID = -1;
+				trackedRobot = null;
+				return move(enemyRobots,desiredMove,nearbyTrees);
+			}
+			
+			// If the soldier is currently not commanded to go anywhere... follow the robot in question
+			else if(!isCommanded){		
+				
+				trackedRobot = rc.senseRobot(trackID);
+				return moveTowardsTargetX(desiredMove, (float)1);
+			}
+			else{
+				// TODO Insert path planning here........
+					return moveTowardsGoalLocation(enemyRobots, desiredMove, nearbyTrees);
+				}
+			}    			
+		}
+    
+    
+    // Function to use when moving towards a certain location with a certain target.....
+    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, MapLocation desiredMove, TreeInfo[] nearbyTrees) throws GameActionException{
+    	
+    	// If it can no longer sense the tracked enemy.....
+    	if (trackID != -1 && !rc.canSenseRobot(trackID)){
+    		trackID = -1;       
+        	isTracking = false;
+        	trackedRobot = null;
+    	}
+    	
+    	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
+    	if (myLocation.distanceTo(goalLocation) < 12 || roundsRouting >= giveUpOnRouting){
+    		
+    		// Reset the values necessary for switching into a command phase
+    		goalLocation = null;
+    		isCommanded = false;
+    		
+    		// Call the move function again...
+    		return move(enemyRobots, desiredMove, nearbyTrees);
+    	}
+    	else{
+    		// SYSTEM CHECK - Inform that the robot is currently attempting to following a route to a goal destination.....
+    	
+	    	System.out.println("Currently attempting to move to a goal location with x: " + goalLocation.x + " and y: " + goalLocation.y);
+	    	
+	    	// Otherwise, call the routing wrapper to get a new location to go to...
+	    	Routing.routingWrapper();
+	    	
+	    	// Set the desired Move
+	    	desiredMove = Routing.path.get(0);
+	    	
+	    	// SYSTEM CHECK - Show desired move after path planning
+	    	System.out.println("desiredMove before post-processing: " + desiredMove.toString());
+	    	
+	    	// SYSTEM CHECK Print dot from current location to intended move location - GREY DOT
+	    	rc.setIndicatorDot(desiredMove, 105, 105, 105);    
+	    	
+	    	return desiredMove;
+    	}
+    } 
+    
+	private static MapLocation harvest(TreeInfo nearestTree, MapLocation desiredMove, TreeInfo[] nearbyTrees) throws GameActionException{
+			
+			// SYSTEM CHECK - Inform that the scout has entered harvest mode.............
+			// System.out.println("Team bullet total insufficient and nearby bullet tree found - entering harvest mode...............");
+			
+				
+			MapLocation testLocation = moveTowardsTree(nearestTree, desiredMove);
+			
+			if (testLocation != null){
+				desiredMove = testLocation;
+			}
+			else{
+				desiredMove = Yuurei.tryMoveInDirection(Move.randomDirection(), strideRadius, myLocation);
+				
+			}
+			rc.setIndicatorLine(myLocation, desiredMove, 0, 255, 0);;
+			return desiredMove;
+	}
 		
-		return null;
-    }
+
+  
+	/*
     
     private static Direction manageNeutralTrees() throws GameActionException {
 	
@@ -301,6 +558,7 @@ public class LumberjackBot extends GlobalVars {
     	Direction theDir = myLocation.directionTo(nearestTree.getLocation());
     	return theDir;
     }
+    */
 
     /******************************************************************
 	******************* Miscellaneous Functions************************
@@ -308,10 +566,116 @@ public class LumberjackBot extends GlobalVars {
 	
 	// Function to obtain the robot info units in the specified team
 	
-	private static RobotInfo[] NearbyUnits(Team team){
+	private static RobotInfo[] NearbyUnits(Team team, float distance){
 	
-		return rc.senseNearbyRobots(myLocation, -1, team);
+		return rc.senseNearbyRobots(myLocation, distance, team);
+	}
+	
+	private static RobotInfo getNearestSoldierorTank(RobotInfo[] enemyRobots){
+		
+		RobotInfo returnRobot = null;
+		
+		float distance = Integer.MAX_VALUE;
+		for(RobotInfo enemyRobot: enemyRobots){
+			if (enemyRobot.type == RobotType.SOLDIER || enemyRobot.type == RobotType.TANK){
+				if (myLocation.distanceTo(enemyRobot.location) <= distance){
+					returnRobot = enemyRobot;
+				}
+			}
+			
+		}
+		return returnRobot;
 	}
 
-    
+	// Function to return the nearest neutral tree to the lumberjack....
+	
+    private static TreeInfo getNearestNonFriendlyTree(TreeInfo[] nearbyTrees, MapLocation myLocation){
+    	
+    	TreeInfo nearestNearbyTree = null;
+    	float distance = Integer.MAX_VALUE;
+    	
+    	for (TreeInfo nearbyTree: nearbyTrees){
+    		
+    		if (nearbyTree.getTeam() == Team.NEUTRAL || nearbyTree.getTeam() == enemy){
+    			if (myLocation.distanceTo(nearbyTree.location) < distance){
+    				nearestNearbyTree = nearbyTree;    	
+    				distance = myLocation.distanceTo(nearbyTree.location);
+    			}
+    		}
+    	}       	
+    	return nearestNearbyTree;    	
+    }
+
+   
+    public static MapLocation moveTowardsTargetX(
+			
+    		
+		MapLocation desiredMove, // The location that the robot will attempt to go to				
+		
+		float multiplier // Multiplier off of the original constants here that the robot will track (useful for tracking big robots)
+		
+		) throws GameActionException{
+	
+		rc.setIndicatorLine(myLocation, trackedRobot.location, 128, 0, 128);
+		
+		// Variable to store the distance to the robot currently being tracked
+		float gap = myLocation.distanceTo(trackedRobot.location);
+		
+		// Get the direction to the target enemy
+    	Direction dir = myLocation.directionTo(trackedRobot.location);
+    	
+    	// If the gap is large enough move directly towards the target
+    	if (gap < 2 * multiplier){
+    		desiredMove = myLocation.add(dir, (float) strideRadius);
+    	}
+    	
+    	// If the gap is slightly smaller, moves so that the approach is not so direct
+    	else if (gap < 4.5 * multiplier){	    		
+    		// If the object was set to be rotating counterclockwise, go clockwise
+    		if (rotationDirection){	    			
+    			// Rotate 20 degrees clockwise
+    			Direction newDir = new Direction(dir.radians - (float) (Math.PI/9));
+    			
+    			// Set new move point
+    			desiredMove = myLocation.add(newDir, (float) (strideRadius));
+    			
+    			// Set rotation direction to be clockwise
+    			rotationDirection = false;	    			
+    		}
+    		else{
+    			// Rotate 30 degrees counterclockwise
+    			Direction newDir = new Direction(dir.radians + (float) (Math.PI/9));
+    			
+    			// Set new move point
+    			desiredMove = myLocation.add(newDir, (float) (strideRadius));
+    			
+    			// Set rotation direction to be counterclockwise
+    			rotationDirection = true;	    				    			
+    		}	    		
+    	}
+    	else{
+    		// If the robot was supposed to be going counterclockwise, continue
+    		if (rotationDirection){
+    			// Calculate the direction from the target that you want to end up at
+    			Direction fromDir = new Direction(dir.radians - (float) (2 * Math.PI/3));
+    			
+    			// Obtain the desired target location
+    			desiredMove = trackedRobot.location.add(fromDir, (float) (5* multiplier));
+    			
+    		} else{
+    			// Calculate the direction from the target that you want to end up at
+    			Direction fromDir = new Direction(dir.radians + (float) (2 * Math.PI/3));
+    			
+    			// Obtain the desired target location
+    			desiredMove = trackedRobot.location.add(fromDir, (float) (5 * multiplier));	    			
+    		}
+    	// SYSTEM CHECK Print line from current location to intended move location - light blue green
+    	rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   			
+    	} 
+    	
+    	return desiredMove;	
+	} 
+
 }
+
+

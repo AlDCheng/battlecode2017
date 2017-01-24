@@ -103,11 +103,11 @@ public class Korosenai extends GlobalVars {
     				
     				// SYSTEM CHECK - Show which allies cannot be shot at... along with a dark blue dot....
     				// System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
-    				// rc.setIndicatorDot(allyData.location, 0, 0, 80); 
+    				rc.setIndicatorDot(allyData.location, 0, 0, 80); 
     				
     				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
-    				// rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 80, 0, 0);
-    				// rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 80, 0, 0);
+    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 80, 0, 0);
+    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 80, 0, 0);
     				
     				return true;
     			}
@@ -159,15 +159,18 @@ public class Korosenai extends GlobalVars {
     			// Get the direction that the bullet will be traveling at
     			Direction fireDirection = new Direction (dirToShoot.radians + j * triadOffset);
     			// If no allies are going to be instantly hit by the bullets... 
-	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){
+	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){	    			
+	    			return false;
 	    			
-	    			// Make sure your team is rich enough for you to fire something at them......
-	    			if(rc.canFireTriadShot()){
-		    			// Fire!
-		    			rc.fireTriadShot(dirToShoot);
-		    			return true;    	
-	    			}
-	    		}    	
+	    		}     
+    		}   		
+    		// Make sure your team is rich enough for you to fire something at them......
+			if(rc.canFireTriadShot()){
+    			// Fire!
+    			rc.fireTriadShot(dirToShoot);
+    			return true; 
+			}else{
+    			return false;
     		}
     	}
 		else if (shotType == 2){
@@ -176,15 +179,18 @@ public class Korosenai extends GlobalVars {
     		for (int j = -2; j <= 2; j++){
     			// Get the direction that the bullet will be traveling at
     			Direction fireDirection = new Direction (dirToShoot.radians + j * pentadOffset);
-    			// If no allies are going to be instantly hit by the bullets... 
-	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){
+    			// Check to see if no allies are going to be hit by bullets.....
+	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){
 	    			
-	    			// Make sure your team is rich enough for you to fire something at them......
-	    			if(rc.canFirePentadShot()){
-		    			// Fire!
-		    			rc.firePentadShot(dirToShoot);
-		    			return true;    	
-	    			}  			
+	    			return false;
+	    		}
+    			// Make sure your team is rich enough for you to fire something at them......
+    			if(rc.canFirePentadShot()){
+	    			// Fire!
+	    			rc.firePentadShot(dirToShoot);
+	    			return true;    	
+    			} else{
+    				return false;
 	    		}    	
     		}
     	}

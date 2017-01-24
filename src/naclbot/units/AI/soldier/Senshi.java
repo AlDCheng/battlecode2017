@@ -577,7 +577,7 @@ public class Senshi extends GlobalVars {
 		boolean hasShot;
 		
 		// If there is more than one enemy nearby, attempt to fire a pentad at the location
-		if(enemyRobots.length > 1){
+		if(enemyRobots.length >= 4){
 			
 			// If a pentad can be shot...
 			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots);
@@ -590,7 +590,7 @@ public class Senshi extends GlobalVars {
 				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
 			}			
 		}
-		else{
+		else if (enemyRobots.length >= 2 || trackedRobot.type == battlecode.common.RobotType.ARCHON){
 			// If a triad can be shot
 			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots);
 			
@@ -598,6 +598,9 @@ public class Senshi extends GlobalVars {
 			if(!hasShot){
 				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
 			}		
+		}
+		else{
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots);
 		}
 		return hasShot;
 	}
@@ -609,11 +612,9 @@ public class Senshi extends GlobalVars {
 		if (sentNumber > 0){
 			
 			// SYSTEM CHECK - See if the soldier has actually read a broadcast from a scout or not....
-			System.out.println("Enemy locations updated by scouts.......");
-			
-			
-			}		
-		}	
+			System.out.println("Enemy locations updated by scouts.......");			
+		}		
+	}	
 }	
 	
 	

@@ -23,12 +23,18 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// ----------------------- ARCHON INFORMATION -------------------------//
 	
-	// Stores how many channels have been updated with information this turn
+	// Stores how many archons are currently in the game
 	public final static int ARCHON_NUMBER_CHANNEL = 0;
+	
+	// ----------------------- SCOUT INFORMATION -------------------------//
+	
+	// Stores how many lumber jacks exist
+	public final static int LUMBERJACK_NUMBER_CHANNEL = 9992;
+	 
 
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
-	// Stores how many channels have been updated with information this turn
+	// Stores how many scouts and harvest scouts there are
 	public final static int SCOUT_NUMBER_CHANNEL = 9995;
 	
 	public final static int SCOUT_HARVESTER_NUMBER_CHANNEL = 9996;
