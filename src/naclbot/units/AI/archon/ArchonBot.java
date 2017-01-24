@@ -400,6 +400,10 @@ public class ArchonBot extends GlobalVars {
          rc.broadcast(8 + archonNumber * ARCHON_OFFSET, 0);
 	}
 	
+	private static void moveAwayFromGardeners() throws GameActionException {
+		
+		
+	}
 	private static void moveToTree() throws GameActionException{
 		
         // Move to tree (Algorithm is very stupid. Replace with Dijkstra's or something 
