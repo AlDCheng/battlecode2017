@@ -53,6 +53,11 @@ public class GardenerBot extends GlobalVars {
 	
 	public static boolean minSat = false;
 	//--------------------------------------------------
+	public static int scanInt = 5;
+	
+	//--------------------------------------------------
+	
+	
 	
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
@@ -99,7 +104,7 @@ public class GardenerBot extends GlobalVars {
                 
                 // check for movement to more optimal space
                 if (canMove) {
-                	if (unitStart < 5) {
+                	if (unitStart < 10) {
                 		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
                 		Direction dirToDestination = rc.getLocation().directionTo(destination);
                 		if (rc.canMove(dirToDestination)) {
@@ -141,7 +146,7 @@ public class GardenerBot extends GlobalVars {
                 		System.out.println("Trees1");
                     	if (rc.hasTreeBuildRequirements()) {
                     		// To end at 0
-                    		Direction plantDirs[] = Plant.scanBuildRadius(5, 1);
+                    		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, 1);
                     		if (plantDirs[0] != null) {
                     			rc.plantTree(plantDirs[0]);
                     		}
@@ -168,7 +173,7 @@ public class GardenerBot extends GlobalVars {
                 	//------------------------------------------------
                     if (minSat) {
                     	System.out.println("Satisfication");
-                    	Direction plantDirs[] = Plant.scanBuildRadius(5, 1);
+                    	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, 1);
                     	System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
                     	if (plantDirs[0] != null) {
                     		rc.plantTree(plantDirs[0]);
@@ -195,7 +200,7 @@ public class GardenerBot extends GlobalVars {
 	public static void buildUnitNew(RobotType Unit, float bullets) throws GameActionException {
 		if (bullets >= Unit.bulletCost) {
 			if (rc.isBuildReady()) {
-				Direction plantDirs[] = Plant.scanBuildRadius(5, 1);
+				Direction plantDirs[] = Plant.scanBuildRadius(scanInt, 1);
 				if (plantDirs[1] != null) {
 					rc.buildRobot(Unit, plantDirs[1]);
 				}

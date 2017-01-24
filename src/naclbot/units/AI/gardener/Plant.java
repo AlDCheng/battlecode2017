@@ -165,7 +165,7 @@ public class Plant extends GlobalVars {
 					
 					// Add penalty for cases on edge of map (equivalent to 3 trees)
 					if(!(rc.onTheMap(potLoc, 3))) {
-						openness = 9;
+						openness = 18;
 					} else {
 						openness = 0;
 						// Tree weighting; radius = 1 (body) + 2 (tree)
@@ -197,7 +197,7 @@ public class Plant extends GlobalVars {
 	
 	// Scans immediate radius of gardener (in degrees)
 	// Output Format: [0]last availible tree plant space; [1]reserved unit building space
-	public static Direction[] scanBuildRadius(float angleInterval, float start) {
+	public static Direction[] scanBuildRadius(float angleInterval, float start) throws GameActionException {
 		
 		// Storage output
 		Direction finalDir[] = new Direction[2];
@@ -213,9 +213,10 @@ public class Plant extends GlobalVars {
 		// Scan for 1 revolution
 		while (totalAngle < 360) {
 			
+			MapLocation newLoc = curLoc.add(dir,2);
 			// Check if tree can be planted
 			if(rc.canPlantTree(dir)) {
-				rc.setIndicatorLine(curLoc, curLoc.add(dir, 2), 0, 255, 255);
+				rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
 				// Keep one space for unit building, fill other if possible
 				if (finalDir[1] != null) {
 					if (Math.abs(finalDir[1].degreesBetween(dir)) > 60) {
@@ -223,13 +224,17 @@ public class Plant extends GlobalVars {
 					}
 				}
 				else {
-					finalDir[1] = dir;
+					if((!(rc.isCircleOccupied(newLoc,(float)0.5))) && (rc.onTheMap(newLoc, (float)0.5))) {
+						finalDir[1] = dir;
+					}
 				}
 			}
 			else {
-				rc.setIndicatorLine(curLoc, curLoc.add(dir, 2), 255, 128, 0);
+				rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
+				if ((finalDir[0] != null) && (finalDir[1] != null)) {
+					break;
+				}
 			}
-			
 			
 			// Increment values
 			dir = dir.rotateRightDegrees(angleInterval);
