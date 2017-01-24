@@ -397,7 +397,7 @@ public class Yuurei extends GlobalVars {
     		// Arbitrary values are 30 degree offsets with 4 sweeps per side... 
     		// A sweep in one direction and its opposite will cover nearly all possibilities
     	
-        return tryMoveInDirection(dir, 20, 4, distance, myLocation);
+        return tryMoveInDirection(dir, 30, 5, distance, myLocation);
     }    
 
     
@@ -470,12 +470,12 @@ public class Yuurei extends GlobalVars {
     	
     	// Obtain the direction checks - are perpendicular to desired direction....
     	if (randomize > 0.5){
-    		firstCheck = new Direction(directionTo.radians + (float)(Math.PI / 2));
-    		secondCheck = new Direction(directionTo.radians - (float)(Math.PI / 2));
+    		firstCheck = new Direction(directionTo.radians + (float)(Math.PI / 8));
+    		secondCheck = new Direction(directionTo.radians - (float)(Math.PI / 8));
     	}
     	else{
-    		firstCheck = new Direction(directionTo.radians - (float)(Math.PI / 2));
-    		secondCheck = new Direction(directionTo.radians + (float)(Math.PI / 2));    		
+    		firstCheck = new Direction(directionTo.radians - (float)(Math.PI / 8));
+    		secondCheck = new Direction(directionTo.radians + (float)(Math.PI / 8));    		
     	}
     	
     	// Variable to hold the return of the checks for movement

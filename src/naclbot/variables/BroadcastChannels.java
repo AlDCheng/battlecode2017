@@ -34,6 +34,14 @@ public class BroadcastChannels extends GlobalVars {
 	// Stores how many gardeners have been initialized....
 	public final static int GARDENERS_CONSTRUCTED_CHANNELS = 9998;
 	
+	// Stores information related to which gardeners are being attacked
+		// Distress Information from Scouts
+		// Bit 0 - Gives My ID
+		// Bit 1 - Gives My X
+		// Bit 2 - Gives My Y
+		// BIT 3 - Gives NearestEnemy ID
+	public final static int GARDENER_DISTRESS_CHANNEL = 9500;
+	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
 	// Stores how many lumber jacks exist

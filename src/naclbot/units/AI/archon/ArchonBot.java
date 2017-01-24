@@ -29,7 +29,10 @@ import java.util.Arrays;
 public class ArchonBot extends GlobalVars {
 	
 	// Variable for storing the current round of the game
-	public static int currentRound = 0;
+	public static int remIsBestGirl = 0;
+	
+	// The intial round in which the archon was initialized
+	public static int initRound;
 	
 	// Variables important to self and team recognition
 	public static int myID;
@@ -64,18 +67,38 @@ public class ArchonBot extends GlobalVars {
     public static int totalGardenersHired;
      
     // Radius at which archon attempts to disperse
-    public static final int disperseRadius = 4;
+    public static final int disperseRadius = 8;
     
     // Stores the total number of gardeners contained
-    public static int numberofGardeners;
+    public static int numberofGardenersConstructed;
     
     // Rotation direction of the archon naturally
     public static boolean rotationDirection;
     
+    // Discreteness of  the initial search to find nearest walls...
+    public static final float initialWallCheckGrain = 1;
     
-
-
-	
+    // Value to store the minimum number of time per new gardener construction...
+    public static final int gardenerConstructionBreak = 50;
+    
+    // Value to store the length of tiem for which a gardener has not been constructed...
+    public static int roundsNotConstructed = 0;
+    
+    // TO BE CHANGED
+    // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CIRCLE
+    public static int getGardenerLimit(int roundNumber){
+    	
+    	if (roundNumber <= 200){
+    		return 4;
+    	}
+    	else if(roundNumber <= 500){
+    		return (2 + roundNumber / 100);
+    	}
+    	else{
+    		return (3 + roundNumber / 125);    	
+    	}
+    }    
+    	
 	// Starting game phase
 	
 	public static void init() throws GameActionException {
@@ -87,14 +110,18 @@ public class ArchonBot extends GlobalVars {
 		myID = rc.getID();
 		enemy = rc.getTeam().opponent();
 		allies = rc.getTeam();
-		lastDirection = Move.randomDirection();
-		
-		numberofGardeners = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+			
+		numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
 		
 		rotationDirection = false;
 		
 		myLocation = rc.getLocation();
 		totalGardenersHired = 0;
+		
+        remIsBestGirl = rc.getRoundNum();
+        initRound = remIsBestGirl;
+        
+        roundsNotConstructed = 0;
 		
 	    // Initialize path list and goal location
        	routingPath = new ArrayList<MapLocation>();    	
@@ -115,6 +142,17 @@ public class ArchonBot extends GlobalVars {
 
             // Try/catch blocks stop unhandled exceptions, - print stacktrace upon exception error....
             try {
+            	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
+            	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
+            	
+            	if (remIsBestGirl == 1){
+            		lastDirection = getInitialWalls();
+            	}
+            	// Get the total number of gardeners constructed thus far.....
+            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
+            	
+            	rc.setIndicatorDot(myLocation.add(lastDirection,10), 155, 135, 244);
+            	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Attempting to hire a gardener. Can hire a maximum of: " + maxGardeners + ", currently hired: " + hiredGardeners);
             	
@@ -133,14 +171,14 @@ public class ArchonBot extends GlobalVars {
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	
             	// Update the current round number.....
-            	currentRound = rc.getRoundNum();
+            	remIsBestGirl = rc.getRoundNum();
   
             	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
             	
             	Direction gardenerDirection = tryHireGardener(testDirection);
             	
             	// If the archon can hire a gardener in a certain direction...
-            	if (gardenerDirection != null){
+            	if (gardenerDirection != null && (roundsNotConstructed >= gardenerConstructionBreak || remIsBestGirl <= 20)){
             		// Assert that the archon can actually hire it (i.e. not limited by previous hiring
             		if (rc.canHireGardener(gardenerDirection)){
 	            		rc.hireGardener(gardenerDirection);
@@ -149,8 +187,10 @@ public class ArchonBot extends GlobalVars {
 	            		hiredGardener = true;
 	            		hiredGardeners += 1;
 	            		totalGardenersHired += 1;
+	            		rc.broadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS, numberofGardenersConstructed+1);
 	            	}
             	}
+            	
             	
             	MapLocation disperseLocation = moveAwayfromGardeners(alliedRobots);
             	
@@ -158,6 +198,9 @@ public class ArchonBot extends GlobalVars {
             		desiredMove = disperseLocation;
             	}
             	
+            	if (remIsBestGirl <= 15){
+            		desiredMove = myLocation.add(lastDirection, strideRadius);
+            	}
             	// Call the function to correct a move and actually move......
             	moveCorrect(desiredMove, rotationDirection, nearbyBullets);       	
       
@@ -165,7 +208,8 @@ public class ArchonBot extends GlobalVars {
 	        	lastPosition =  rc.getLocation();
 	            lastDirection = new Direction(myLocation, lastPosition);
                   
-	            currentRound += 1;
+	            remIsBestGirl += 1;
+	            roundsNotConstructed += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -189,14 +233,25 @@ public class ArchonBot extends GlobalVars {
         	
             // catch 
             try {            	
+              	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
+            	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
+            	
+            	// Get the total number of gardeners constructed thus far.....
+            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
+            	
+            	if (numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)){
+            		constructGardeners(1);
+            	}
+            	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Currently not doing anything..............." );
             	
             	// Update own location
             	myLocation = rc.getLocation();
             	
-            	// STore the location that archon wants to go to....
+            	// STore the location that archon wants to go to.... it doesnt want to move by default
             	MapLocation desiredMove = myLocation;
+            	
             	
             	// Initialize information about world......
                	RobotInfo[] enemyRobots = NearbyUnits(enemy, -1);
@@ -204,7 +259,7 @@ public class ArchonBot extends GlobalVars {
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	
             	// Update the current round number.....
-            	currentRound = rc.getRoundNum();
+            	remIsBestGirl = rc.getRoundNum();
   
             	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
 
@@ -221,8 +276,8 @@ public class ArchonBot extends GlobalVars {
 	        	lastPosition =  rc.getLocation();
 	            lastDirection = new Direction(myLocation, lastPosition);
                   
-	            currentRound += 1;           	
-            	
+	            remIsBestGirl += 1;           	
+	            roundsNotConstructed += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -261,7 +316,11 @@ public class ArchonBot extends GlobalVars {
 			Direction moveAway = new Direction(nearestRobot.location, myLocation);
 			
 			// Attempt to move directly away from it to a point that is exactly one disperseRadius from the robot
-			return myLocation.add(moveAway,disperseRadius - distanceTo);
+		
+			MapLocation newLocation = myLocation.add(moveAway, strideRadius);
+			rc.setIndicatorLine(myLocation, myLocation.add(moveAway, 25), 125, 125, 0);
+			return newLocation;
+			
 		}
 		// If no gardeners are close enough to warrant walking away, return nothing....
 		else{
@@ -350,11 +409,70 @@ public class ArchonBot extends GlobalVars {
     	}    	
 	}
 	
-	private static void getInitialWalls(){
+	// Function to obtain the initial direction that the archon will attempt to build something - checks all nearby walls 
+	// so that it gets the most open space to move forward and construct additional gardeners
+	
+	private static Direction getInitialWalls() throws GameActionException{
 		
+		// Initialize an array to store the  distances to any walls (obstacles to building)
+		float[] wallDistances = new float[16]; 
+		Arrays.fill(wallDistances, 0);
 		
+		// Check up to a distance of 9 away... and 16 different angles
+		for(int i = 1; i <= 9 / initialWallCheckGrain; i++){
+			for(int j = 0; j < 16; j++){
+				
+				// Get the locations to check for the obstacles
+				Direction directionToCheck = new Direction((float)(j * Math.PI/8));
+				float distanceToCheck = i * initialWallCheckGrain;
+				MapLocation locationToCheck = myLocation.add(directionToCheck, distanceToCheck);
+				
+				// Check to see if the considered point is off the map or has a tree
+				if(!rc.isLocationOccupiedByTree(locationToCheck) && rc.onTheMap(locationToCheck)){
+					
+					// SYSTEM CHECK If the location is free print a BLUE DOT
+					rc.setIndicatorDot(locationToCheck, 0, 0, 128);
+					
+					if (wallDistances[j] >= 0){
+						wallDistances[j] = i * initialWallCheckGrain;
+					}
+				}
+				else{
+					
+					// SYSTEM CHECK - If the location isn't free print a RED DOT
+					rc.setIndicatorDot(locationToCheck, 128, 0, 0);
+					
+					if (wallDistances[j] >= 0){
+						wallDistances[j] *= -1;
+					}				
+				}
+			}
+		}
+		// Placeholder to find the minimum (moving average of three directions)
+		int index = -1;
+		float maximum = Integer.MIN_VALUE;
 		
+		// Iterate over the fall wall Distances....
+		for (int i = 0; i < wallDistances.length; i ++){
+			
+			// Values to get the indices to iterate over....
+			int indexAbove = (i+1) % 16;
+			int indexBelow = (i+15) % 16;
+			
+			// Obtain the average of the three wall distances  surrounding the current index
+			float average = Math.abs(wallDistances[i]) + (Math.abs(wallDistances[indexAbove]) + Math.abs(wallDistances[indexBelow]))/2;
+			if (average > maximum){
+				maximum = average;
+				index = i;
+			}			
+		}
 		
+		// Calculate the direction to go to...
+		Direction newDirection = new Direction(index * (float) (Math.PI/8));
 		
+		// SYSTEM CHECK - Put a green line to show which direction the arcon will attempt to move...
+		rc.setIndicatorLine(myLocation, myLocation.add(newDirection,10), 0, 125, 0);
+		
+		return newDirection;
 	}
 }
