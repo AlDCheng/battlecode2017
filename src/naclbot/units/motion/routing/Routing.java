@@ -142,6 +142,7 @@ public class Routing extends GlobalVars{
 	    	}
 	    	else if (timeStep > 0) {
 	    		timeStep--;
+	    		pastLoc.remove(0);
 	    	}
 //	    	System.out.println("BP0");
 	    	ArrayList<MapLocation> newPath = new ArrayList<MapLocation>();
