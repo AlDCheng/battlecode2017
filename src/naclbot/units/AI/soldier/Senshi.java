@@ -83,13 +83,13 @@ public class Senshi extends GlobalVars {
     public static final int attackFrequency = 50;
     
     // Gives probability of joining an attack at a particular time....
-    public static final float attackProbability = (float) 0.4;
+    public static final float attackProbability = (float) 1;
     
     // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
     public static int lastCommanded = attackFrequency;
     
     // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
-    public static final int giveUpOnRouting = 75;
+    public static final int giveUpOnRouting = 125;
     
     // Variable to store the amount of time currently in routing....
     public static int roundsRouting = 0;
@@ -218,8 +218,22 @@ public class Senshi extends GlobalVars {
                     	Routing.setRouting(routingPath);
                    	}
                    	else{
-                   		isCommanded = false;
-                   		goalLocation = null;
+                   		
+                   		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+                   		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);
+                   		
+                   		// IF there are no more enemies to be found.......
+                   		
+                   		if(finishedArchons == discoveredArchons){
+                   			isCommanded = false;
+                       		goalLocation = null;         
+                   			
+                   		}
+                   		else{
+                   			isCommanded = false;
+                       		goalLocation = null;                   			
+                   		}
+          
                    	}
                	}
 
@@ -339,7 +353,10 @@ public class Senshi extends GlobalVars {
             		// SYSTEM CHECK - Show who the robot is aiming at...
             		System.out.println("Currently shooting at a robot with ID: " + trackID);
             		
-            		hasShot = decideShoot(enemyRobots, alliedRobots);
+            		// Get a list of allied trees to avoid shooting..
+            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
+            		
+            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
             	}
             	
             	if(hasShot){            		
@@ -433,6 +450,10 @@ public class Senshi extends GlobalVars {
     			return move(enemyRobots, desiredMove);    	
     		
     		} else{ // If there is no robot to be tracked and the robot is not receiving any orders
+    			
+    			trackedRobot = null;
+    			trackID = -1;
+    			
     			// Posit the desired move location as a forward movement along the last direction
     			desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
     			
@@ -451,7 +472,7 @@ public class Senshi extends GlobalVars {
     		// If the soldier is currently not commanded to go anywhere... follow the robot in question
     		if(!isCommanded){
     			// Call the track function.....
-    			return track(enemyRobots, (float)2, desiredMove);
+    			return track(enemyRobots, (float) 1.8, desiredMove);
     		}
     		else{
     			// TODO Insert path planning here........
@@ -472,7 +493,7 @@ public class Senshi extends GlobalVars {
     	}
     	
     	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
-    	if (myLocation.distanceTo(goalLocation) < 12 || roundsRouting >= giveUpOnRouting){
+    	if (myLocation.distanceTo(goalLocation) < 5 || roundsRouting >= giveUpOnRouting){
     		
     		// Reset the values necessary for switching into a command phase
     		goalLocation = null;
@@ -568,7 +589,7 @@ public class Senshi extends GlobalVars {
 	}
 	
 	
-	private static boolean decideShoot(RobotInfo[] enemyRobots, RobotInfo[] alliedRobots) throws GameActionException{
+	private static boolean decideShoot(RobotInfo[] enemyRobots, RobotInfo[] alliedRobots, TreeInfo[] alliedTrees) throws GameActionException{
 		
 		// Obtain a location to shoot at
 		MapLocation shootingLocation = Korosenai.getFiringLocation(trackedRobot, previousRobotData, myLocation);
@@ -580,27 +601,27 @@ public class Senshi extends GlobalVars {
 		if(enemyRobots.length >= 4){
 			
 			// If a pentad can be shot...
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, alliedTrees);
 			
 			// If that was not possible, try a triad and then a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees);
 			}			
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees);
 			}			
 		}
 		else if (enemyRobots.length >= 2 || trackedRobot.type == battlecode.common.RobotType.ARCHON){
 			// If a triad can be shot
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees);
 			
 			// If that was not possible, try a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees);
 			}		
 		}
 		else{
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots, alliedTrees);
 		}
 		return hasShot;
 	}
@@ -614,7 +635,8 @@ public class Senshi extends GlobalVars {
 			// SYSTEM CHECK - See if the soldier has actually read a broadcast from a scout or not....
 			System.out.println("Enemy locations updated by scouts.......");			
 		}		
-	}	
+	}
+	
 }	
 	
 	

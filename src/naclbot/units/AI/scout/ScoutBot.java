@@ -390,14 +390,19 @@ public class ScoutBot extends GlobalVars {
             	// ------------------------ Shooting -----------------------------//
             	
             	// SYSTEM CHECK - Notify that the scout is now attempting to shoot at something........
-            	// System.out.println("Moving on to shooting phase...................");
+            	System.out.println("Moving on to shooting phase...................");
             	
-            	if (trackID >= 0){
+            	if (trackID >= 0 && trackedRobot != null){
+            		
+            		System.out.println("Attempted to shoot");
             		
             		// Obtain a location to shoot at
             		MapLocation shootingLocation = Korosenai.getFiringLocation(trackedRobot, previousRobotData, myLocation);
             		
-            		Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
+            		// Get a list of allied trees to avoid shooting..
+            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
+            		
+            		Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees);
             	}
     
             	// Make sure to show appreciation for the one and only best girl in the world.
@@ -744,6 +749,9 @@ public class ScoutBot extends GlobalVars {
     			return move(enemyRobots);    	
     		
     		} else{ // If there is no robot to be tracked 
+    			trackID = -1;
+    			trackedRobot = null;
+    			
     			// Posit the desired move location as a forward movement along the last direction
     			MapLocation desiredMove = myLocation.add(myDirection, (float) (Math.random() * 0.5  + 1));
     			
@@ -851,6 +859,7 @@ public class ScoutBot extends GlobalVars {
 	    	
 	    	// Reset the enemy track ID, since it is not something that the robot would like to follow at the moment
 	    	trackID = -1;
+	    	trackedRobot = null;
         	roundsCurrentlyTracked = 0;	 
         	isTracking = false;
         	return desiredMove;   
@@ -863,6 +872,7 @@ public class ScoutBot extends GlobalVars {
 			
     		// Don't update no track in case the spooky comes back
         	trackID = -1;
+        	trackedRobot = null;
         	roundsCurrentlyTracked = 0;
         	isTracking = false;  
         	
@@ -1014,6 +1024,7 @@ public class ScoutBot extends GlobalVars {
 			noTrackUpdateIndex += 1;
 			
         	trackID = -1;
+        	trackedRobot = null;
         	roundsCurrentlyTracked = 0;
         	isTracking = false;        	
 			
@@ -1034,7 +1045,7 @@ public class ScoutBot extends GlobalVars {
 		
 		
 		// If the robot can currently sense the robot it is tracking and if it has not been tracking this robot for too long
-    	if ((rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 50) || rc.canSenseRobot(trackID) && mustDefend){
+    	if ((rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 80) || rc.canSenseRobot(trackID) && mustDefend){
     		
     		MapLocation desiredMove = null;
     		
@@ -1064,6 +1075,7 @@ public class ScoutBot extends GlobalVars {
 			noTrackUpdateIndex += 1;
 			
         	trackID = -1;
+        	trackedRobot = null;
         	roundsCurrentlyTracked = 0;
         	isTracking = false;        	
 			

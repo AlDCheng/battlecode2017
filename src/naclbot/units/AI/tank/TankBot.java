@@ -337,7 +337,10 @@ public class TankBot extends GlobalVars {
             		// SYSTEM CHECK - Show who the robot is aiming at...
             		System.out.println("Currently shooting at a robot with ID: " + trackID);
             		
-            		hasShot = decideShoot(enemyRobots, alliedRobots);
+            		// Get a list of allied trees to avoid shooting..
+            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
+            		
+            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
             	}
             	
             	if(hasShot){            		
@@ -566,7 +569,7 @@ public class TankBot extends GlobalVars {
 	}
 	
 	
-	private static boolean decideShoot(RobotInfo[] enemyRobots, RobotInfo[] alliedRobots) throws GameActionException{
+	private static boolean decideShoot(RobotInfo[] enemyRobots, RobotInfo[] alliedRobots, TreeInfo[] nearbyAlliedTrees) throws GameActionException{
 		
 		// Obtain a location to shoot at
 		MapLocation shootingLocation = Korosenai.getFiringLocation(trackedRobot, previousRobotData, myLocation);
@@ -578,23 +581,23 @@ public class TankBot extends GlobalVars {
 		if(enemyRobots.length > 3){
 			
 			// If a pentad can be shot...
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, nearbyAlliedTrees);
 			
 			// If that was not possible, try a triad and then a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees);
 			}			
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees);
 			}			
 		}
 		else{
 			// If a triad can be shot
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees);
 			
 			// If that was not possible, try a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees);
 			}		
 		}
 		return hasShot;

@@ -23,6 +23,7 @@ public class Korosenai extends GlobalVars {
 	
 	// Maximum distance away from current location that the functions will sweep in order to make sure that the robot will not hit the ally.....
 	public static final float maximumAllyCheckDistance = 3;
+	public static final float maximumAllyTreeCheckDistance = 0;
 	
 	// Firing line offsets...
 	public static final float triadOffset = 20;
@@ -64,6 +65,66 @@ public class Korosenai extends GlobalVars {
     	return false;
     }
     
+   
+    // Function to ensure that no allied tree in in between the firing locatio nand the target location..
+    
+    public static boolean isDirectionOccupiedByAllyTree(
+    		
+    	// Input variables
+	    MapLocation start, // Location the robot is currently at
+		
+		Direction dir, // Intended firing location of this bullet....
+		
+		TreeInfo[] alliedTrees, // A list of info on allies of the robot
+		
+		float distance // The max distance away to make sure that the robot isn't going to accidentally shoot an ally or an allytree...
+		
+		) throws GameActionException{
+    	
+    	if (alliedTrees == null || distance == 0){
+    		return false;
+    	}
+    	
+    	// Iterate through each nearby ally...
+    	for (TreeInfo treeData: alliedTrees){
+    		
+    		// Obtain the distance to each of these allied trees
+			float distanceTo = treeData.location.distanceTo(start);
+			
+			// SYSTEM CHECK - Print out the distance to this allied tree
+			// System.out.println("distanceTo: " + distanceTo);
+			
+			// Obtain the direction to the allied tree
+			Direction directionTo = new Direction(start, treeData.location);
+			
+			// If the ally is quite close to the current location of the robot...
+    		if (distanceTo < distance){
+    			// Calculate the largest number of radians intercepted by the ally
+    			float interceptRadians = treeData.getRadius() / distanceTo;
+    			
+    			// SYSTEM CHECK - Print out the distance to this ally...
+    			// System.out.println("interceptRadians" + interceptRadians);
+    			
+    			// If the current direction to shoot will intercept the body of the currently considered ally
+    			if(Math.abs(directionTo.radians - dir.radians) <= interceptRadians){
+    				
+    				// SYSTEM CHECK - Show which allies cannot be shot at... along with a brown dot....
+    				System.out.println("Cannot fire - there is an all tree with ID: " + treeData.ID + " in the way" );
+    				rc.setIndicatorDot(treeData.location, 150, 75, 0); 
+    				
+    				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
+    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 0, 60, 0);
+    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 0, 60, 0);
+    				
+    				return true;
+    			}
+    		}    		
+    	}    	    	
+    	return false;
+    }
+
+    
+    // Function to make sure that a given direction isn't occupied by an ally....
     
     public static boolean isDirectionOccupiedByAlly(
     		
@@ -77,6 +138,10 @@ public class Korosenai extends GlobalVars {
     		float distance // The max distance away to make sure that the robot isn't going to accidentally shoot an ally
     		
     		) throws GameActionException{
+    	
+    	if (nearbyAllies == null){
+    		return false;
+    	}
     	
     	// Iterate through each nearby ally...
     	for (RobotInfo allyData: nearbyAllies){
@@ -102,7 +167,7 @@ public class Korosenai extends GlobalVars {
     			if(Math.abs(directionTo.radians - dir.radians) <= interceptRadians){
     				
     				// SYSTEM CHECK - Show which allies cannot be shot at... along with a dark blue dot....
-    				// System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
+    				System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
     				rc.setIndicatorDot(allyData.location, 0, 0, 80); 
     				
     				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
@@ -132,17 +197,29 @@ public class Korosenai extends GlobalVars {
 						// This value should be 1 if the shot type is to be a triple..
 						// This value should be a 2 if the shot type is to be a pentad...
 		
-		RobotInfo[] nearbyAllies // An array storing the robot information of nearby allies		
+		RobotInfo[] nearbyAllies, // An array storing the robot information of nearby allies		
+		
+		TreeInfo[] alliedTrees // An array storing the robot information of nearby allied trees....
 
     	) throws GameActionException{
+    	
+    	// If the gap to the target is too large, dont shoot......
+    	if (targetLocation.distanceTo(currentLocation) > 6){
+    		return false;
+    	}
     	
     	// Obtain the direction wanted to shoot at....
     	Direction dirToShoot = new Direction (currentLocation, targetLocation);
     	
     	// If the robot wishes to fire a single shot....
     	if (shotType == 0){
+    		
+    		// SYSTEM CHECK Print out that attempting to fire single shot
+    		System.out.println("attempting to fire single shot");
+    		
     		// If no allies are going to be instantly hit by the bullets... 
-    		if (!isDirectionOccupiedByAlly(currentLocation, dirToShoot, nearbyAllies, maximumAllyCheckDistance)){
+    		if (!isDirectionOccupiedByAlly(currentLocation, dirToShoot, nearbyAllies, maximumAllyCheckDistance) && 
+    				!isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){
     			
     			// Make sure your team is rich enough for you to fire something at them......
     			if(rc.canFireSingleShot()){
@@ -154,12 +231,16 @@ public class Korosenai extends GlobalVars {
     	}
     	else if (shotType == 1){
     		
+    		// SYSTEM CHECK Print out that attempting to fire single shot
+    		System.out.println("attempting to fire triad shot");
+    		
     		// Iterate over the three bullets to be fired
     		for (int j = -1; j <= 1; j++){
     			// Get the direction that the bullet will be traveling at
     			Direction fireDirection = new Direction (dirToShoot.radians + j * triadOffset);
     			// If no allies are going to be instantly hit by the bullets... 
-	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){	    			
+	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) || 
+	    				isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){			
 	    			return false;
 	    			
 	    		}     
@@ -174,13 +255,23 @@ public class Korosenai extends GlobalVars {
     		}
     	}
 		else if (shotType == 2){
+			
+			// SYSTEM CHECK Print out that attempting to fire single shot
+    		System.out.println("attempting to fire pentad shot");
+			
+			if(isLineBLockedByTree(currentLocation, targetLocation, 1)){
+				return false;
+			}
 		    		
-    		// Iterate over the three bullets to be fired
+    		// Iterate over the five bullets to be fired
     		for (int j = -2; j <= 2; j++){
     			// Get the direction that the bullet will be traveling at
     			Direction fireDirection = new Direction (dirToShoot.radians + j * pentadOffset);
     			// Check to see if no allies are going to be hit by bullets.....
-	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance)){
+	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
+	    				!isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){
+	    			
+	    			
 	    			
 	    			return false;
 	    		}
