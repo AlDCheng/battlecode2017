@@ -37,6 +37,11 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// Stores how many channels have been updated with information this turn
 	public final static int SOLDIER_NUMBER_CHANNEL = 9993;
+	
+	// ---------------------- SOLDIER INFORMATION -------------------------//
+	
+	// Stores how many channels have been updated with information this turn
+	public final static int TANK_NUMBER_CHANNEL = 9994;
 		
 	
 	// ----------------------- TREE INFORMATION -------------------------//
