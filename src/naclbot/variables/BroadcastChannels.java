@@ -31,6 +31,9 @@ public class BroadcastChannels extends GlobalVars {
 	// Stores how many gardeners  exist
 	public final static int GARDENER_NUMBER_CHANNEL = 9991;
 	
+	// Stores how many gardeners have been initialized....
+	public final static int GARDENERS_CONSTRUCTED_CHANNELS = 9998;
+	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
 	// Stores how many lumber jacks exist

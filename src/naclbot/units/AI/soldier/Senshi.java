@@ -268,7 +268,7 @@ public class Senshi extends GlobalVars {
             	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
             	if(!rc.canMove(desiredMove)){          		
             	
-					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius);
+					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius /2 );
 					
 					// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
 					// System.out.println("Attempted to find a new location to move to randomly...");

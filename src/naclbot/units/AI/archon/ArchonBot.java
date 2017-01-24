@@ -15,7 +15,16 @@ import naclbot.units.motion.search.TreeSearch;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-//~~ Updated by Illiyia~~
+
+/* ------------------   Overview ----------------------
+ * 
+ * AI Controlling the functions of the ScoutBot
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ * Debug statements all begin with SYSTEM CHECK 
+ * 
+ ---------------------------------------------------- */
 
 public class ArchonBot extends GlobalVars {
 	
@@ -60,6 +69,9 @@ public class ArchonBot extends GlobalVars {
     // Stores the total number of gardeners contained
     public static int numberofGardeners;
     
+    // Rotation direction of the archon naturally
+    public static boolean rotationDirection;
+    
     
 
 
@@ -79,8 +91,11 @@ public class ArchonBot extends GlobalVars {
 		
 		numberofGardeners = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
 		
+		rotationDirection = false;
+		
 		myLocation = rc.getLocation();
 		totalGardenersHired = 0;
+		
 	    // Initialize path list and goal location
        	routingPath = new ArrayList<MapLocation>();    	
        	Routing.setRouting(routingPath);
@@ -115,6 +130,7 @@ public class ArchonBot extends GlobalVars {
             	// Initialize information about world......
                	RobotInfo[] enemyRobots = NearbyUnits(enemy, -1);
             	RobotInfo[] alliedRobots = NearbyUnits(allies, -1);
+            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	
             	// Update the current round number.....
             	currentRound = rc.getRoundNum();
@@ -141,8 +157,15 @@ public class ArchonBot extends GlobalVars {
             	if (disperseLocation != null){            		
             		desiredMove = disperseLocation;
             	}
-                
- 
+            	
+            	// Call the function to correct a move and actually move......
+            	moveCorrect(desiredMove, rotationDirection, nearbyBullets);       	
+      
+            	// Update the last position of the robot to get the heading of the archon in the previous turn....
+	        	lastPosition =  rc.getLocation();
+	            lastDirection = new Direction(myLocation, lastPosition);
+                  
+	            currentRound += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -156,55 +179,50 @@ public class ArchonBot extends GlobalVars {
         idle();
     }
 	
+	
+	// Default state of archon when it is not building anything......
+	
 	public static void idle() throws GameActionException {
-		// System.out.println("Archon transitioning to Main Phase");
+
 		
-		boolean hireGard = false;
-		
-		// loop for Main Phase
         while (true) {
         	
-            // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
-            try {
-            	rc.broadcast(TREES_SENT_THIS_TURN, 0);
+            // catch 
+            try {            	
+            	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
+            	System.out.println("Currently not doing anything..............." );
             	
-            	//get current round number
+            	// Update own location
+            	myLocation = rc.getLocation();
+            	
+            	// STore the location that archon wants to go to....
+            	MapLocation desiredMove = myLocation;
+            	
+            	// Initialize information about world......
+               	RobotInfo[] enemyRobots = NearbyUnits(enemy, -1);
+            	RobotInfo[] alliedRobots = NearbyUnits(allies, -1);
+            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+            	
+            	// Update the current round number.....
             	currentRound = rc.getRoundNum();
-            	
-            	//get needed victory points to win
-            	victoryPointsToWin = (float) GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints();
-            	
-            	// if enough bullets; win
-            	float currentVictoryPointCost = rc.getVictoryPointCost();
-            	if (rc.getTeamBullets() >= victoryPointsToWin*currentVictoryPointCost) {
-            		rc.donate(rc.getTeamBullets());
-            
-            	
-            
-            	}
-                // Generate a random direction
-                Direction dir = Move.randomDirection();
-                
-	            // Get number of gardeners
-            	int prevNumGard = rc.readBroadcast(GARDENER_CHANNEL);
-	          	                        	            	
-                // Try to hire gardeners at 150 turn intervals
-            	if ((rc.getRoundNum() % 50 == 0) || (prevNumGard < 3)) {
-            		hireGard = false;
-            	}
-                if (rc.canHireGardener(dir) && !hireGard && prevNumGard < 15) {
-                    rc.hireGardener(dir);
-                    rc.broadcast(GARDENER_CHANNEL, prevNumGard + 1);
-                    hireGard = true;
-                }
+  
+            	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
 
-                // Move randomly
-                MapLocation newLoc = Yuurei.tryMoveInDirection(dir, strideRadius, myLocation);
-                if (newLoc != null) {
-                	rc.move(newLoc);
-                	iFeed.willFeed(newLoc);
-                }
-
+            	MapLocation disperseLocation = moveAwayfromGardeners(alliedRobots);
+            	
+            	if (disperseLocation != null){            		
+            		desiredMove = disperseLocation;
+            	}
+            	
+            	// Call the function to correct a move and actually move......
+            	moveCorrect(desiredMove, rotationDirection, nearbyBullets);       	
+      
+            	// Update the last position of the robot to get the heading of the archon in the previous turn....
+	        	lastPosition =  rc.getLocation();
+	            lastDirection = new Direction(myLocation, lastPosition);
+                  
+	            currentRound += 1;           	
+            	
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -215,12 +233,6 @@ public class ArchonBot extends GlobalVars {
         }
     }
         
-
-	private static RobotInfo[] senseAlliedUnits(){
-		return rc.senseNearbyRobots(-1, allies);		
-	}	
-	
-	
 	// Function to get the archon to move away from gardeners to give them more space....
 	
 	private static MapLocation moveAwayfromGardeners(RobotInfo alliedRobots[]){
@@ -257,8 +269,6 @@ public class ArchonBot extends GlobalVars {
 		}
 	}
 	
-	
-	
 	// Find a direction to hire a direction or return null if there isn't one found...
 	
 	private static Direction tryHireGardener(Direction tryDirection){
@@ -283,7 +293,68 @@ public class ArchonBot extends GlobalVars {
 		return rc.senseNearbyRobots(myLocation, distance, team);
 	}
 	
-		
-		
+	// Copy of the code from the scoutbot - correct movement after finding a location......
 	
+	private static void moveCorrect(MapLocation desiredMove, boolean rotationDirection, BulletInfo[] nearbyBullets) throws GameActionException{
+		
+		// Correct desiredMove to within one soldier  stride location of where the robot is right now....
+    	if(myLocation.distanceTo(desiredMove) > strideRadius){
+    		
+        	Direction desiredDirection = new Direction(myLocation, desiredMove);	
+        	
+        	desiredMove = myLocation.add(desiredDirection, strideRadius);
+    	}
+    	// Make the robot bounce of walls if they are too far......
+    	if (!rc.canMove(desiredMove)){
+    		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+    		
+    		myDirection = new Direction(myLocation, newLocation);
+    		
+    		desiredMove = newLocation;
+    	}
+    	
+    	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
+    	if(!rc.canMove(desiredMove)){          		
+    	
+			MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius);
+			
+			desiredMove = newLocation;
+    	}     	
+    	
+    	// --------------------------- DODGING ------------------------ //
+    	
+    	// Placeholder Variable for any dodge that the dodge function creates....
+    	MapLocation dodgeLocation;
+    	
+    	// Currently does nothing may use later XD
+    	boolean canDodge = false;
+    	
+    	// SYSTEM CHECK - Make sure that the dodge function is called...
+    	// System.out.println("Calling Dodge Function....");
+    	
+    	// Call the dodge function
+    	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
+    	    			
+    	// If there is a location that the unit can dodge to..
+    	if (dodgeLocation != null){
+    		desiredMove = dodgeLocation;
+    	}
+    	
+    	// See whether or not the robot can move to the current desired move, and move if it does
+    	if(rc.canMove(desiredMove)){
+    		rc.move(desiredMove);
+    	}           	
+    	else{
+    		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
+    		// System.out.println("This robot did not move because it did not want to....");
+    	}    	
+	}
+	
+	private static void getInitialWalls(){
+		
+		
+		
+		
+		
+	}
 }
