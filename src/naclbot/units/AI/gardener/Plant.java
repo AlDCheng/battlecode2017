@@ -231,13 +231,18 @@ public class Plant extends GlobalVars {
 			}
 			else {
 				rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
-				if ((finalDir[0] != null) && (finalDir[1] != null)) {
+				/*if ((finalDir[0] != null) && (finalDir[1] != null)) {
 					break;
-				}
+				}*/
 			}
 			
 			// Increment values
-			dir = dir.rotateRightDegrees(angleInterval);
+			if (start <= 0) {
+				dir = dir.rotateLeftDegrees(angleInterval);
+			}
+			else {
+				dir = dir.rotateRightDegrees(angleInterval);
+			}
 			totalAngle += angleInterval;
 			
 //			System.out.println("Angle: " + dir + ", Total Angle: " + totalAngle);

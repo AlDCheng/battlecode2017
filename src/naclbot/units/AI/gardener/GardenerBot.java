@@ -135,18 +135,20 @@ public class GardenerBot extends GlobalVars {
                 // Force minimum number of units
                 // Scout-Tree-Tree-Scout-Soldier-Trees
 //                System.out.println("Tree status: " + treeImpossible + ", Num Tree: " + rc.getTreeCount());
+                float buildDir = dirAway(rc.getLocation()).getAngleDegrees();
+                System.out.println("Build Degrees: " + buildDir);
                 
                 float bulletNum = rc.getTeamBullets();
                 if (bulletNum > GameConstants.BULLET_TREE_COST) {
                 	if (scoutCount < minScouts1) {
                 		System.out.println("Scouts1");
-                		buildUnitNew(RobotType.SCOUT, bulletNum);
+                		buildUnitNew(RobotType.SCOUT, bulletNum, buildDir);
                     }
                 	else if ((rc.getTreeCount() < minTrees1) && (!treeImpossible)) {
                 		System.out.println("Trees1");
                     	if (rc.hasTreeBuildRequirements()) {
                     		// To end at 0
-                    		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, 1);
+                    		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
                     		if (plantDirs[0] != null) {
                     			rc.plantTree(plantDirs[0]);
                     		}
@@ -158,12 +160,12 @@ public class GardenerBot extends GlobalVars {
                     }
                 	else if (scoutCount < minScouts2) {
                 		System.out.println("Scouts2");
-                    	buildUnitNew(RobotType.SCOUT, bulletNum);
+                    	buildUnitNew(RobotType.SCOUT, bulletNum, buildDir);
                     }
                 	// Toggle with lumberjack
                 	else if (soldierCount < minSoldiers1) {
                 		System.out.println("Soldiers1");
-                    	buildUnitNew(RobotType.SOLDIER, bulletNum);
+                    	buildUnitNew(RobotType.SOLDIER, bulletNum, buildDir);
                     }
                 	else {
                 		minSat = true;
@@ -173,7 +175,7 @@ public class GardenerBot extends GlobalVars {
                 	//------------------------------------------------
                     if (minSat) {
                     	System.out.println("Satisfication");
-                    	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, 1);
+                    	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
                     	System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
                     	if (plantDirs[0] != null) {
                     		rc.plantTree(plantDirs[0]);
@@ -197,72 +199,39 @@ public class GardenerBot extends GlobalVars {
         }
 	}
 	
-	public static void buildUnitNew(RobotType Unit, float bullets) throws GameActionException {
+	public static void buildUnitNew(RobotType Unit, float bullets, float dirDeg) throws GameActionException {
 		if (bullets >= Unit.bulletCost) {
 			if (rc.isBuildReady()) {
-				Direction plantDirs[] = Plant.scanBuildRadius(scanInt, 1);
+				Direction plantDirs[] = Plant.scanBuildRadius(scanInt, dirDeg);
 				if (plantDirs[1] != null) {
 					rc.buildRobot(Unit, plantDirs[1]);
 				}
 			}
 		}		
 	}
-
 	
-	/*
-	public static void completeSurroundTrees(float spacing) throws GameActionException {
-		//hexDirArray is an array with 6 Direction objects that point to 0, 60, 120, 180, 240, 300 degrees
-		//these are the directions that the gardeners will plant trees in to surround themselves
+	public static Direction dirAway(MapLocation curLoc) {
+		RobotInfo[] ourBots = rc.senseNearbyRobots(RobotType.GARDENER.sensorRadius, rc.getTeam());
+		Direction opDir;
 		
-        // plants trees around itself in 6 directions
-		if((treeCount < 6) && (rc.hasTreeBuildRequirements())) {
-			if (rc.canPlantTree(hexDirArray[0])) {
-	        	rc.plantTree(hexDirArray[0]);
-	            treeCount++;
-	        } else if (rc.canPlantTree(hexDirArray[1])) {
-	    		rc.plantTree(hexDirArray[1]);
-	            treeCount++;
-	        } else if (rc.canPlantTree(hexDirArray[2])) {
-	    		rc.plantTree(hexDirArray[2]);
-	            treeCount++;
-	        } else if (rc.canPlantTree(hexDirArray[3])) {
-	    		rc.plantTree(hexDirArray[3]);
-	            treeCount++;   
-	        } else if (rc.canPlantTree(hexDirArray[4])) {
-	    		rc.plantTree(hexDirArray[4]);
-	            treeCount++;   
-	        } else if (rc.canPlantTree(hexDirArray[5])) {
-	    		rc.plantTree(hexDirArray[5]);
-	            treeCount++;   
-	        }
+		float dx = 0;
+		float dy = 0;
+		int size = ourBots.length;
+		if(size > 0) {
+			for(int i = 1; i < size; i++) {
+				if(ourBots[i].type == RobotType.GARDENER) {
+					dx += (float)((ourBots[i].location.x - curLoc.x)/size);
+					dy += (float)((ourBots[i].location.y - curLoc.y)/size);
+				}
+			}
+			opDir = new Direction(dx, dy);
+			opDir = opDir.opposite();
+			return opDir;
+		}
+		else {
+			return new Direction(0);
 		}
 	}
-	
-	public static void incompleteSurroundTrees(float spacing) throws GameActionException {
-		//hexDirArray is an array with 6 Direction objects that point to 0, 60, 120, 180, 240, 300 degrees
-		//these are the directions that the gardeners will plant trees in to surround themselves
-		if((treeCount < 6) && (rc.hasTreeBuildRequirements())) {
-			// plants trees around itself in 5 directions, leaving one opening
-	    	if (rc.canPlantTree(hexDirArray[0])) {
-	        	rc.plantTree(hexDirArray[0]);
-	            treeCount++;
-	        } else if (rc.canPlantTree(hexDirArray[1])) {
-	    		rc.plantTree(hexDirArray[1]);
-	            treeCount++;
-	        } else if (rc.canPlantTree(hexDirArray[2])) {
-	    		rc.plantTree(hexDirArray[2]);
-	            treeCount++;
-	        } else if (rc.canPlantTree(hexDirArray[3])) {
-	    		rc.plantTree(hexDirArray[3]);
-	            treeCount++;   
-	        } else if (rc.canPlantTree(hexDirArray[4])) {
-	    		rc.plantTree(hexDirArray[4]);;
-	            treeCount++;
-	        } else {
-	        	buildUnits(dirToOpening);
-	        }	
-		}
-	}*/
 	
 	public static void waterSurroundingTrees() throws GameActionException {
 		//first checks if there are trees it can water, then waters
