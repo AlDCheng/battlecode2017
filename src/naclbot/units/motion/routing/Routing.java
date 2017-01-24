@@ -63,6 +63,20 @@ public class Routing extends GlobalVars{
 		lastDest = new MapLocation(prevLoc.x,prevLoc.y);
 	}
 	
+	public static void resetRouting() {
+		prevDir = new Direction(0);
+		
+		prevLoc = rc.getLocation();
+		curLoc = new MapLocation(prevLoc.x,prevLoc.y);
+		lastDest = new MapLocation(prevLoc.x,prevLoc.y);
+		
+		if (path.size() > 0) {
+			MapLocation dest = path.get(path.size()-1);
+			path = new ArrayList<MapLocation>();
+			path.add(dest);
+		}
+	}
+	
 	/**
 	 * Wrapper function for movement through path.
 	 */	
