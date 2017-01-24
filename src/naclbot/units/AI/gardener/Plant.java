@@ -113,9 +113,10 @@ public class Plant extends GlobalVars {
 	// These functions are added by Alan
 	
 	// Find largest nearby empty space for tree planting
-	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval) throws GameActionException {
+	// Also finds an empty space for unit/tree production
+	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength) throws GameActionException {
 		
-		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
+//		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
 		
 		// Get robot type
 		RobotType thisBot = rc.getType();
@@ -130,7 +131,7 @@ public class Plant extends GlobalVars {
 		MapLocation finalLoc = curLoc;
 		
 		// Find openness of current space:
-		float minOpenness = 0;
+		float minOpenness = Float.MAX_VALUE;
 		float radius = 3;
 		
 		// Tree weighting; radius = 1 (body) + 2 (tree)
@@ -140,10 +141,7 @@ public class Plant extends GlobalVars {
 		// Unit weighting (for enemy Team)
 		minOpenness += 3*rc.senseNearbyRobots(radius, them).length;
 		
-		// Declare Max Length
-		float maxLength = thisBot.strideRadius;
-		
-		System.out.println("Max Length: " + maxLength);
+//		System.out.println("Max Length: " + maxLength);
 		
 		// Declare angle/length modifiers
 		float angle = 0;
@@ -154,28 +152,31 @@ public class Plant extends GlobalVars {
 			angle = 0;
 			
 			while(angle < 360) {
-				System.out.println("Angle: " + angle + ", length: " + length);
 				
 				// Get potential location
 				potLoc = curLoc.add((float)Math.toRadians(angle), length);
 				rc.setIndicatorDot(potLoc, 178, 102, 255);
 				
 				// Check surroundings
-				float openness = 0;
+				float openness = Float.MAX_VALUE;
 				
 				// Check if on Map
 				if(rc.onTheMap(potLoc)) {
-					// Tree weighting; radius = 1 (body) + 2 (tree)
-					openness += rc.senseNearbyTrees(potLoc, radius, null).length;
-					// Unit weighting (for own Team)
-					openness += rc.senseNearbyRobots(potLoc, radius, us).length;
-					// Unit weighting (for enemy Team)
-					openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
 					
 					// Add penalty for cases on edge of map (equivalent to 3 trees)
 					if(!(rc.onTheMap(potLoc, 3))) {
-						openness += 3;
-					} 
+						openness = 9;
+					} else {
+						openness = 0;
+						// Tree weighting; radius = 1 (body) + 2 (tree)
+						openness += rc.senseNearbyTrees(potLoc, radius, null).length;
+						// Unit weighting (for own Team)
+						openness += rc.senseNearbyRobots(potLoc, radius, us).length;
+						// Unit weighting (for enemy Team)
+						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
+					}
+					
+//					System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);
 				}
 				
 				// Compare with existing, and replace if lower
@@ -189,9 +190,54 @@ public class Plant extends GlobalVars {
 			length += lengthInterval;
 		}
 		
+//		System.out.println("Final: " + finalLoc[0] + ", " + finalLoc[1]);
+		
 		return finalLoc;
 	}
 	
-
+	// Scans immediate radius of gardener (in degrees)
+	// Output Format: [0]last availible tree plant space; [1]reserved unit building space
+	public static Direction[] scanBuildRadius(float angleInterval, float start) {
 		
+		// Storage output
+		Direction finalDir[] = new Direction[2];
+		
+		// Define direction variable
+		Direction dir = new Direction((float)Math.toRadians(start));
+		
+		MapLocation curLoc = rc.getLocation();
+		
+		// Make sure only one revolution is check
+		float totalAngle = 0;
+		
+		// Scan for 1 revolution
+		while (totalAngle < 360) {
+			
+			// Check if tree can be planted
+			if(rc.canPlantTree(dir)) {
+				rc.setIndicatorLine(curLoc, curLoc.add(dir, 2), 0, 255, 255);
+				// Keep one space for unit building, fill other if possible
+				if (finalDir[1] != null) {
+					if (Math.abs(finalDir[1].degreesBetween(dir)) > 60) {
+						finalDir[0] = finalDir[1];
+					}
+				}
+				else {
+					finalDir[1] = dir;
+				}
+			}
+			else {
+				rc.setIndicatorLine(curLoc, curLoc.add(dir, 2), 255, 128, 0);
+			}
+			
+			
+			// Increment values
+			dir = dir.rotateRightDegrees(angleInterval);
+			totalAngle += angleInterval;
+			
+//			System.out.println("Angle: " + dir + ", Total Angle: " + totalAngle);
+		}
+		
+		return finalDir;
+	}
 }

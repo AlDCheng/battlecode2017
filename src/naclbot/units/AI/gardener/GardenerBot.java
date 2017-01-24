@@ -4,6 +4,7 @@ import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.variables.GlobalVars;
+import naclbot.variables.BroadcastChannels;
 import naclbot.units.motion.*;
 
 import java.util.ArrayList;
@@ -34,11 +35,24 @@ public class GardenerBot extends GlobalVars {
 	public static MapLocation archonLoc;
 	
 	public static MapLocation destination;
+	public static boolean treeImpossible = false;
 	
 	public static ArrayList<MapLocation> lowHealthTrees;
 	
 	public static boolean nearbyTreesAndArc;
 	
+	//-----------Starting game unit amounts-------------
+	public static int unitStart = 0;
+	
+	public static int minScouts1 = 1;
+	public static int minScouts2 = 2; // Total
+	
+	public static int minTrees1 = 2;
+	
+	public static int minSoldiers1 = 1;
+	
+	public static boolean minSat = false;
+	//--------------------------------------------------
 	
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
@@ -57,15 +71,19 @@ public class GardenerBot extends GlobalVars {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	// Listen for home archon's location, not implemented yet
+            	// Check later
                 xPos = rc.readBroadcast(0);
                 yPos = rc.readBroadcast(1);                
                 archonLoc = new MapLocation(xPos,yPos);
                 
                 // Check number of all units currently in service
-                scoutCount = rc.readBroadcast(SCOUT_CHANNEL);                
-                soldierCount = rc.readBroadcast(SOLDIER_CHANNEL);
+                scoutCount = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);                
+                soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
                 lumberjackCount = rc.readBroadcast(LUMBERJACK_CHANNEL);
                 tankCount = rc.readBroadcast(TANK_CHANNEL);
+                
+                System.out.println("Scouts: " + scoutCount + ", Soldiers: " + soldierCount + 
+                					", Lumberjacks: " + lumberjackCount + ", Tanks: " + tankCount);
 
                 //generates direction of opening after gardeners partially enclose themselves in trees
                 dirToOpening = Direction.getEast().rotateLeftDegrees(300);
@@ -81,41 +99,89 @@ public class GardenerBot extends GlobalVars {
                 
                 // check for movement to more optimal space
                 if (canMove) {
-                	// Find optimal location to move
-                	destination = Plant.findOptimalSpace(30, (float)rc.getType().strideRadius);
-                	
-                	// Move to location
-                	Direction dirToDestination = rc.getLocation().directionTo(destination);
-                	float lengthTo = rc.getLocation().distanceTo(destination);
-                	Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);   
-                	
-                	rc.setIndicatorDot(destination, 255, 0, 255);
-                }
-
-                //ROLE DESIGNATION
-                if (lowHealthTrees.size() > 0) {
-                	role = 0;
-                } else if (!nearbyTreesAndArc || treeCount > 0) {
-                	//if there are no trees nearby role = 0, calls incompleteSurroundTrees()
-                	role = 1;
-                	canMove = false;
-                } else {
-                	//if no trees need to be watered, role = 1, calls on buildUnits()
-                	role = 2;
+                	if (unitStart < 5) {
+                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
+                		Direction dirToDestination = rc.getLocation().directionTo(destination);
+                		if (rc.canMove(dirToDestination)) {
+                			 Move.tryMove(dirToDestination);
+            			}
+                		unitStart++;
+                	}
+                	else {
+	                	destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
+	                	// Find optimal location to move
+//	                	System.out.println(Clock.getBytecodeNum());
+	                	MapLocation destination = Plant.findOptimalSpace(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4);
+//	                	System.out.println(Clock.getBytecodeNum());
+	                	rc.setIndicatorDot(destination, 255, 0, 255);
+	                	
+	                	// Move to location
+	                	Direction dirToDestination = rc.getLocation().directionTo(destination);
+	                	if (dirToDestination != null) {
+	                		float lengthTo = rc.getLocation().distanceTo(destination);
+	                		Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);
+	                	}
+                	}
                 }
                 
-                //ROLE EXECUTION
-                if (role == 0) {
-                	waterSurroundingTrees();
-                } else if (role == 1) {
-                	incompleteSurroundTrees(6);
-                } else if (role == 2) {
-                   	buildUnits(dirToOpening);
-                } else if (role == 3) {
-                	//not yet implemented
-                	waterSurroundingTrees();
-                	completeSurroundTrees(6);
+                //--------------------------------------------------------------------------------
+                //ROLE DESIGNATION
+                
+                // Force minimum number of units
+                // Scout-Tree-Tree-Scout-Soldier-Trees
+//                System.out.println("Tree status: " + treeImpossible + ", Num Tree: " + rc.getTreeCount());
+                
+                float bulletNum = rc.getTeamBullets();
+                if (bulletNum > GameConstants.BULLET_TREE_COST) {
+                	if (scoutCount < minScouts1) {
+                		System.out.println("Scouts1");
+                		buildUnitNew(RobotType.SCOUT, bulletNum);
+                    }
+                	else if ((rc.getTreeCount() < minTrees1) && (!treeImpossible)) {
+                		System.out.println("Trees1");
+                    	if (rc.hasTreeBuildRequirements()) {
+                    		// To end at 0
+                    		Direction plantDirs[] = Plant.scanBuildRadius(5, 1);
+                    		if (plantDirs[0] != null) {
+                    			rc.plantTree(plantDirs[0]);
+                    		}
+                    		else {
+                    			treeImpossible = true;
+                    		}
+                    	}
+                    	canMove = false;
+                    }
+                	else if (scoutCount < minScouts2) {
+                		System.out.println("Scouts2");
+                    	buildUnitNew(RobotType.SCOUT, bulletNum);
+                    }
+                	// Toggle with lumberjack
+                	else if (soldierCount < minSoldiers1) {
+                		System.out.println("Soldiers1");
+                    	buildUnitNew(RobotType.SOLDIER, bulletNum);
+                    }
+                	else {
+                		minSat = true;
+                	}
+                	
+                	// End early game
+                	//------------------------------------------------
+                    if (minSat) {
+                    	System.out.println("Satisfication");
+                    	Direction plantDirs[] = Plant.scanBuildRadius(5, 1);
+                    	System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
+                    	if (plantDirs[0] != null) {
+                    		rc.plantTree(plantDirs[0]);
+                    		canMove = false;
+                    	}
+                    	else if (plantDirs[1] != null){
+                    		buildUnits(plantDirs[1]);
+                    	}
+                    }                	
                 }
+                
+                //--------------------------------------------------------------------------------
+                waterSurroundingTrees();
                 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -126,7 +192,19 @@ public class GardenerBot extends GlobalVars {
         }
 	}
 	
+	public static void buildUnitNew(RobotType Unit, float bullets) throws GameActionException {
+		if (bullets >= Unit.bulletCost) {
+			if (rc.isBuildReady()) {
+				Direction plantDirs[] = Plant.scanBuildRadius(5, 1);
+				if (plantDirs[1] != null) {
+					rc.buildRobot(Unit, plantDirs[1]);
+				}
+			}
+		}		
+	}
+
 	
+	/*
 	public static void completeSurroundTrees(float spacing) throws GameActionException {
 		//hexDirArray is an array with 6 Direction objects that point to 0, 60, 120, 180, 240, 300 degrees
 		//these are the directions that the gardeners will plant trees in to surround themselves
@@ -179,7 +257,7 @@ public class GardenerBot extends GlobalVars {
 	        	buildUnits(dirToOpening);
 	        }	
 		}
-	}
+	}*/
 	
 	public static void waterSurroundingTrees() throws GameActionException {
 		//first checks if there are trees it can water, then waters
