@@ -89,7 +89,7 @@ public class Routing extends GlobalVars{
 		System.out.println("RESET!");
 		
 		prevDir = new Direction(0);
-		timeStep = 0;
+		timeStep = timeOut;
 		
 //		pastLoc = new ArrayList<MapLocation>();
 		prevLoc = rc.getLocation();
@@ -121,16 +121,18 @@ public class Routing extends GlobalVars{
 			// TODO: Comment later
 	    	curLoc = rc.getLocation(); // Get current location
 	    	pastLoc.add(curLoc);
-	    	System.out.println("BP-1: " + pastLoc.size() + ", WF: " + wallFollow);
+	    	System.out.println("BP-1: " + pastLoc.size() + ", WF: " + wallFollow + ", TS: " + timeStep);
 	    	if ((pastLoc.size() >= timeOut) && (timeStep == 0)) {
 //	    		System.out.println(pastLoc);
 	    		//System.out.println(pastLoc.get(0).distanceTo(curLoc));
 	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
 //	    			System.out.println("BP-0.5");
 		    		if(wallFollow) {
+		    			pastLoc.remove(0);
 		    			resetRouting();
 		    		}
 		    		else {
+		    			pastLoc.remove(0);
 		    			wallFollowingEntry();
 		    		}
 	    		}
@@ -945,6 +947,8 @@ public class Routing extends GlobalVars{
 		resetRouting();
 		stuckLoc = curLoc;
 		
+		System.out.println("Switch to Wall Following");
+		
 		try {
 			Direction toGoal = new Direction(curLoc, path.get(0));
 			progX = 1; progY = 0;
@@ -992,7 +996,7 @@ public class Routing extends GlobalVars{
 			e.printStackTrace(); // Print exceptions
 		}
 		
-		timeStep = 5;
+		timeStep = timeOut;
 	}
 	
 	public static ArrayList<MapLocation> wallFollowMoveTo(MapLocation dest) {
@@ -1081,14 +1085,19 @@ public class Routing extends GlobalVars{
 		    while(distanceCheck > 0.0001) {
 //		    	System.out.println(dir + ", " + distanceCheck);
 		    	
-		    	rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+//		    	rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 		    	
-		    	if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist), bodyRadius)) {
-		    		if(rc.canMove(dir,distanceCheck)) {
+		    	//if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+bodyRadius), bodyRadius)) {
+		    	if(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+2*bodyRadius), bodyRadius)) {
+//		    		if(rc.canMove(dir,distanceCheck)) {
+		    		Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
+		    		rc.setIndicatorLine(curLoc, curLoc.add(dirRot, 1), 0, 0, 255);
+		    		if(rc.canMove(dirRot,distanceCheck)) {
 //		    			System.out.println(-rotL * 90);
-		    			startAngle = dir.rotateLeftDegrees(-rotL * 90);
+//		    			startAngle = dir.rotateLeftDegrees(-rotL * 90);
+		    			startAngle = dir;
 		    			System.out.println(dir + ", " + distanceCheck);
-			        	return curLoc.add(dir,distanceCheck);
+			        	return curLoc.add(dirRot,distanceCheck);
 			        }
 		    	}
 			    // Set next distance to be check
