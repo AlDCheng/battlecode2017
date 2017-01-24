@@ -79,19 +79,17 @@ public class GardenerBot extends GlobalVars {
                 //check if there are nearby allied units
                 RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
                 
-                //default motion
+                // check for movement to more optimal space
                 if (canMove) {
-                	if (nearbyAllies.length > 0) {
-                		System.out.println("before");
-                		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
-                		System.out.println(destination);
-                		Direction dirToDestination = rc.getLocation().directionTo(destination);
-                		if (rc.canMove(dirToDestination)) {
-                			System.out.println("after");
-                			Move.tryMove(dirToDestination);
-                			System.out.println("after2");
-                		}
-                	}
+                	// Find optimal location to move
+                	destination = Plant.findOptimalSpace(30, (float)rc.getType().strideRadius);
+                	
+                	// Move to location
+                	Direction dirToDestination = rc.getLocation().directionTo(destination);
+                	float lengthTo = rc.getLocation().distanceTo(destination);
+                	Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);   
+                	
+                	rc.setIndicatorDot(destination, 255, 0, 255);
                 }
 
                 //ROLE DESIGNATION
@@ -134,50 +132,53 @@ public class GardenerBot extends GlobalVars {
 		//these are the directions that the gardeners will plant trees in to surround themselves
 		
         // plants trees around itself in 6 directions
-        if (rc.canPlantTree(hexDirArray[0]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-        	rc.plantTree(hexDirArray[0]);
-            treeCount++;
-        } else if (rc.canPlantTree(hexDirArray[1]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[1]);
-            treeCount++;
-        } else if (rc.canPlantTree(hexDirArray[2]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[2]);
-            treeCount++;
-        } else if (rc.canPlantTree(hexDirArray[3]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[3]);
-            treeCount++;   
-        } else if (rc.canPlantTree(hexDirArray[4]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[4]);
-            treeCount++;   
-        } else if (rc.canPlantTree(hexDirArray[5]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[5]);
-            treeCount++;   
-        }
+		if((treeCount < 6) && (rc.hasTreeBuildRequirements())) {
+			if (rc.canPlantTree(hexDirArray[0])) {
+	        	rc.plantTree(hexDirArray[0]);
+	            treeCount++;
+	        } else if (rc.canPlantTree(hexDirArray[1])) {
+	    		rc.plantTree(hexDirArray[1]);
+	            treeCount++;
+	        } else if (rc.canPlantTree(hexDirArray[2])) {
+	    		rc.plantTree(hexDirArray[2]);
+	            treeCount++;
+	        } else if (rc.canPlantTree(hexDirArray[3])) {
+	    		rc.plantTree(hexDirArray[3]);
+	            treeCount++;   
+	        } else if (rc.canPlantTree(hexDirArray[4])) {
+	    		rc.plantTree(hexDirArray[4]);
+	            treeCount++;   
+	        } else if (rc.canPlantTree(hexDirArray[5])) {
+	    		rc.plantTree(hexDirArray[5]);
+	            treeCount++;   
+	        }
+		}
 	}
 	
 	public static void incompleteSurroundTrees(float spacing) throws GameActionException {
 		//hexDirArray is an array with 6 Direction objects that point to 0, 60, 120, 180, 240, 300 degrees
 		//these are the directions that the gardeners will plant trees in to surround themselves
-		
-        // plants trees around itself in 5 directions, leaving one opening
-    	if (rc.canPlantTree(hexDirArray[0]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-        	rc.plantTree(hexDirArray[0]);
-            treeCount++;
-        } else if (rc.canPlantTree(hexDirArray[1]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[1]);
-            treeCount++;
-        } else if (rc.canPlantTree(hexDirArray[2]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[2]);
-            treeCount++;
-        } else if (rc.canPlantTree(hexDirArray[3]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[3]);
-            treeCount++;   
-        } else if (rc.canPlantTree(hexDirArray[4]) && rc.hasTreeBuildRequirements() && treeCount < 6) {
-    		rc.plantTree(hexDirArray[4]);;
-            treeCount++;
-        } else {
-        	buildUnits(dirToOpening);
-        }
+		if((treeCount < 6) && (rc.hasTreeBuildRequirements())) {
+			// plants trees around itself in 5 directions, leaving one opening
+	    	if (rc.canPlantTree(hexDirArray[0])) {
+	        	rc.plantTree(hexDirArray[0]);
+	            treeCount++;
+	        } else if (rc.canPlantTree(hexDirArray[1])) {
+	    		rc.plantTree(hexDirArray[1]);
+	            treeCount++;
+	        } else if (rc.canPlantTree(hexDirArray[2])) {
+	    		rc.plantTree(hexDirArray[2]);
+	            treeCount++;
+	        } else if (rc.canPlantTree(hexDirArray[3])) {
+	    		rc.plantTree(hexDirArray[3]);
+	            treeCount++;   
+	        } else if (rc.canPlantTree(hexDirArray[4])) {
+	    		rc.plantTree(hexDirArray[4]);;
+	            treeCount++;
+	        } else {
+	        	buildUnits(dirToOpening);
+	        }	
+		}
 	}
 	
 	public static void waterSurroundingTrees() throws GameActionException {

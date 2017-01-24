@@ -10,11 +10,13 @@ public class Plant extends GlobalVars {
 	public static void plantToLocation(MapLocation potentialPlantLoc, Direction dirToPlant) {
 		try {
 			System.out.println(rc.getID() + " " + 2);
+			
 			//makes gardeners walk to left of potentialPlantLoc and plant a tree there
 			float distanceFromTree = 1 + GameConstants.BULLET_TREE_RADIUS; //distance between center of gardener and center of tree being planted
-			MapLocation gardenerLocation = potentialPlantLoc.subtract(dirToPlant,distanceFromTree);
+			MapLocation gardenerLocation = potentialPlantLoc.subtract(dirToPlant, distanceFromTree);
 			Direction dirToPlantLocation = rc.getLocation().directionTo(gardenerLocation); 
 			System.out.println("isbuildready: " + rc.isBuildReady());
+			
 			while (!rc.getLocation().equals(gardenerLocation) || !rc.isBuildReady() || !rc.canPlantTree(dirToPlant)) {
 				//not at location so move toward the gardenerLocation
 				System.out.println(rc.getLocation().y + " " + gardenerLocation.y);
@@ -107,6 +109,89 @@ public class Plant extends GlobalVars {
 		}
 		return false;
 	}
+	
+	// These functions are added by Alan
+	
+	// Find largest nearby empty space for tree planting
+	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval) throws GameActionException {
+		
+		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
+		
+		// Get robot type
+		RobotType thisBot = rc.getType();
+		Team us = rc.getTeam();
+		Team them = us.opponent();
+		
+		// Get current location
+		MapLocation curLoc = rc.getLocation();
+		
+		// Declare potential and final location
+		MapLocation potLoc = curLoc;
+		MapLocation finalLoc = curLoc;
+		
+		// Find openness of current space:
+		float minOpenness = 0;
+		float radius = 3;
+		
+		// Tree weighting; radius = 1 (body) + 2 (tree)
+		minOpenness += rc.senseNearbyTrees(radius).length;
+		// Unit weighting (for own Team)
+		minOpenness += rc.senseNearbyRobots(radius, us).length;
+		// Unit weighting (for enemy Team)
+		minOpenness += 3*rc.senseNearbyRobots(radius, them).length;
+		
+		// Declare Max Length
+		float maxLength = thisBot.strideRadius;
+		
+		System.out.println("Max Length: " + maxLength);
+		
+		// Declare angle/length modifiers
+		float angle = 0;
+		float length = lengthInterval;
+		
+		// Check
+		while(length <= maxLength) {
+			angle = 0;
+			
+			while(angle < 360) {
+				System.out.println("Angle: " + angle + ", length: " + length);
+				
+				// Get potential location
+				potLoc = curLoc.add((float)Math.toRadians(angle), length);
+				rc.setIndicatorDot(potLoc, 178, 102, 255);
+				
+				// Check surroundings
+				float openness = 0;
+				
+				// Check if on Map
+				if(rc.onTheMap(potLoc)) {
+					// Tree weighting; radius = 1 (body) + 2 (tree)
+					openness += rc.senseNearbyTrees(potLoc, radius, null).length;
+					// Unit weighting (for own Team)
+					openness += rc.senseNearbyRobots(potLoc, radius, us).length;
+					// Unit weighting (for enemy Team)
+					openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
+					
+					// Add penalty for cases on edge of map (equivalent to 3 trees)
+					if(!(rc.onTheMap(potLoc, 3))) {
+						openness += 3;
+					} 
+				}
+				
+				// Compare with existing, and replace if lower
+				if (openness < minOpenness) {
+					minOpenness = openness;
+					finalLoc = potLoc;
+				}
+				
+				angle += angleInterval;
+			}
+			length += lengthInterval;
+		}
+		
+		return finalLoc;
+	}
+	
 
 		
 }
