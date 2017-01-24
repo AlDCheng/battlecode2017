@@ -175,10 +175,10 @@ public class ArchonBot extends GlobalVars {
             	float currentVictoryPointCost = rc.getVictoryPointCost();
             	if (rc.getTeamBullets() >= victoryPointsToWin*currentVictoryPointCost) {
             		rc.donate(rc.getTeamBullets());
-            	} else if (rc.getTeamBullets() >= currentVictoryPointCost && currentRound >= 700 && currentRound % 2 == 0) {
+            	} /*else if (rc.getTeamBullets() >= currentVictoryPointCost && currentRound >= 700 && currentRound % 2 == 0) {
             		System.out.println(currentVictoryPointCost);
             		rc.donate(currentVictoryPointCost);
-            	}
+            	}*/
             	
             	lastCount = -1;
             	
