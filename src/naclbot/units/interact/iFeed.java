@@ -20,7 +20,7 @@ public class iFeed extends GlobalVars {
     	if (bulletsThatWillHit.size() > 0) {
     		remainingHealth = healthLeftBullets(bulletsThatWillHit,currentHealth);
     		
-    		if (remainingHealth == 0) {
+    		if (remainingHealth < 5) {
     			return true;
     		}
     	}
@@ -32,7 +32,7 @@ public class iFeed extends GlobalVars {
     	if (nearbyRobots.length > 0) {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
     		
-    		if (remainingHealth == 0) {
+    		if (remainingHealth < 5) {
     			return true;
     		} else {
     			return false;
@@ -81,14 +81,9 @@ public class iFeed extends GlobalVars {
     	// Otherwise there will be some health left
     	if (totalLumberjackDamage >= currHealth) {
     		// There is enough damage to kill the unit
-    		System.out.println("GG I WILL DIE FROM LUMBERJACK STRIKES");
     		float health = 0;
     		return health;
     	} else {
-    		if (totalLumberjackDamage == 0) {
-    			System.out.println("NO LUMBERJACKS");
-    		}
-    		System.out.println("WILL NOT DIE FROM LUMBERJACK DAMAGE");
     		currHealth -= totalLumberjackDamage;
     		return currHealth;
     	}
@@ -107,13 +102,11 @@ public class iFeed extends GlobalVars {
 		// Otherwise, there will be some health left
 		if (totalBulletDamage >= currHealth) {
 			// There is enough damage to kill the unit
-			System.out.println("GG I WILL DIE FROM BULLETS");
 			float health = 0;
 			return health;
 			
 		} else {
 			currHealth -= totalBulletDamage;
-			System.out.println("WILL NOT DIE FROM BULLETS");
 			return currHealth;
 		}
     }

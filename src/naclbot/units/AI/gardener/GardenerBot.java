@@ -13,6 +13,7 @@ import java.util.ArrayList;
 public class GardenerBot extends GlobalVars {
 	
 	public static int role;
+	public static boolean iDied = false;
 	
 	public static ArrayList<MapLocation> plantedTrees = new ArrayList<MapLocation>();
 	public static ArrayList<MapLocation> nearbyLowHealthTrees = new ArrayList<MapLocation>();
@@ -98,6 +99,20 @@ public class GardenerBot extends GlobalVars {
         	//System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
+            	// Check if it did not die, and reset the number of gardeners and units
+            	if (iDied) {
+            		 // Get own soldierNumber - important for broadcasting 
+                    gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+                    currentNumberofGardeners = gardenerNumber + 1;
+                    
+                    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+                    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+                    
+                    // Update soldier number for other soldiers to see.....
+                    rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
+            	}
+            	
             	// Listen for home archon's location, not implemented yet
             	// Check later
                 xPos = rc.readBroadcast(0);
@@ -141,11 +156,7 @@ public class GardenerBot extends GlobalVars {
                 		if (dirToDestination != null) {
                 			MapLocation newLoc = Yuurei.tryMoveInDirection(dirToDestination, rc.getType().strideRadius, rc.getLocation());
                 			if (newLoc != null) {
-                				boolean beingAttacked = iFeed.willBeAttacked(newLoc);
-                				if (beingAttacked) {
-                					boolean willDie = iFeed.willFeed(newLoc);
-                					System.out.println("I WILL BE ATTACKED");
-                				}
+                				manageBeingAttacked(newLoc);
                 				rc.move(newLoc);
                 			}
                 		}
@@ -165,25 +176,16 @@ public class GardenerBot extends GlobalVars {
 	                		float lengthTo = rc.getLocation().distanceTo(destination);
 	                		MapLocation newLoc = Yuurei.tryMoveInDirection(dirToDestination, lengthTo, rc.getLocation());
 	                		if (newLoc != null) {
-	                			boolean beingAttacked = iFeed.willBeAttacked(newLoc);
-	                			if (beingAttacked) {
-	                				boolean willDie = iFeed.willFeed(newLoc);
-	                				System.out.println("I WILL BE ATTACKED");
-	                			}
+	                			manageBeingAttacked(newLoc);
 	                			rc.move(newLoc);
 	                		}
-	                		//Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);
 	                	}
                 	}
                 }
                 
                 // If it hasn't moved then check if will be attacked in same loc
                 if (!rc.hasMoved()) {
-                	boolean beingAttacked = iFeed.willBeAttacked(rc.getLocation());
-                	if (beingAttacked) {
-                		boolean willDie = iFeed.willFeed(rc.getLocation());
-                		System.out.println("I WILL BE ATTACKED");
-                	}
+                	manageBeingAttacked(rc.getLocation());
                 }
                 
                 //--------------------------------------------------------------------------------
@@ -253,6 +255,34 @@ public class GardenerBot extends GlobalVars {
                 e.printStackTrace();
             }
         }
+	}
+	
+	public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		if (beingAttacked) {
+			// BIT 0 - GIVES MY ID
+			// BIT 1 - GIVES MY X
+			// BIT 2 - GIVES MY Y
+			// BIT 3 - GIVES NEAREST ENEMY
+			RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, rc.getID());
+			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, (int) loc.x);
+			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, (int) loc.y);
+			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, nearbyEnemies[0].getID());
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				iDied = true;
+				// Get own soldierNumber - important for broadcasting 
+		        gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+		        currentNumberofGardeners = gardenerNumber - 1;
+		        
+		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+		        
+		        // Update soldier number for other soldiers to see.....
+		        rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
+			}
+		}
 	}
 	
 	public static void buildUnitNew(RobotType Unit, float bullets, float dirDeg) throws GameActionException {
