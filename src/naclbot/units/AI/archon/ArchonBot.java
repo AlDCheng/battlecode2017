@@ -36,6 +36,7 @@ public class ArchonBot extends GlobalVars {
 	
 	// Variables important to self and team recognition
 	public static int myID;
+	public static boolean iDied;
 	private static Team enemy;
 	private static Team allies;	
 	private static final float strideRadius = battlecode.common.RobotType.ARCHON.strideRadius;

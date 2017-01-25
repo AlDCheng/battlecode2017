@@ -4,6 +4,7 @@ import battlecode.common.*;
 
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
+import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
@@ -29,6 +30,7 @@ public class Senshi extends GlobalVars {
 	
 	// Variables for self and team recognition
 	public static int myID;
+	public static boolean iDied;
 	public static int soldierNumber;
 	public static int unitNumber;
 	private static Team enemy;	
@@ -156,7 +158,25 @@ public class Senshi extends GlobalVars {
     	while(true){
     		
     		try{
+    			
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//          
+    			
+    			// Check if unit actually died or not
+    			if (iDied) {
+    				
+    				iDied = false;
+    				
+    				// Get own soldierNumber - important for broadcasting 
+    		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
+    		        currentNumberofSoldiers = soldierNumber + 1;
+    		        
+    		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+    		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+    		        
+    		        // Update soldier number for other soldiers to see.....
+    		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
+
+    			}
     			
             	// Get nearby enemies and allies and bullets for use in other functions            	
             	RobotInfo[] enemyRobots = NearbyUnits(enemy);
@@ -328,6 +348,7 @@ public class Senshi extends GlobalVars {
     	    	
             	// See whether or not the robot can move to the completely processed desired move, and move if it does
             	if(rc.canMove(desiredMove)){
+            		manageBeingAttacked(desiredMove);
             		rc.move(desiredMove);
             	}
             	// If the robot wasn't able to move....
@@ -408,7 +429,25 @@ public class Senshi extends GlobalVars {
     	}
     }
     
-    
+    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		if (beingAttacked) {
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				iDied = true;
+				// Get own soldierNumber - important for broadcasting 
+		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
+		        currentNumberofSoldiers = soldierNumber - 1;
+		        
+		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+		        
+		        // Update soldier number for other soldiers to see.....
+		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
+
+			}
+		}
+	}
     
 	/******************************************************************
 	******************* Functions for Movement  ***********************
