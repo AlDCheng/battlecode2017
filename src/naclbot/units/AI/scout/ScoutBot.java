@@ -4,6 +4,7 @@ import java.util.Arrays;
 import battlecode.common.*;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
+import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.Todoruno;
 import naclbot.variables.GlobalVars;
@@ -49,6 +50,7 @@ public class ScoutBot extends GlobalVars {
 	
 	// Variables for self and team recognition
 	public static int id;
+	public static boolean iDied;
 	public static int scoutNumber;
 	public static int unitNumber;
 	private static Team enemy;
@@ -215,6 +217,22 @@ public class ScoutBot extends GlobalVars {
             try {
             	// ------------------------- RESET/UPDATE VARIABLES ----------------//            	
             	
+            	// Check if it did not die and reset scout and unit counts
+            	if (iDied) {
+            		iDied = false;
+            		
+            		// Get own scoutNumber  and unitNumber- important for broadcasting 
+                    scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
+                    currentNumberofScouts = scoutNumber + 1;
+                    
+                    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+                    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+                    
+                    // Update the number of scouts so that other scouts can recognize....
+                    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
+            		
+            	}
+            	
             	// If the robot has not tracked anything for a long time fill the no track with -1 so it can track something again
             	if (hasNotTracked > 25){
             		Arrays.fill(noTrack, -1);
@@ -379,6 +397,7 @@ public class ScoutBot extends GlobalVars {
             	
             	// See whether or not the robot can move to the current desired move, and move if it does
             	if(rc.canMove(desiredMove)){
+            		manageBeingAttacked(desiredMove);
             		rc.move(desiredMove);
             	}           	
             	else{
@@ -430,6 +449,26 @@ public class ScoutBot extends GlobalVars {
         }
     }	
 
+
+    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		if (beingAttacked) {
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				iDied = true;
+				// Get own scoutNumber  and unitNumber- important for broadcasting 
+			    scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
+			    currentNumberofScouts = scoutNumber - 1;
+			    
+			    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+			    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+			    
+			    // Update the number of scouts so that other scouts can recognize....
+			    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
+			}
+		}
+    }
+    
 	// Function for idle scout - does nothing until something triggers it to move
 	// TODO
 	
