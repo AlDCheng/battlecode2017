@@ -43,6 +43,31 @@ public class iFeed extends GlobalVars {
     	}
     }
     
+    public static boolean willBeAttacked (MapLocation optLocation) {
+    	
+    	float currentHealth = rc.getHealth();
+    	float remainingHealth = currentHealth;
+    	ArrayList<BulletInfo> bulletsThatWillHit = bulletsThatHit(optLocation);
+		
+    	// Determine if bullets will hit it
+    	if (bulletsThatWillHit.size() > 0) {
+    		return true;
+    	}
+    	
+    	// Determine if lumberjacks will hit it
+    	
+    	RobotInfo[] nearbyRobots = rc.senseNearbyRobots(rc.getType().bodyRadius + GameConstants.LUMBERJACK_STRIKE_RADIUS,rc.getTeam().opponent());
+    	
+    	if (nearbyRobots.length > 0) {
+    		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
+    		// Only if attacked by lumberjacks does it return true
+    		if (remainingHealth < currentHealth) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    
     public static float healthLeftLumberjacks(RobotInfo[] nearbyRob, float currHealth) {
     	float totalLumberjackDamage = 0;
     	

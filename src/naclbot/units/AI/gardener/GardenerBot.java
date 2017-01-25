@@ -5,6 +5,7 @@ import naclbot.units.motion.Move;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.BroadcastChannels;
+import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
 
 import java.util.ArrayList;
@@ -137,9 +138,17 @@ public class GardenerBot extends GlobalVars {
                 	if (unitStart < 10) {
                 		destination = Chirasou.Disperse(rc.getTeam(),rc.getLocation(), battlecode.common.RobotType.GARDENER.strideRadius);
                 		Direction dirToDestination = rc.getLocation().directionTo(destination);
-                		if (rc.canMove(dirToDestination)) {
-                			 Move.tryMove(dirToDestination);
-            			}
+                		if (dirToDestination != null) {
+                			MapLocation newLoc = Yuurei.tryMoveInDirection(dirToDestination, rc.getType().strideRadius, rc.getLocation());
+                			if (newLoc != null) {
+                				boolean beingAttacked = iFeed.willBeAttacked(newLoc);
+                				if (beingAttacked) {
+                					boolean willDie = iFeed.willFeed(newLoc);
+                					System.out.println("I WILL BE ATTACKED");
+                				}
+                				rc.move(newLoc);
+                			}
+                		}
                 		unitStart++;
                 	}
                 	else {
@@ -154,8 +163,26 @@ public class GardenerBot extends GlobalVars {
 	                	if (dirToDestination != null) {
 	                		prevBuildVec = dirToDestination;
 	                		float lengthTo = rc.getLocation().distanceTo(destination);
-	                		Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);
+	                		MapLocation newLoc = Yuurei.tryMoveInDirection(dirToDestination, lengthTo, rc.getLocation());
+	                		if (newLoc != null) {
+	                			boolean beingAttacked = iFeed.willBeAttacked(newLoc);
+	                			if (beingAttacked) {
+	                				boolean willDie = iFeed.willFeed(newLoc);
+	                				System.out.println("I WILL BE ATTACKED");
+	                			}
+	                			rc.move(newLoc);
+	                		}
+	                		//Move.tryMoveWithDist(dirToDestination, 2, 3, lengthTo);
 	                	}
+                	}
+                }
+                
+                // If it hasn't moved then check if will be attacked in same loc
+                if (!rc.hasMoved()) {
+                	boolean beingAttacked = iFeed.willBeAttacked(rc.getLocation());
+                	if (beingAttacked) {
+                		boolean willDie = iFeed.willFeed(rc.getLocation());
+                		System.out.println("I WILL BE ATTACKED");
                 	}
                 }
                 
