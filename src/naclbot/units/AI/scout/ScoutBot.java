@@ -136,6 +136,12 @@ public class ScoutBot extends GlobalVars {
     // Variable to determine whether or not a scout should defend a unit or not....
     private static boolean mustDefend;
     
+    // Location that the scout must defend...
+    private static MapLocation defendLocation;
+    
+    // Enemy to attack...
+    private static int defendAgainstID;
+    
     // ------------- SHOOTING VARIABLES -------------//
   
 	// Separation distance of shoot check...
@@ -144,7 +150,8 @@ public class ScoutBot extends GlobalVars {
     // ------------- ENEMY DATA VARIABLES -------------//
     
     // Store the last known location of the gardener...
-    private static MapLocation gardenerLocation;    
+    private static MapLocation gardenerLocation;  
+    
     
     
 	/************************************************************************
@@ -186,7 +193,11 @@ public class ScoutBot extends GlobalVars {
         noTrackUpdateIndex = 0;
         isTracking = false;
         gardenerLocation = null;    
-        previousRobotData = null;
+        previousRobotData = null;        
+        
+        // Initialize variables relating to defending....
+        defendLocation = null;
+        defendAgainstID = -1;        
         
         // Update the number of scouts so that other scouts can recognize....
         rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
@@ -323,7 +334,10 @@ public class ScoutBot extends GlobalVars {
             	
             	broadcastNearestEnemyLocation(enemyRobots);
             	
-            	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);            	
+            	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);        
+            	
+            	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 30);
+         
             	
             	// Update the team's bullet count - will determine if it attempts to search for bullet trees or no.....
             	teamBullets = rc.getTeamBullets();
@@ -331,15 +345,83 @@ public class ScoutBot extends GlobalVars {
         		// Check to find the nearest bullet tree.......
         		TreeInfo nearestBulletTree = findNearestBulletTree();
             	
-            	// If the team currently has too few bullets and there is a bullet tree nearby and no enemies currently threaten its workers
-            	if (teamBullets < harvestThreshold && nearestBulletTree != null && !mustDefend){
+        		
+        		// If the scout found some distress signal this turn...
+            	if(distressInfo != null){
+            		
+            		// If the distressed gardener is being attacked by a scout.....
+            		if (distressInfo.enemyType == 2 || distressInfo.enemyType == -1){
+            			
+            			// Set the location to defend...
+            			defendLocation = new MapLocation (distressInfo.xPosition, distressInfo.yPosition);
+        				
+            			// Set the ID of the offending enemy
+        				defendAgainstID = distressInfo.ID;
+            		}            	
+            	}
+            	
+            	// If the robot is meant to defend........
+            	if (defendLocation != null){            		
+    				
+            		// If it already nearby or can simply sense the offending unit, track it
+            		if(rc.canSenseRobot(defendAgainstID)){
+            			
+            			// Start tracking the robot to defend against....
+            			trackID = defendAgainstID;            			
+            			trackedRobot = rc.senseRobot(trackID);
+            			
+            			// Exit the return to defending location - actually defend!!!
+            			defendLocation = null;            			
+            			defendAgainstID = -1; 
+        
+            			
+            			// SYSTEM CHECK Display a yellow dot on the enemy to kill now...
+            			rc.setIndicatorDot(trackedRobot.location, 255, 255, 0);
+            			
+            			
+            			// SYSTEM CHECK IF the robot has need to defend, it will do so...
+            			System.out.println("Found the offending enemy....");
+            			
+            			// Track the enemy....            			
+            			desiredMove = track(enemyRobots, 1);            			
+            		}
+            		// If the robot has arrived at the defend location and has not found the enemy.....
+            		else if (myLocation.distanceTo(defendLocation) <= 5){
+            			
+            			defendLocation = null;
+            			defendAgainstID = -1;    
+            			
+            			// SYSTEM CHECK - display a green line to the distress location....
+        				rc.setIndicatorLine(myLocation, defendLocation, 0, 128, 0);
+            			
+            			// SYSTEM CHECK IF the robot has need to defend, it will do so...
+            			System.out.println("Returned to distress call but found no one");
+            			
+            			// Exit the call to defendLocations and go on back to normal operations
+            			desiredMove = move(enemyRobots);
+            		}
+            		else{
+            			
+            			Direction defendDirection = myLocation.directionTo(defendLocation);
+            			desiredMove = myLocation.add(defendDirection, strideRadius);
+            			
+            			// SYSTEM CHECK - display a blue line to the distress location....
+        				rc.setIndicatorLine(myLocation, defendLocation, 0, 0, 128);
+            			
+            			// SYSTEM CHECK IF the robot has need to defend, it will do so...
+            			System.out.println("Travelling back to defend....");
+            			
+            		}            		         		
+            	}
+
+        		// If the team currently has too few bullets and there is a bullet tree nearby and no enemies currently threaten its workers
+            	else if (teamBullets < harvestThreshold && nearestBulletTree != null && !mustDefend){
             		
             		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
             		// System.out.println("Team requires additional bullets, so will attempt to find more");            		
  
         			// Do the harvest function to attempt to get some bullets from some trees...
-            		desiredMove = harvest(nearestBulletTree);
-            		
+            		desiredMove = harvest(nearestBulletTree);            		
             	}
             	
             	// Otherwise just call the move function normally......
@@ -1196,6 +1278,7 @@ public class ScoutBot extends GlobalVars {
 			return null;
 		}		
 	}
+	
 	
 	// Function to notify everyone that the unit has died.
 	

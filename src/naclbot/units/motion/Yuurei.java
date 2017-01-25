@@ -366,7 +366,7 @@ public class Yuurei extends GlobalVars {
 		if (rc.onTheMap(newLocation, bodyRadius)){
 			
 			// SYSTEM CHECK - Display the corrected move on screen as an orange line
-			rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
+			// rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
 			
 			// TODO Check to see if switching rotation direction here is better
 			return newLocation;			
@@ -383,7 +383,7 @@ public class Yuurei extends GlobalVars {
 			rotationDirection = !rotationDirection;
 			
 			// SYSTEM CHECK - Display the corrected move on screen as an orange line
-			rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
+			// rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
 			
 			return newLocation;			
 		}		
@@ -397,7 +397,7 @@ public class Yuurei extends GlobalVars {
     		// Arbitrary values are 30 degree offsets with 4 sweeps per side... 
     		// A sweep in one direction and its opposite will cover nearly all possibilities
     	
-        return tryMoveInDirection(dir, 30, 5, distance, myLocation);
+        return tryMoveInDirection(dir, 25, 4, distance, myLocation);
     }    
 
     
@@ -470,12 +470,12 @@ public class Yuurei extends GlobalVars {
     	
     	// Obtain the direction checks - are perpendicular to desired direction....
     	if (randomize > 0.5){
-    		firstCheck = new Direction(directionTo.radians + (float)(Math.PI / 8));
-    		secondCheck = new Direction(directionTo.radians - (float)(Math.PI / 8));
+    		firstCheck = new Direction(directionTo.radians + (float)(2 * Math.PI / 3));
+    		secondCheck = new Direction(directionTo.radians - (float)(2 * Math.PI / 3));
     	}
     	else{
-    		firstCheck = new Direction(directionTo.radians - (float)(Math.PI / 8));
-    		secondCheck = new Direction(directionTo.radians + (float)(Math.PI / 8));    		
+    		firstCheck = new Direction(directionTo.radians - (float)(2 * Math.PI / 3));
+    		secondCheck = new Direction(directionTo.radians + (float)(2 * Math.PI / 3));    		
     	}
     	
     	// Variable to hold the return of the checks for movement
@@ -506,4 +506,147 @@ public class Yuurei extends GlobalVars {
     	return null;
     }
     
+    public static MapLocation correctAllMove(
+		
+		//Input variables
+		
+		float strideRadius, // The stride radius of the robot		
+		float bodyRadius, // The body radius of the robot
+		
+		boolean rotationDirection, // The current rotation orientation of the robot....
+		
+		Team allies, // The team that the robot is on...		
+		
+		MapLocation myLocation, // The current location of the robot		
+		MapLocation desiredMove // The current location the robot wants to go to..   	  
+    		
+    	) throws GameActionException{
+    	    	
+	   
+	    // Check if the initially selected position was out of bounds...
+		
+	   	// SYSTEM CHECK - Show desired move after path planning
+		// System.out.println("desiredMove before post-processing: " + desiredMove.toString());
+		
+		// Correct desiredMove to within one soldier  stride location of where the robot is right now....
+		if(myLocation.distanceTo(desiredMove) > strideRadius){
+			
+	    	Direction desiredDirection = new Direction(myLocation, desiredMove);	
+	    	
+	    	desiredMove = myLocation.add(desiredDirection, strideRadius);
+		}
+		
+	   	// SYSTEM CHECK - Show desired move after path planning
+		// System.out.println("desiredMove after rescaling: " + desiredMove.toString());	
+		
+		// SYSTEM CHECK Make sure the new desired move is in the correct location LIGHT BLUE DOT
+		// rc.setIndicatorDot(desiredMove, 102, 255, 255);
+		
+		// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
+		if (!rc.canMove(desiredMove) && !rc.onTheMap(desiredMove)){
+			MapLocation newLocation = correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+			
+			desiredMove = newLocation;
+			
+		   	// SYSTEM CHECK - Show desired move after path planning
+	    	// System.out.println("desiredMove after out of bounds correction: " + desiredMove.toString());  
+		}
+	 	
+		// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above functions
+		if(!rc.canMove(desiredMove)){          	
+			
+			// SYSTEM CHECK - Print out that the robot still cannot move...
+			System.out.println("The robot still cannot seem to move");
+			
+			
+			// Check if there is a robot located at the desired move spot....
+			if (rc.isLocationOccupiedByRobot(desiredMove)){
+				
+				// CHeck to see if the nearby unit is allied or not...
+				RobotInfo closebyRobot = rc.senseRobotAtLocation(desiredMove);
+				
+				if(closebyRobot.ID != rc.getID()){
+					
+					if (closebyRobot.team == allies){
+						
+						// SYSTEM CHECK Show nearby colliding allies with PURPLE DOT
+						rc.setIndicatorDot(closebyRobot.location, 255, 0, 255);
+						
+						// SYSTEM CHECK See status of movement
+						System.out.println("Colliding with ally ----- will stop before collision");
+						
+						// Close the distance to the robot but do not bounce off...
+						float distanceToClose = myLocation.distanceTo(closebyRobot.location) - closebyRobot.getRadius() - bodyRadius;
+						
+						// Obtain the distance towards the robot and add the gap to close the distance...
+						Direction directionTo = myLocation.directionTo(closebyRobot.location);
+						desiredMove = myLocation.add(directionTo, distanceToClose);            					
+					}
+					
+					else{
+						
+						if (rc.getType() == RobotType.LUMBERJACK){
+						// SYSTEM CHECK Show nearby colliding enemy with DARK YELLOW DOT
+						rc.setIndicatorDot(closebyRobot.location, 102, 102, 0);
+						
+						// SYSTEM CHECK See status of movement
+						System.out.println("Colliding with enemy will move towards to attack");
+						
+						// Close the distance to the target robot but do not bounce off...					
+						float distanceToClose = myLocation.distanceTo(closebyRobot.location) - closebyRobot.getRadius() - bodyRadius;
+						
+						// Obtain the distance towards the robot and add the gap to close the distance...
+						Direction directionTo = myLocation.directionTo(closebyRobot.location);
+						
+						desiredMove = myLocation.add(directionTo, distanceToClose);            					
+						}
+						
+						// If the robot is colliding with the enemy and is not a lumberjack....
+						else{
+							// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
+							System.out.println("Colliding with enemy and attempting to move away....");
+							
+							Direction directionAway = closebyRobot.location.directionTo(myLocation);
+							
+							// SYSTEM CHECK Show nearby colliding enemy with LIGHT YELLOW DOT
+							rc.setIndicatorDot(closebyRobot.location, 255, 255, 153);
+		
+							
+							MapLocation newLocation = tryMoveInDirection(directionAway, 15, 5, strideRadius, myLocation);
+							
+							desiredMove = newLocation;
+						}
+					}
+				}
+				// The robot just deteceted its own self so just treat like tree.....
+				else{
+					// Get the distance to the previous desired point - use for calculating new place to move to....
+					float reCalc = myLocation.distanceTo(desiredMove);
+					
+					MapLocation newLocation = attemptRandomMove(myLocation, desiredMove, strideRadius / 2 );
+					
+					// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
+					System.out.println("Attempted to find a new location to move to randomly...");
+					
+					desiredMove = newLocation;					
+				}
+			}
+			// Otherwise the current desired move is likely a tree....			
+			else{            							
+				// Get the distance to the previous desired point - use for calculating new place to move to....
+				float reCalc = myLocation.distanceTo(desiredMove);
+				
+				MapLocation newLocation = attemptRandomMove(myLocation, desiredMove, strideRadius / 2 );
+				
+				// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
+				System.out.println("Attempted to find a new location to move to randomly...");
+				
+				desiredMove = newLocation;						
+			}
+	       	// SYSTEM CHECK - Show desired move after path planning
+	    	// System.out.println("desiredMove after collision correcetion " + desiredMove.toString());
+		} 
+		
+	    return desiredMove;
+    }
 }

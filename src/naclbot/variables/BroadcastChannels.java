@@ -47,6 +47,7 @@ public class BroadcastChannels extends GlobalVars {
 		// Bit 1 - Gives My X
 		// Bit 2 - Gives My Y
 		// BIT 3 - Gives NearestEnemy ID
+		// BIT 4 - Gives Enemy Type...
 	
 	public final static int GARDENER_DISTRESS_CHANNEL = 9502;
 	
@@ -207,13 +208,16 @@ public class BroadcastChannels extends GlobalVars {
 		public int ID;
 		public float xPosition;
 		public float yPosition;
-		public float myID;
+		public int myID;
+		public int enemyType;
 		
-		BroadcastInfo(int newID, float xLocation, float yLocation){	
+		BroadcastInfo(int newID, float xLocation, float yLocation, int senderID, int enemyType){	
 			
 			this.ID = newID;
 			this.xPosition = xLocation;
 			this.yPosition = yLocation;
+			this.myID = senderID;
+			this.enemyType = enemyType;
 		}		
 	}
 	
@@ -333,10 +337,9 @@ public class BroadcastChannels extends GlobalVars {
 		
 		int archonsDisabled = rc.readBroadcast(FINISHED_ARCHON_COUNT);
 		
-		if (currentArchonCount > 0){
+		if (currentArchonCount > 0 && archonsDisabled < currentArchonCount){
 			
 			for (int i = 0; i < currentArchonCount; i++){
-				
 				int archonID = rc.readBroadcast(ARCHON_INFORMATION_CHANNEL + i * ARCHON_INFORMATION_OFFSET + 0);
 				int archonHealth = rc.readBroadcast(ARCHON_INFORMATION_CHANNEL + i * ARCHON_INFORMATION_OFFSET + 3);
 				if (archonHealth >= 20){
@@ -345,7 +348,7 @@ public class BroadcastChannels extends GlobalVars {
 					float readY = rc.readBroadcast(ARCHON_INFORMATION_CHANNEL + i * ARCHON_INFORMATION_OFFSET + 2) / 100;
 					
 					// Generate the data neeeded to return...
-					BroadcastInfo newInfo = new BroadcastInfo(archonID, readX, readY);
+					BroadcastInfo newInfo = new BroadcastInfo(archonID, readX, readY, -1, -1);
 					
 					// SYSTEM CHECK Make sure that the archon dot is correctly placed... BRIGHT PURPLE			
 					MapLocation newLocation = new MapLocation(readX, readY);
@@ -394,18 +397,20 @@ public class BroadcastChannels extends GlobalVars {
 			
 			// Broadcast ID, position and enemy ID  to the distress channel
 			rc.broadcast(GARDENER_DISTRESS_CHANNEL, rc.getID());
-			rc.broadcast(GARDENER_DISTRESS_CHANNEL, (int)(myLocation.x * 100));
-			rc.broadcast(GARDENER_DISTRESS_CHANNEL, (int)(myLocation.y * 100));
+			rc.broadcast(GARDENER_DISTRESS_CHANNEL + 1, (int)(myLocation.x * 100));
+			rc.broadcast(GARDENER_DISTRESS_CHANNEL + 2, (int)(myLocation.y * 100));
 			
 			// If the gardener can sense a robot near it...
 			if(nearestEnemy != null){
-				rc.broadcast(GARDENER_DISTRESS_CHANNEL, nearestEnemy.ID);
+				rc.broadcast(GARDENER_DISTRESS_CHANNEL + 3, nearestEnemy.ID);
+				rc.broadcast(GARDENER_DISTRESS_CHANNEL + 4, getRobotTypeToInt(nearestEnemy));
 				
 				// SYSTEM CHECK Print out that the gardener is actually sensing a nearby unit
-				System.out.println("The acttacker has ID: " + nearestEnemy.ID);
+				System.out.println("The attacker has ID: " + nearestEnemy.ID);
 			}
 			else{
-				rc.broadcast(GARDENER_DISTRESS_CHANNEL, -1);
+				rc.broadcast(GARDENER_DISTRESS_CHANNEL + 3, -1);
+				rc.broadcast(GARDENER_DISTRESS_CHANNEL + 4, -1);
 				// SYSTEM CHECK Print out that the gardener cannot sense what is attacking it
 				System.out.println("Unfortunately cannot sense who attacker might be.....");
 			}
@@ -413,6 +418,51 @@ public class BroadcastChannels extends GlobalVars {
 			rc.broadcast(DISTRESS_SIGNAL_SENT_THIS_TURN, 1);			
 		}
 	}	
+	
+	// Function to obtain information on distress signals if they happened....
+	// Returns a location to go to if the location is within the respondDistance of the current location of the roobot
+	
+	public static BroadcastInfo readDistress(MapLocation myLocation, float respondDistance) throws GameActionException{
+		
+		// Boolean to test whether or not a distress message was actually sent this turn
+		boolean distressSignalSent = false;
+		
+		if (rc.readBroadcast(DISTRESS_SIGNAL_SENT_THIS_TURN) != 0 && rc.readBroadcast(LAST_UPDATER_GARDENER_DISTRESS) != -1){
+			
+			distressSignalSent = true;
+		}
+		
+		if(distressSignalSent){
+			int readSentID = rc.readBroadcast(GARDENER_DISTRESS_CHANNEL);
+			float readX = rc.readBroadcast(GARDENER_DISTRESS_CHANNEL + 1) / 100;
+			float readY = rc.readBroadcast(GARDENER_DISTRESS_CHANNEL + 2) / 100;
+			int readEnemyID = rc.readBroadcast(GARDENER_DISTRESS_CHANNEL + 3);
+			int readEnemyType = rc.readBroadcast(GARDENER_DISTRESS_CHANNEL + 4);
+			
+			BroadcastInfo newInfo = new BroadcastInfo(readEnemyID, readX, readY, readSentID, readEnemyType);
+			
+			MapLocation distressLocation = new MapLocation(readX, readY);
+			
+			if(distressLocation.distanceTo(myLocation) < respondDistance && rc.onTheMap(distressLocation)){
+				
+				// SYSTEM CHECK - display a blue line to the distress location and print out some data...
+				// rc.setIndicatorLine(myLocation, distressLocation, 0, 0, 128);
+				
+				
+				
+				return newInfo;
+			}
+			// If the location was too far away
+			else{
+				// SYSTEM CHECK - Print out that the robot noticed the call but it was too far away
+				System.out.println("Distress signal from ID: " + readSentID + " noted, but too far away to respond to....");
+				return null;
+			}
+		}
+		else{
+			return null;
+		}		
+	}
 }
 
 

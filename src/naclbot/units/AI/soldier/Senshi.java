@@ -5,6 +5,8 @@ import battlecode.common.*;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 import naclbot.units.interact.iFeed;
+import naclbot.units.motion.Chirasou;
+import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
@@ -37,8 +39,6 @@ public class Senshi extends GlobalVars {
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.SOLDIER.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.SOLDIER.bodyRadius;
-	private static final float senseRadius = battlecode.common.RobotType.SOLDIER.sensorRadius;
-	private static float teamBullets;
 	
 	// The intial round in which the soldier was constructed
 	public static int initRound;
@@ -82,7 +82,7 @@ public class Senshi extends GlobalVars {
     public static MapLocation goalLocation;
     
     // Asserts how often robots will attempt to go on the attack after completing a prior attack....
-    public static final int attackFrequency = 50;
+    public static final int attackFrequency = 25;
     
     // Gives probability of joining an attack at a particular time....
     public static final float attackProbability = (float) 1;
@@ -158,8 +158,25 @@ public class Senshi extends GlobalVars {
     	while(true){
     		
     		try{
+    			// ------------------------- RESET/UPDATE VARIABLES ----------------//        
     			
-    			// ------------------------- RESET/UPDATE VARIABLES ----------------//          
+            	// Get nearby enemies and allies and bullets for use in other functions            	
+            	RobotInfo[] enemyRobots = NearbyUnits(enemy);
+            	RobotInfo[] alliedRobots = NearbyUnits(allies);
+            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+    			
+            	// If the robot was just initialized or did not move last turn, set the last direction to point away from anything....
+            	
+    			if(lastDirection == null){
+    		        RobotInfo nearestAlly = Chirasou.getNearestAlly(alliedRobots, myLocation);
+    		        
+    		        if(nearestAlly != null){
+    		        	lastDirection = new Direction(myLocation.directionTo(nearestAlly.location).radians + (float)Math.PI);
+    		        }
+    		        else{
+    		        	lastDirection = Move.randomDirection();
+    		        }
+    			}    			  
     			
     			// Check if unit actually died or not
     			if (iDied) {
@@ -177,23 +194,22 @@ public class Senshi extends GlobalVars {
     		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
 
     			}
-    			
-            	// Get nearby enemies and allies and bullets for use in other functions            	
-            	RobotInfo[] enemyRobots = NearbyUnits(enemy);
-            	RobotInfo[] alliedRobots = NearbyUnits(allies);
-            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	
             	// Update location of self
             	myLocation = rc.getLocation();         	
             	
             	// Initialize the direction the robot would like to go to at any given round as the direction the robot moved previously....     	
             	myDirection = lastDirection;
+            	
+            	// If the robot is probably going to attempt to move straight to another unit.,.
+            	if(rc.isLocationOccupied(myLocation.add(myDirection, bodyRadius + (float) 0.1))){
+            		
+            		float newValue = (float)(Math.random() * Math.PI - Math.PI / 2);
+            		myDirection = new Direction(lastDirection.radians + (float)Math.PI + newValue);
+            	}
 
             	// Placeholder for desired location to go to
             	MapLocation tryMove = myLocation;
-            	
-            	// Update the team's bullets
-            	teamBullets = rc.getTeamBullets(); 
             	
             	if (goalLocation != null){
             		// SYSTEM CHECK - Show where the robot is attempting to go to.... SILVER LINE
@@ -238,10 +254,9 @@ public class Senshi extends GlobalVars {
                     	Routing.setRouting(routingPath);
                    	}
                    	else{
-                   		
+                   		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
                    		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
-                   		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);
-                   		
+                   		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
                    		// IF there are no more enemies to be found.......
                    		
                    		if(finishedArchons == discoveredArchons){
@@ -261,58 +276,16 @@ public class Senshi extends GlobalVars {
             	// Call the move function - to either track an enemy or simply 
             	MapLocation desiredMove = move(enemyRobots, tryMove);
             	
+            	
             	// -------------------- MOVE CORRECTION ---------------------//
             	
-            	// Check if the initially selected position was out of bounds...
+            	// Get the correction from the wrapping correct all move function....
             	
-               	// SYSTEM CHECK - Show desired move after path planning
-    	    	System.out.println("desiredMove before post-processing: " + desiredMove.toString());
-    	    	
-            	// Correct desiredMove to within one soldier  stride location of where the robot is right now....
-            	if(myLocation.distanceTo(desiredMove) > strideRadius){
-            		
-	            	Direction desiredDirection = new Direction(myLocation, desiredMove);	
-	            	
-	            	desiredMove = myLocation.add(desiredDirection, strideRadius);
-            	}
+            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, rotationDirection, allies, myLocation, desiredMove);
             	
-               	// SYSTEM CHECK - Show desired move after path planning
-    	    	System.out.println("desiredMove after rescaling: " + desiredMove.toString());
-            	
-            	// Hold uncorrected desired Move for routing purposes.........
-            	boolean moveWasEdited = false;
-            	
-            	// SYSTEM CHECK Make sure the new desired move is in the correct location LIGHT BLUE DOT
-            	// rc.setIndicatorDot(desiredMove, 102, 255, 255);
-            	
-            	// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
-            	if (!rc.canMove(desiredMove)){
-            		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
-            		
-            		myDirection = new Direction(myLocation, newLocation);
-            		
-            		desiredMove = newLocation;
-            		moveWasEdited = true;
-            		
-            	   	// SYSTEM CHECK - Show desired move after path planning
-        	    	System.out.println("desiredMove after out of bounds correction: " + desiredMove.toString());  
-            	}
-            	
-             	
-            	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
-            	if(!rc.canMove(desiredMove)){          		
-            	
-					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius /2 );
-					
-					// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
-					// System.out.println("Attempted to find a new location to move to randomly...");
-					
-					desiredMove = newLocation;
-					moveWasEdited = true;
-
-	    	       	// SYSTEM CHECK - Show desired move after path planning
-	    	    	System.out.println("desiredMove after collision correcetion " + desiredMove.toString());
-            	}              	
+            	if (correctedMove != null){
+            		desiredMove = correctedMove;
+            	}            	
             	
             	// --------------------------- DODGING ------------------------ //
             	
@@ -330,12 +303,7 @@ public class Senshi extends GlobalVars {
             	
             	// Call the dodge function
             	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
-            	 
-            	// If the canDodge variable was modified, the robot did attempt to dodge....
-            	if(canDodge){
-            		moveWasEdited = true;
-            	}
-            	
+            	            	
             	// If there is a location that the unit can dodge to..
             	if (dodgeLocation != null){
             		desiredMove = dodgeLocation;
@@ -356,11 +324,6 @@ public class Senshi extends GlobalVars {
             		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
             		// System.out.println("This robot did not move because it forgot to show Rem appreciation........");
             	}
-            	
-            	// If the robot post-processed its final given location, reset the routing function to clear waypoints
-            	if (isCommanded && moveWasEdited){
-            		Routing.resetRouting();
-            	}            	
             	
             	// ------------------------ Shooting ------------------------//
             	
@@ -416,16 +379,14 @@ public class Senshi extends GlobalVars {
                 }
                 else{
                 	roundsRouting += 1;
-                }
-                
-                Clock.yield();            	
+                }                
+                Clock.yield();       	
             	
     		
 	        } catch (Exception e) {
 	            System.out.println("Soldier Exception");
 	            e.printStackTrace();
-	        }
-    	
+	        }    	
     	}
     }
     
@@ -559,7 +520,7 @@ public class Senshi extends GlobalVars {
     		trackedRobot = rc.senseRobot(trackID);
     		
     		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
-    		// rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
+    		rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
     		
     		// Attempt to move towards the new location.....
     		desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, multiplier);
@@ -657,11 +618,22 @@ public class Senshi extends GlobalVars {
 		}		
 	}
 	
-    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
-		boolean beingAttacked = iFeed.willBeAttacked(loc);
+	// Function to notify everyone that the unit has died.
+	
+    public static void manageBeingAttacked(MapLocation location) throws GameActionException{
+    	
+    	// Boolean to determine whether or not the scout will lose health if it moves to a certain location
+		boolean beingAttacked = iFeed.willBeAttacked(location);
+		
+		//If it will lose health for going there...
 		if (beingAttacked) {
-			boolean willDie = iFeed.willFeed(loc);
-			if (willDie) {
+			
+			// Check if the unit will die from the damage
+			boolean willDie = iFeed.willFeed(location);
+			
+			//If it will die, broadcast to all relevant channesl.....
+			
+			if (willDie) {	
 				iDied = true;
 				// Get own soldierNumber - important for broadcasting 
 		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
@@ -672,11 +644,9 @@ public class Senshi extends GlobalVars {
 		        
 		        // Update soldier number for other soldiers to see.....
 		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
-
 			}
 		}
-	}
-	
+	}	
 }	
 	
 	

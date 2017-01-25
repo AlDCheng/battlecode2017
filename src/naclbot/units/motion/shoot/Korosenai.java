@@ -207,6 +207,13 @@ public class Korosenai extends GlobalVars {
     	if (targetLocation.distanceTo(currentLocation) > 6){
     		return false;
     	}
+    	// If the target is in a tree >.>.>
+    	if (rc.isLocationOccupiedByTree(targetLocation)){
+    		
+    		// SYSTEM CHECK - Tell that shot unsuccesfull because there was a tree
+    		System.out.println("Targetlocation is a tree - cannot shoot");
+    		return false;
+    	}    	
     	
     	// Obtain the direction wanted to shoot at....
     	Direction dirToShoot = new Direction (currentLocation, targetLocation);
@@ -215,7 +222,7 @@ public class Korosenai extends GlobalVars {
     	if (shotType == 0){
     		
     		// SYSTEM CHECK Print out that attempting to fire single shot
-    		System.out.println("attempting to fire single shot");
+    		System.out.println("Attempting to fire single shot");
     		
     		// If no allies are going to be instantly hit by the bullets... 
     		if (!isDirectionOccupiedByAlly(currentLocation, dirToShoot, nearbyAllies, maximumAllyCheckDistance) && 
@@ -224,7 +231,10 @@ public class Korosenai extends GlobalVars {
     			// Make sure your team is rich enough for you to fire something at them......
     			if(rc.canFireSingleShot()){
 	    			// Fire!
-	    			rc.fireSingleShot(dirToShoot);
+	    			rc.fireSingleShot(dirToShoot);	    			
+	    			
+	        		// SYSTEM CHECK Print out that the unit has fired a single shot
+	        		System.out.println("Fired single shot");
 	    			return true;    	
     			}
     		}    	
@@ -241,14 +251,16 @@ public class Korosenai extends GlobalVars {
     			// If no allies are going to be instantly hit by the bullets... 
 	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) || 
 	    				isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){			
-	    			return false;
-	    			
+	    			return false;	    			
 	    		}     
     		}   		
     		// Make sure your team is rich enough for you to fire something at them......
 			if(rc.canFireTriadShot()){
     			// Fire!
     			rc.fireTriadShot(dirToShoot);
+    			
+    			// SYSTEM CHECK Print out that the unit has fired a triad shot
+        		System.out.println("Fired triad shot");
     			return true; 
 			}else{
     			return false;
@@ -279,6 +291,10 @@ public class Korosenai extends GlobalVars {
     			if(rc.canFirePentadShot()){
 	    			// Fire!
 	    			rc.firePentadShot(dirToShoot);
+	    			
+	    			// SYSTEM CHECK Print out that the unit has fired a pentad shot
+	        		System.out.println("Fired pentad shot");
+	    			
 	    			return true;    	
     			} else{
     				return false;

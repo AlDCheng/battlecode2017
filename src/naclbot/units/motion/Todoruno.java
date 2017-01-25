@@ -141,14 +141,14 @@ public class Todoruno extends GlobalVars {
 					combatEnemyRobot = enemyRobot;
 				}
 				// If the enemy is a scout and it is given that the robot may track scouts
-				else if (enemyRobot.type == battlecode.common.RobotType.SCOUT&& targetScout){
+				else if (enemyRobot.type == battlecode.common.RobotType.SCOUT && targetScout){
 					// Update all placeholder parameters
 					minimumTotalDistance = distanceTo;
 					anyEnemyRobot = enemyRobot;
 					
 				}
 				// Finally if the robot is either a gardener or archon and the robot can target civilians....
-				else if (targetCivilian){
+				else if (enemyRobot.type == battlecode.common.RobotType.ARCHON || enemyRobot.type == battlecode.common.RobotType.GARDENER){
 					// Update all placeholder parameters
 					minimumTotalDistance = distanceTo;
 					anyEnemyRobot = enemyRobot;

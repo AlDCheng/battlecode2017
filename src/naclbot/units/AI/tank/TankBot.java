@@ -6,15 +6,10 @@ import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
-import naclbot.units.motion.shoot.Aim;
 import naclbot.units.motion.shoot.Korosenai;
 import naclbot.units.motion.routing.Routing;
-import naclbot.units.motion.search.TreeSearch;
 import naclbot.variables.BroadcastChannels;
-import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
-import naclbot.variables.DataVars.basicTreeInfo;
-import naclbot.variables.DataVars.binarySearchTree;
 
 import java.util.ArrayList;
 
@@ -27,15 +22,14 @@ public class TankBot extends GlobalVars {
 	
 	// Variables for self and team recognition
 	public static int myID;
+	public static boolean iDied;
 	public static int tankNumber;
 	public static int unitNumber;
 	private static Team enemy;	
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.TANK.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.TANK.bodyRadius;
-	private static final float senseRadius = battlecode.common.RobotType.TANK.sensorRadius;
-	private static float teamBullets;
-	
+
 	// The intial round in which the tank was constructed
 	public static int initRound;
 	
@@ -81,13 +75,13 @@ public class TankBot extends GlobalVars {
     public static final int attackFrequency = 100;
     
     // Gives probability of joining an attack at a particular time....
-    public static final float attackProbability = (float) 0.8;
+    public static final float attackProbability = (float) 1;
     
     // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
     public static int lastCommanded = attackFrequency;
     
     // Variable to determine after how long tanks decide that Alan's code is a piece of shit......
-    public static final int giveUpOnRouting = 75;
+    public static final int giveUpOnRouting = 3000;
     
     // Variable to store the amount of time currently in routing....
     public static int roundsRouting = 0;
@@ -160,6 +154,36 @@ public class TankBot extends GlobalVars {
             	RobotInfo[] enemyRobots = NearbyUnits(enemy);
             	RobotInfo[] alliedRobots = NearbyUnits(allies);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+    			
+    	      	// If the robot was just initialized or did not move last turn, set the last direction to point away from anything....
+    	
+    			if(lastDirection == null){
+    		        RobotInfo nearestAlly = Chirasou.getNearestAlly(alliedRobots, myLocation);
+    		        
+    		        if(nearestAlly != null){
+    		        	lastDirection = new Direction(myLocation.directionTo(nearestAlly.location).radians + (float)Math.PI);
+    		        }
+    		        else{
+    		        	lastDirection = Move.randomDirection();
+    		        }
+    			}
+    	    			
+     			// Check if unit actually died or not
+    			if (iDied) {
+    				
+    				iDied = false;
+    				
+    				// Get own soldierNumber - important for broadcasting 
+    		        tankNumber = rc.readBroadcast(BroadcastChannels.TANK_NUMBER_CHANNEL);
+    		        currentNumberofTanks = tankNumber + 1;
+    		        
+    		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+    		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+    		        
+    		        // Update soldier number for other soldiers to see.....
+    		        rc.broadcast(BroadcastChannels.TANK_NUMBER_CHANNEL, currentNumberofTanks);
+
+    			}
             	
             	// Update location of self
             	myLocation = rc.getLocation();         	
@@ -168,11 +192,16 @@ public class TankBot extends GlobalVars {
             	myDirection = lastDirection;
 
             	// Placeholder for desired location to go to
-            	MapLocation tryMove = myLocation;
+            	MapLocation tryMove = myLocation;            	
             	
-            	// Update the team's bullets
-            	teamBullets = rc.getTeamBullets(); 
+            	// If the robot is probably going to attempt to move straight to another unit.,.
+            	if(rc.isLocationOccupied(myLocation.add(myDirection, bodyRadius + (float) 0.1))){
+            		
+            		float newValue = (float)(Math.random() * Math.PI - Math.PI / 2);
+            		myDirection = new Direction(lastDirection.radians + (float)Math.PI + newValue);
+            	}
             	
+                       	
             	if (goalLocation != null){
             		// SYSTEM CHECK - Show where the robot is attempting to go to.... SILVER LINE
             		rc.setIndicatorLine(myLocation, goalLocation, 192, 192, 192);
@@ -216,67 +245,35 @@ public class TankBot extends GlobalVars {
                     	Routing.setRouting(routingPath);
                    	}
                    	else{
-                   		isCommanded = false;
-                   		goalLocation = null;
+                   		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
+                   		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+                   		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
+                   		// IF there are no more enemies to be found.......
+                   		
+                   		if(finishedArchons == discoveredArchons){
+                   			isCommanded = false;
+                       		goalLocation = null;         
+                   			
+                   		}
+                   		else{
+                   			isCommanded = false;
+                       		goalLocation = null;                   			
+                   		}
+          
                    	}
                	}
-
             	
             	// Call the move function - to either track an enemy or simply 
             	MapLocation desiredMove = move(enemyRobots, tryMove);
             	
             	// -------------------- MOVE CORRECTION ---------------------//
             	
-            	// Check if the initially selected position was out of bounds...
+            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, rotationDirection, allies, myLocation, desiredMove);
             	
-               	// SYSTEM CHECK - Show desired move after path planning
-    	    	System.out.println("desiredMove before post-processing: " + desiredMove.toString());
-    	    	
-            	// Correct desiredMove to within one soldier  stride location of where the robot is right now....
-            	if(myLocation.distanceTo(desiredMove) > strideRadius){
-            		
-	            	Direction desiredDirection = new Direction(myLocation, desiredMove);	
-	            	
-	            	desiredMove = myLocation.add(desiredDirection, strideRadius);
-            	}
+            	if (correctedMove != null){
+            		desiredMove = correctedMove;
+            	}    
             	
-               	// SYSTEM CHECK - Show desired move after path planning
-    	    	System.out.println("desiredMove after rescaling: " + desiredMove.toString());
-            	
-            	// Hold uncorrected desired Move for routing purposes.........
-            	boolean moveWasEdited = false;
-            	
-            	// SYSTEM CHECK Make sure the new desired move is in the correct location LIGHT BLUE DOT
-            	// rc.setIndicatorDot(desiredMove, 102, 255, 255);
-            	
-            	// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
-            	if (!rc.canMove(desiredMove)){
-            		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
-            		
-            		myDirection = new Direction(myLocation, newLocation);
-            		
-            		desiredMove = newLocation;
-            		moveWasEdited = true;
-            		
-            	   	// SYSTEM CHECK - Show desired move after path planning
-        	    	System.out.println("desiredMove after out of bounds correction: " + desiredMove.toString());  
-            	}
-            	
-             	
-            	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
-            	if(!rc.canMove(desiredMove)){          		
-            	
-					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius);
-					
-					// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
-					// System.out.println("Attempted to find a new location to move to randomly...");
-					
-					desiredMove = newLocation;
-					moveWasEdited = true;
-
-	    	       	// SYSTEM CHECK - Show desired move after path planning
-	    	    	System.out.println("desiredMove after collision correcetion " + desiredMove.toString());
-            	}              	
             	
             	// --------------------------- DODGING ------------------------ //
             	
@@ -295,11 +292,7 @@ public class TankBot extends GlobalVars {
             	// Call the dodge function
             	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
             	 
-            	// If the canDodge variable was modified, the robot did attempt to dodge....
-            	if(canDodge){
-            		moveWasEdited = true;
-            	}
-            	
+
             	// If there is a location that the unit can dodge to..
             	if (dodgeLocation != null){
             		desiredMove = dodgeLocation;
@@ -319,12 +312,6 @@ public class TankBot extends GlobalVars {
             		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
             		// System.out.println("This robot did not move because it forgot to show Rem appreciation........");
             	}
-            	
-            	// If the robot post-processed its final given location, reset the routing function to clear waypoints
-            	if (isCommanded && moveWasEdited){
-            		Routing.resetRouting();
-            	}            	
-            	
             	// ------------------------ Shooting ------------------------//
             	
             	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
@@ -612,6 +599,37 @@ public class TankBot extends GlobalVars {
 			// SYSTEM CHECK - See if the tank has actually read a broadcast from a scout or not....
 			System.out.println("Enemy locations updated by scouts.......");			
 		}		
+	}	
+	
+	
+	// Function to notify everyone that the unit has died.
+	
+    public static void manageBeingAttacked(MapLocation location) throws GameActionException{
+    	
+    	// Boolean to determine whether or not the scout will lose health if it moves to a certain location
+		boolean beingAttacked = iFeed.willBeAttacked(location);
+		
+		//If it will lose health for going there...
+		if (beingAttacked) {
+			
+			// Check if the unit will die from the damage
+			boolean willDie = iFeed.willFeed(location);
+			
+			//If it will die, broadcast to all relevant channesl.....
+			
+			if (willDie) {	
+				iDied = true;
+				// Get own soldierNumber - important for broadcasting 
+		        tankNumber = rc.readBroadcast(BroadcastChannels.TANK_NUMBER_CHANNEL);
+		        currentNumberofTanks = tankNumber - 1;
+		        
+		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+		        
+		        // Update soldier number for other soldiers to see.....
+		        rc.broadcast(BroadcastChannels.TANK_NUMBER_CHANNEL, currentNumberofTanks);
+			}
+		}
 	}	
 }	
 	 
