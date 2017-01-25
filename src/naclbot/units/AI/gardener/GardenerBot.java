@@ -104,14 +104,14 @@ public class GardenerBot extends GlobalVars {
             	// Check if it did not die, and reset the number of gardeners and units
             	if (iDied) {
             		iDied = false;
-            		 // Get own soldierNumber - important for broadcasting 
+            		 // Get own gardenerNumber - important for broadcasting 
                     gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
                     currentNumberofGardeners = gardenerNumber + 1;
                     
                     unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
                     rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
                     
-                    // Update soldier number for other soldiers to see.....
+                    // Update gardener number for other units to see.....
                     rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
             	}
             	
