@@ -125,11 +125,20 @@ public class ArchonBot extends GlobalVars {
         initRound = remIsBestGirl;
         
         roundsNotConstructed = 0;
-		
+        
+        // Check initial tree conditions
+        float crowd = checkBuildRadius((float)15, (float)5, (float)0.5);
+        float ratioTree = 2;
+        
+        int treeNum = (int)((1-crowd)*ratioTree);
+        if (treeNum <= 0) {
+        	treeNum = 1;
+        }
+        
 	    // Initialize path list and goal location
        	routingPath = new ArrayList<MapLocation>();    	
        	Routing.setRouting(routingPath);
-		constructGardeners(2);	
+		constructGardeners(treeNum);	
 	}
 	
 	public static void constructGardeners(int maxGardeners) throws GameActionException {		
@@ -145,7 +154,7 @@ public class ArchonBot extends GlobalVars {
             // Try/catch blocks stop unhandled exceptions, - print stacktrace upon exception error....
             try {
             	// Scan surrounding first:
-            	boolean crowded = checkBuildRadius(30, crowdThresh);
+            	boolean crowded = (checkBuildRadius((float)30, (float)2.5, (float)0.5) >= crowdThresh);
             	System.out.println("Crowded?: " + crowded);
             	
             	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
@@ -179,7 +188,8 @@ public class ArchonBot extends GlobalVars {
             	// Update the current round number.....
             	remIsBestGirl = rc.getRoundNum();
             	
-            	Direction testDirection = null;
+//            	Direction testDirection = null;
+            	Direction testDirection = new Direction(0);
             	Direction gardenerDirection = null;
             	
             	// Build if not crowded
@@ -252,7 +262,7 @@ public class ArchonBot extends GlobalVars {
             	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
 
         		// Check surroundings
-        		boolean crowded = checkBuildRadius(30, crowdThresh);
+        		boolean crowded = (checkBuildRadius((float)30, (float)2.5, (float)0.5) >= crowdThresh);
         		
             	if ((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) && (!crowded)) {
             		constructGardeners(1);
@@ -496,7 +506,7 @@ public class ArchonBot extends GlobalVars {
 	// Alan's Work
 	// Imported from gardeners
 	// Check build radius
-	public static boolean checkBuildRadius(float angleInterval, float threshold) throws GameActionException {
+	public static float checkBuildRadius(float angleInterval, float dist, float distRad) throws GameActionException {
 		float crowdedFactor = 0;
 		
 		// Define direction variable
@@ -512,20 +522,20 @@ public class ArchonBot extends GlobalVars {
 		while (totalAngle < 360) {
 			
 			// Point to be scan
-			MapLocation newLoc = curLoc.add(dir,(float)2.5);
+			MapLocation newLoc = curLoc.add(dir,dist);
 			
 			// Check if space of radius 0.5 is clear 2.5 units away
 			// First check if on map
-			if(rc.onTheMap(newLoc, (float)0.5)) {
+			if(rc.onTheMap(newLoc, distRad)) {
 				// Then check if occupied
-				if(rc.isCircleOccupiedExceptByThisRobot(newLoc,(float)0.5)) {
-					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,(float)0.5), 255, 128, 0);
+				if(rc.isCircleOccupiedExceptByThisRobot(newLoc,distRad)) {
+					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,distRad), 255, 128, 0);
 					
 					// Increase factor
 					crowdedFactor += angleInterval/360;
 				}
 				else {
-					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,(float)0.5), 0, 255, 255); 
+					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,distRad), 0, 255, 255); 
 				}
 			}
 			else {
@@ -536,15 +546,9 @@ public class ArchonBot extends GlobalVars {
 			totalAngle += angleInterval; 
 		}
 		
-		System.out.println("Crowded Factor: " + crowdedFactor + ", Theshold: " + threshold);
+		System.out.println("Crowded Factor: " + crowdedFactor);
 		
-		// Check if threshold is met (under)
-		if (crowdedFactor < threshold) {
-			return false;
-		}
-		else {
-			return true;
-		}
+		return crowdedFactor;
 	}
 	
 	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength, float start) throws GameActionException {
