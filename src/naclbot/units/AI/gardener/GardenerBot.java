@@ -70,7 +70,14 @@ public class GardenerBot extends GlobalVars {
 	public static float buildDir, prevBuildDir;
 	public static Direction buildVec = new Direction(0);
 	public static Direction prevBuildVec = new Direction(0);
+	//--------------------------------------------------
+	public static int buildingLumberjack = 0;
+	public static int buildingScout = 0;
+	public static int buildingSoldier = 0;
+	public static int buildingTank = 0;
+	public static int buildingTree = 0;
 	
+	public static int spawnTime = 20;
 	
 	// Integer to store the previous health of the gardener
 	public static float previousHealth;
@@ -114,6 +121,8 @@ public class GardenerBot extends GlobalVars {
         	//System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	Win();
+            	propagateBuild();
             	
             	MapLocation myLocation = rc.getLocation();
             	
@@ -257,7 +266,19 @@ public class GardenerBot extends GlobalVars {
                     	TreeInfo[] trees = rc.senseNearbyTrees(rc.getType().sensorRadius, Team.NEUTRAL);
                     	int treeNum = trees.length;
                     	System.out.println("Tree Length: " + treeNum);
-                		buildJacks = (float)treeNum/(float)10.0;
+                		buildJacks = (float)treeNum/(float)15.0;
+                    	for (int i = 0; i < treeNum; i++) {
+                    		if (trees[i].getContainedRobot() != null) {
+                    			buildJacks = 1;
+                    			break;
+                    		}
+                    	}
+                    	
+                    	trees = rc.senseNearbyTrees(rc.getType().sensorRadius-3, Team.NEUTRAL);
+                    	treeNum = trees.length;
+                    	System.out.println("Tree Length (short): " + treeNum);
+                		float buildJacksTemp = (float)2.0*(float)treeNum/(float)15.0;
+                		buildJacks = Math.max(buildJacksTemp, buildJacks);
                     	for (int i = 0; i < treeNum; i++) {
                     		if (trees[i].getContainedRobot() != null) {
                     			buildJacks = 1;
@@ -281,17 +302,18 @@ public class GardenerBot extends GlobalVars {
                 		buildUnitNew(overrideType, bulletNum, newBuildDir);             		
                 	}
                     else if (earlyGame) {
-                		if (scoutCount < minScouts1) {
+                		if (scoutCount + Math.ceil(buildingScout/20.0) < minScouts1) {
                     		System.out.println("Scouts1");
                     		buildUnitNew(RobotType.SCOUT, bulletNum, newBuildDir);
                         }
-                    	else if ((rc.getTreeCount() < minTrees1) && (!treeImpossible)) {
+                    	else if ((rc.getTreeCount() + Math.ceil(buildingTree/20.0) < minTrees1) && (!treeImpossible)) {
                     		System.out.println("Trees1");
                         	if (rc.hasTreeBuildRequirements()) {
                         		// To end at 0
 //                        		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
                         		if (plantDirs[0] != null) {
                         			rc.plantTree(plantDirs[0]);
+                        			buildingTree += 20;
                         		}
                         		else {
                         			treeImpossible = true;
@@ -300,7 +322,7 @@ public class GardenerBot extends GlobalVars {
                         	canMove = false;
                         }
                 		// Toggle with lumberjack
-                    	else if (soldierCount < minSoldiers1) {
+                    	else if (soldierCount + Math.ceil(buildingSoldier/20.0) + Math.ceil(buildingLumberjack/20.0) < minSoldiers1) {
                     		if (buildJacks >= Math.random()) {
                     			System.out.println("Soldiers1 -> Lumberjacks");
                             	buildUnitNew(RobotType.LUMBERJACK, bulletNum, newBuildDir);
@@ -310,10 +332,10 @@ public class GardenerBot extends GlobalVars {
                             	buildUnitNew(RobotType.SOLDIER, bulletNum, newBuildDir);                    			
                     		}
                         }
-                    	else if (scoutCount < minScouts2) {
+                    	/*else if (scoutCount + Math.ceil(buildingScout/20.0) < minScouts2) {
                     		System.out.println("Scouts2");
                         	buildUnitNew(RobotType.SCOUT, bulletNum, newBuildDir);
-                        }
+                        }*/
                     	else {
 //                    		minSat = true;
                     		earlyGame = false;
@@ -329,6 +351,7 @@ public class GardenerBot extends GlobalVars {
                     		System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
                         	if (plantDirs[0] != null) {
                         		rc.plantTree(plantDirs[0]);
+                        		buildingTree += 20;
                         		canMove = false;
                         	}
                     	}
@@ -392,6 +415,21 @@ public class GardenerBot extends GlobalVars {
 				Direction plantDirs[] = Plant.scanBuildRadius(scanInt, dirDeg);
 				if (plantDirs[1] != null) {
 					rc.buildRobot(Unit, plantDirs[1]);
+					
+					// Set counters
+					
+					if (Unit == RobotType.LUMBERJACK) {
+						buildingLumberjack += 20;
+					}
+					else if (Unit == RobotType.SCOUT) {
+						buildingScout += 20;
+					}
+					else if (Unit == RobotType.SOLDIER) {
+						buildingSoldier += 20;
+					}
+					else if (Unit == RobotType.TANK) {
+						buildingTank += 20;
+					}
 				}
 			}
 		}		
@@ -471,6 +509,7 @@ public class GardenerBot extends GlobalVars {
 				dirToBuild = Plant.scanBuildRadiusTank(scanInt, dirToBuild.getAngleDegrees());
 				if (dirToBuild != null) {
 					rc.buildRobot(RobotType.TANK, dirToBuild);
+					buildingTank += 20;
 					return;
 				}
 			}
@@ -482,15 +521,17 @@ public class GardenerBot extends GlobalVars {
 //				if (scoutCount > START_SCOUT_COUNT) {
 					
 				// Pseudo-Random for lumberjacks or soldiers
-				if (0.7*lumberRatio <= Math.random()) {
+				if ((0.7*lumberRatio <= Math.random()) && (lumberRatio <= 1.0)) {
 					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
 						rc.buildRobot(RobotType.SOLDIER, dirToBuild);
+						buildingSoldier += 20;
 						return;
 					}
 				}
 				else {
 					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
 						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
+						buildingLumberjack += 20;
 						return;
 					}
 				}
@@ -504,6 +545,7 @@ public class GardenerBot extends GlobalVars {
 					if ((scoutCount < (rc.getRoundNum()/200 + 2)) && (scoutCount < SCOUT_LIMIT)) {
 						if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild)) {
 					        rc.buildRobot(RobotType.SCOUT, dirToBuild);
+					        buildingScout += 20;
 					        return;
 						}
 					}
@@ -517,5 +559,13 @@ public class GardenerBot extends GlobalVars {
 	private static RobotInfo[] NearbyUnits(Team team){
 
 		return rc.senseNearbyRobots((float)10, team);
+	}
+	
+	public static void propagateBuild() {
+		buildingLumberjack = Math.max(0, buildingLumberjack - 1);
+		buildingScout = Math.max(0, buildingScout - 1);
+		buildingSoldier = Math.max(0, buildingSoldier - 1);
+		buildingTank = Math.max(0, buildingTank - 1);
+		buildingTree = Math.max(0,  buildingTree - 1);
 	}
 }

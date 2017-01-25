@@ -264,7 +264,9 @@ public class ArchonBot extends GlobalVars {
         while (true) {
         	
             // catch 
-            try {            	
+            try {
+            	Win();
+            	
               	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
             	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
             	
