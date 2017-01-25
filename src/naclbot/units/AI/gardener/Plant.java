@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 public class Plant extends GlobalVars {
 	
+	public static float congestion = 0;
+	
 	public static void plantToLocation(MapLocation potentialPlantLoc, Direction dirToPlant) {
 		try {
 			System.out.println(rc.getID() + " " + 2);
@@ -118,6 +120,8 @@ public class Plant extends GlobalVars {
 		
 //		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
 		
+		congestion = 0;
+		
 		// Get robot type
 		RobotType thisBot = rc.getType();
 		Team us = rc.getTeam();
@@ -166,7 +170,12 @@ public class Plant extends GlobalVars {
 					} else {
 						openness = 0;
 						// Tree weighting; radius = 1 (body) + 2 (tree)
-						openness += rc.senseNearbyTrees(potLoc, radius, null).length;
+						float treeLen = rc.senseNearbyTrees(potLoc, radius, null).length;
+						openness += treeLen;
+						if(treeLen > 0) {
+							congestion += angleInterval/360;	
+						}
+						
 						// Unit weighting (for own Team)
 						openness += rc.senseNearbyRobots(potLoc, radius, us).length;
 						// Unit weighting (for enemy Team)
@@ -205,6 +214,8 @@ public class Plant extends GlobalVars {
 	// Output Format: [0]last availible tree plant space; [1]reserved unit building space
 	public static Direction[] scanBuildRadius(float angleInterval, float start) throws GameActionException {
 		
+		congestion = 0;
+		
 		// Storage output
 		Direction finalDir[] = new Direction[2];
 		
@@ -230,6 +241,9 @@ public class Plant extends GlobalVars {
 					}
 				}
 				else {
+					if (rc.senseTreeAtLocation(newLoc) != null) {
+						congestion += angleInterval/360;
+					}
 					if((!(rc.isCircleOccupied(newLoc,(float)0.5))) && (rc.onTheMap(newLoc, (float)0.5))) {
 						finalDir[1] = dir;
 					}

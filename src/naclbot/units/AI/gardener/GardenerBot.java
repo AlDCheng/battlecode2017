@@ -54,7 +54,8 @@ public class GardenerBot extends GlobalVars {
 	
 	public static int minSoldiers1 = 1;
 	
-	public static boolean minSat = false;
+//	public static boolean minSat = false;
+	public static boolean earlyGame = true;
 	//--------------------------------------------------
 	public static int scanInt = 5;
 	
@@ -96,6 +97,10 @@ public class GardenerBot extends GlobalVars {
 	public static void main() throws GameActionException {
         // The code you want your robot to perform every round should be in this loop
 		
+		boolean override = false;
+		RobotType overrideType = RobotType.SOLDIER;
+        boolean buildJacks = false;   
+		
         while (true) {
         	//System.out.println(role);
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
@@ -104,14 +109,14 @@ public class GardenerBot extends GlobalVars {
             	// Check if it did not die, and reset the number of gardeners and units
             	if (iDied) {
             		iDied = false;
-            		 // Get own gardenerNumber - important for broadcasting 
+            		 // Get own soldierNumber - important for broadcasting 
                     gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
                     currentNumberofGardeners = gardenerNumber + 1;
                     
                     unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
                     rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
                     
-                    // Update gardener number for other units to see.....
+                    // Update soldier number for other soldiers to see.....
                     rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
             	}
             	
@@ -193,51 +198,99 @@ public class GardenerBot extends GlobalVars {
                 }
                 
                 //--------------------------------------------------------------------------------
-                //ROLE DESIGNATION
+                // Enemy Sensing
                 
-                // Force minimum number of units
-                // Scout-Tree-Tree-Scout-Soldier-Trees
-//                System.out.println("Tree status: " + treeImpossible + ", Num Tree: " + rc.getTreeCount());
-                
+                // Check for surrounding enemies
+                if (rc.senseNearbyRobots(rc.getLocation(), rc.getType().sensorRadius, rc.getTeam().opponent()).length > 0) {
+                	earlyGame = false;
+                	override = true;
+                	
+                	if (buildJacks) {
+                		overrideType = RobotType.LUMBERJACK;
+                	}
+                	                	
+                }
+
+                //--------------------------------------------------------------------------------
+                // Unit Building
                 
                 float bulletNum = rc.getTeamBullets();
                 if (bulletNum > GameConstants.BULLET_TREE_COST) {
-                	if (scoutCount < minScouts1) {
-                		System.out.println("Scouts1");
-                		buildUnitNew(RobotType.SCOUT, bulletNum, buildDir);
+                	float newBuildDir = buildDir;
+                	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
+                	
+                	if (plantDirs[1] != null) {
+                		newBuildDir = plantDirs[1].getAngleDegrees();
+                	}
+            			
+                	
+                	//--------------------------------------------------------------------------------
+                	System.out.println("Tree Congestion: " + Plant.congestion);
+                    
+                    // Fixed constant values in here
+                    // Check for surrouding trees
+                    if (Plant.congestion > 0.75) {
+                    	buildJacks = true;
                     }
-                	else if ((rc.getTreeCount() < minTrees1) && (!treeImpossible)) {
-                		System.out.println("Trees1");
-                    	if (rc.hasTreeBuildRequirements()) {
-                    		// To end at 0
-                    		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
-                    		if (plantDirs[0] != null) {
-                    			rc.plantTree(plantDirs[0]);
+                    else {
+                    	int treeNum = rc.senseNearbyTrees().length;
+                    	if (treeNum > 10) {
+                    		buildJacks = true;
+                    	}
+                    	else {
+                    		buildJacks = false;
+                    	}
+                    }
+                    //--------------------------------------------------------------------------------
+                    if (override) {
+                		override = false;
+                		buildUnitNew(overrideType, bulletNum, newBuildDir);             		
+                	}
+                    else if (earlyGame) {
+                		if (scoutCount < minScouts1) {
+                    		System.out.println("Scouts1");
+                    		buildUnitNew(RobotType.SCOUT, bulletNum, newBuildDir);
+                        }
+                    	else if ((rc.getTreeCount() < minTrees1) && (!treeImpossible)) {
+                    		System.out.println("Trees1");
+                        	if (rc.hasTreeBuildRequirements()) {
+                        		// To end at 0
+//                        		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
+                        		if (plantDirs[0] != null) {
+                        			rc.plantTree(plantDirs[0]);
+                        		}
+                        		else {
+                        			treeImpossible = true;
+                        		}
+                        	}
+                        	canMove = false;
+                        }
+                    	else if (scoutCount < minScouts2) {
+                    		System.out.println("Scouts2");
+                        	buildUnitNew(RobotType.SCOUT, bulletNum, newBuildDir);
+                        }
+                    	// Toggle with lumberjack
+                    	else if (soldierCount < minSoldiers1) {
+                    		if (buildJacks) {
+                    			System.out.println("Soldiers1 -> Lumberjacks");
+                            	buildUnitNew(RobotType.LUMBERJACK, bulletNum, newBuildDir);
                     		}
                     		else {
-                    			treeImpossible = true;
+                    			System.out.println("Soldiers1");
+                            	buildUnitNew(RobotType.SOLDIER, bulletNum, newBuildDir);                    			
                     		}
+                        }
+                    	else {
+//                    		minSat = true;
+                    		earlyGame = false;
                     	}
-                    	canMove = false;
-                    }
-                	else if (scoutCount < minScouts2) {
-                		System.out.println("Scouts2");
-                    	buildUnitNew(RobotType.SCOUT, bulletNum, buildDir);
-                    }
-                	// Toggle with lumberjack
-                	else if (soldierCount < minSoldiers1) {
-                		System.out.println("Soldiers1");
-                    	buildUnitNew(RobotType.SOLDIER, bulletNum, buildDir);
-                    }
-                	else {
-                		minSat = true;
                 	}
                 	
                 	// End early game
                 	//------------------------------------------------
-                    if (minSat) {
+                	else if (!earlyGame) {
                     	System.out.println("Satisfication");
-                    	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
+//                    	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
                     	System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
                     	if (plantDirs[0] != null) {
                     		rc.plantTree(plantDirs[0]);
@@ -280,14 +333,14 @@ public class GardenerBot extends GlobalVars {
 			boolean willDie = iFeed.willFeed(loc);
 			if (willDie) {
 				iDied = true;
-				// Get own soldierNumber - important for broadcasting 
+				// Get own gardenerNumber - important for broadcasting 
 		        gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
 		        currentNumberofGardeners = gardenerNumber - 1;
 		        
 		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
 		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
 		        
-		        // Update soldier number for other soldiers to see.....
+		        // Update gardener number for other gardeners to see.....
 		        rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
 			}
 		}
