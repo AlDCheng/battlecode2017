@@ -321,7 +321,16 @@ public class GlobalVars {
 			System.out.println();
 			
 		}
-	} 
+	}
+	
+	public static void Win() throws GameActionException{
+		if((rc.getTeamBullets() / (GameConstants.VP_INCREASE_PER_ROUND * rc.getRoundNum() + GameConstants.VP_BASE_COST))
+    			> GameConstants.VICTORY_POINTS_TO_WIN) {
+    		rc.donate(rc.getTeamBullets());
+    	} else if (rc.getRoundNum() >= rc.getRoundLimit()-1) {
+    		rc.donate(rc.getTeamBullets());
+    	}
+	}
 
 }
 
