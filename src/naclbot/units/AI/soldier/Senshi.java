@@ -95,6 +95,12 @@ public class Senshi extends GlobalVars {
     
     // Variable to store the amount of time currently in routing....
     public static int roundsRouting = 0;
+    
+    // Variable to store for how long the robot has been tracking something
+    public static int roundsTracked = 0;
+    
+    // To store the last known location of a civilian
+    public static MapLocation nearestCivilian;
 
     
 	/************************************************************************
@@ -158,6 +164,8 @@ public class Senshi extends GlobalVars {
     	while(true){
     		
     		try{
+    			boolean mustDefend = false;
+    			
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//        
     			
             	// Get nearby enemies and allies and bullets for use in other functions            	
@@ -228,6 +236,49 @@ public class Senshi extends GlobalVars {
             	
                	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
                	
+             	// Param to store the location of the nearest ally for the current turn - use this to determine whether or not to break out of a tracking operation.....       	
+            	RobotInfo NearestAlly;
+               	
+            	// Update the location of the nearest noncombatant allied location and store into the variable Nearest Ally - which is null if no nearby ally exists
+            	if (alliedRobots.length > 0){            		
+                 	NearestAlly = getNearestCivilian(alliedRobots);
+            	}
+            	else{
+            		NearestAlly = null;
+            	}
+             	
+             	// If there is a friendly noncombatant nearby
+             	if(NearestAlly != null){
+             		
+             		nearestCivilian = NearestAlly.location;
+             		
+             		// For Initialization and for the future,- have last direction originally point away from the closest ally, rounded to 30 degree intervals             		
+             		if (myLocation.distanceTo(nearestCivilian) <= 2.5){
+	             		int randOffset = (int)(Math.random() * 4 - 2);
+	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
+	            		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
+	            		
+	            		myDirection = new Direction(newRadians);
+	            		
+	            		// SYSTEM CHECK - make sure direction is multiple of 30 degrees
+	            		// System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + myDirection.getAngleDegrees());  
+             		}
+             		// Get the nearest enemy to the scout..
+            		RobotInfo nearestEnemy = Chirasou.getNearestAlly(enemyRobots, myLocation);
+            		// If there is one...
+            		if (nearestEnemy != null){
+	            		// If the nearest enemy is close enough to the nearest ally....
+	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 20){
+	            			mustDefend = true;
+	            		}
+            		}
+             	}
+             	
+             	if(mustDefend){
+             		isCommanded = false;
+             	}
+
+               	
                	// Periodically check to go to a nearby archon......
                	if (roundNumber % 25 == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
                    	
@@ -270,8 +321,7 @@ public class Senshi extends GlobalVars {
                    		}
           
                    	}
-               	}
-
+               	}               	
             	
             	// Call the move function - to either track an enemy or simply 
             	MapLocation desiredMove = move(enemyRobots, tryMove);
@@ -379,7 +429,11 @@ public class Senshi extends GlobalVars {
                 }
                 else{
                 	roundsRouting += 1;
-                }                
+                }    
+                
+                if (isTracking){
+                	roundsTracked +=1;
+                }
                 Clock.yield();       	
             	
     		
@@ -398,7 +452,8 @@ public class Senshi extends GlobalVars {
     private static MapLocation move(RobotInfo[] enemyRobots, MapLocation desiredMove) throws GameActionException{
     	
     	// If the robot is currently not tracking anything
-    	if(trackID == -1){    		
+    	if(trackID == -1){  
+    		
     		// See if a robot to be tracked can be found, allow soldier to track any and all units
     		trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true);
     		
@@ -511,7 +566,8 @@ public class Senshi extends GlobalVars {
 	private static MapLocation track(RobotInfo[] enemyRobots, float multiplier, MapLocation desiredMove) throws GameActionException{
 		
 		// If the robot can currently sense the robot it was tracking in the previous turn
-    	if (rc.canSenseRobot(trackID)){
+    	if (rc.canSenseRobot(trackID) && !(roundsTracked >= 10 && trackedRobot.type == RobotType.ARCHON)){
+    		
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		// System.out.println("I am continuing to follow a normie Emilia lover with ID: " + trackID);
@@ -540,20 +596,12 @@ public class Senshi extends GlobalVars {
         	trackID = -1;       
         	isTracking = false;
         	trackedRobot = null;
+        	roundsTracked = 0;
 			
         	// SYSTEM CHECK - Notify of target loss
         	// System.out.println("Lost sight of target/Finding a new target");        	
         	
-        	// Posit the desired move location as a forward movement along the last direction
-			desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
-			
-			// SYSTEM Check - Set LIGHT GREY LINE indicating where the soldier would wish to go
-			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
-   			
-    		// SYSTEM CHECK - Notify that nothing to be scouted has been found
-    		// System.out.println("The soldier cannot find anything to track"); 
-			
-			return desiredMove;
+        	return move(enemyRobots,desiredMove);
     	}	                		
     }	       
     
@@ -647,6 +695,40 @@ public class Senshi extends GlobalVars {
 			}
 		}
 	}	
+    
+	// Function to obtain the data for the nearest ally to the robot currently (only gardeners and archons)
+	
+	private static RobotInfo getNearestCivilian(RobotInfo[] currentAllies){
+    	
+    	float minimum = Integer.MAX_VALUE;
+		
+		int index = -1;
+		
+		for (int i = 0; i < currentAllies.length; i++){
+			// Only consider allies that are archons or gardeners
+			if (currentAllies[i].type == battlecode.common.RobotType.GARDENER){
+				
+				float dist = myLocation.distanceTo(currentAllies[i].location);
+
+				if (dist < minimum){					
+							
+					minimum = dist;
+					index = i;	
+				}		
+			}			
+		}
+		// If such an ally has been found return its data or otherwise return null
+		if (index >= 0){
+			
+			// SYSTEM CHECK - Check to see if the robot returns a valid ally
+			// System.out.println("I have an ally nearby and its ID is: " + currentAllies[index].ID);
+			
+			return currentAllies[index];
+		} else{
+			return null;
+		}
+    }
+	
 }	
 	
 	

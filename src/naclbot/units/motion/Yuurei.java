@@ -366,7 +366,7 @@ public class Yuurei extends GlobalVars {
 		if (rc.onTheMap(newLocation, bodyRadius)){
 			
 			// SYSTEM CHECK - Display the corrected move on screen as an orange line
-			// rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
+			rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
 			
 			// TODO Check to see if switching rotation direction here is better
 			return newLocation;			
@@ -383,7 +383,7 @@ public class Yuurei extends GlobalVars {
 			rotationDirection = !rotationDirection;
 			
 			// SYSTEM CHECK - Display the corrected move on screen as an orange line
-			// rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
+			rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
 			
 			return newLocation;			
 		}		
@@ -543,7 +543,7 @@ public class Yuurei extends GlobalVars {
 		// rc.setIndicatorDot(desiredMove, 102, 255, 255);
 		
 		// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
-		if (!rc.canMove(desiredMove) && !rc.onTheMap(desiredMove)){
+		if (!rc.canMove(desiredMove)){
 			MapLocation newLocation = correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
 			
 			desiredMove = newLocation;

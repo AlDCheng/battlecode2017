@@ -35,9 +35,6 @@ public class LumberjackBot extends GlobalVars {
 	// The intial round in which the soldier was constructed
 	public static int initRound;
 	
-	// Current round
-	public static int currentRound;
-	
 	// The total number of soldiers in active service
 	private static int currentNumberofLumberjacks;
 	
@@ -113,8 +110,6 @@ public class LumberjackBot extends GlobalVars {
         
         roundNumber = rc.getRoundNum();
         initRound = roundNumber;
-        
-        initRound = currentRound;
                 
         myID = rc.getID();
         myLocation = rc.getLocation();
@@ -155,6 +150,24 @@ public class LumberjackBot extends GlobalVars {
         while (true) {
 
             try {
+         	
+            	// Get nearby enemies and allies and bullets for use in other functions            	
+            	RobotInfo[] enemyRobots = NearbyUnits(enemy, 6);
+            	RobotInfo[] alliedRobots = NearbyUnits(allies, 10);
+            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+    			
+            	// If the robot was just initialized or did not move last turn, set the last direction to point away from anything....
+            	
+    			if(lastDirection == null){
+    		        RobotInfo nearestAlly = Chirasou.getNearestAlly(alliedRobots, myLocation);
+    		        
+    		        if(nearestAlly != null){
+    		        	lastDirection = new Direction(myLocation.directionTo(nearestAlly.location).radians + (float)Math.PI);
+    		        }
+    		        else{
+    		        	lastDirection = Move.randomDirection();
+    		        }
+    			}    			  
             	
             	// Check if it did not die, and reset the number of gardeners and units
             	if (iDied) {
@@ -179,10 +192,7 @@ public class LumberjackBot extends GlobalVars {
             	// Update location of self
             	myLocation = rc.getLocation();      
     			
-            	// Get nearby enemies and allies and bullets for use in other functions            	
-            	RobotInfo[] enemyRobots = NearbyUnits(enemy, 6);
-            	RobotInfo[] alliedRobots = NearbyUnits(allies, 10);
-            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+
             	TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
             	RobotInfo nearestAlly = Chirasou.getNearestAlly(alliedRobots, myLocation);
             	
@@ -194,6 +204,7 @@ public class LumberjackBot extends GlobalVars {
             	}
             	// If hasn't moved and there are no nearby allies then calculate a random direction
             	else if(lastDirection == null && nearestAlly == null){
+            		
             		lastDirection = Move.randomDirection();
             	}
             	
@@ -201,7 +212,7 @@ public class LumberjackBot extends GlobalVars {
             	myDirection = lastDirection;
             	
             	// Initialize the location the robot would like to go to as the location it is currently at..
-            	MapLocation desiredMove = myLocation;
+            	MapLocation desiredMove = myLocation.add(lastDirection, strideRadius);
             		
             	// ***************** I AM HERE ****************** //
             	MapLocation newDesiredMove = move(enemyRobots, desiredMove, nearbyTrees);
@@ -222,9 +233,7 @@ public class LumberjackBot extends GlobalVars {
                	// SYSTEM CHECK - Show desired move after path planning
     	    	// System.out.println("desiredMove after rescaling: " + desiredMove.toString());
             	
-            	// Hold uncorrected desired Move for routing purposes.........
-            	boolean moveWasEdited = false;
-            	
+              	
             	// SYSTEM CHECK Make sure the new desired move is in the correct location LIGHT BLUE DOT
             	// rc.setIndicatorDot(desiredMove, 102, 255, 255);
             	
@@ -235,26 +244,20 @@ public class LumberjackBot extends GlobalVars {
             		myDirection = new Direction(myLocation, newLocation);
             		
             		desiredMove = newLocation;
-            		moveWasEdited = true;
             		
             	   	// SYSTEM CHECK - Show desired move after path planning
         	    	// System.out.println("desiredMove after out of bounds correction: " + desiredMove.toString());  
             	}
-            	
-            	if(!rc.canMove(desiredMove) && treeID != -1 && enemyRobots.length == 0){
-            		desiredMove = myLocation;
-            	}
-             	
+
             	// Check if the initial desired move can be completed and wasn't out of bounds/corrected by the above function
             	if(!rc.canMove(desiredMove)){          		
             	
-					MapLocation newLocation = Yuurei.attemptRandomMove(myLocation, desiredMove, strideRadius);
+					MapLocation newLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, rotationDirection, allies, myLocation, desiredMove);
 					
 					// SYSTEM CHECK See if the robot called the attemptRandom Move function or no....
 					// System.out.println("Attempted to find a new location to move to randomly...");
 					
 					desiredMove = newLocation;
-					moveWasEdited = true;
 
 	    	       	// SYSTEM CHECK - Show desired move after path planning
 	    	    	// System.out.println("desiredMove after collision correcetion " + desiredMove.toString());
@@ -270,11 +273,7 @@ public class LumberjackBot extends GlobalVars {
             		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
             		// System.out.println("This robot did not move because it forgot to show Rem appreciation........");
             	}
-            	
-            	// If the robot post-processed its final given location, reset the routing function to clear waypoints
-            	if (isCommanded && moveWasEdited){
-            		Routing.resetRouting();
-            	}            	
+          	
             	
             	if(trackID != -1){
             		
@@ -451,17 +450,21 @@ public class LumberjackBot extends GlobalVars {
 					// Get the nearest tree
 	            	TreeInfo nearestNeutralTree = getNearestNonFriendlyTree(nearbyTrees, myLocation);    
 	            	
-	            	if (nearestNeutralTree != null){
+	            	if (nearestNeutralTree != null && roundNumber >= initRound + 2){
 	            		treeToHarvest = nearestNeutralTree;
 	            		treeID = nearestNeutralTree.ID;
 	            		return harvest(nearestNeutralTree, desiredMove, nearbyTrees);
 	            	}
 	            	else{
+				
+	            	
+	            	
+	            		desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
 	            		// SYSTEM Check - Set LIGHT GREY LINE indicating where the soldier would wish to go
-	        			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
-	            	
-	            	
-	            		return myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
+		        		rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    
+	            		
+	            		return desiredMove;
+	            		
 	            	}	
 	        		
 				}

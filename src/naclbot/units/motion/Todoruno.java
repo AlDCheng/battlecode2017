@@ -116,12 +116,12 @@ public class Todoruno extends GlobalVars {
 	public static RobotInfo getNewEnemyToTrack(RobotInfo[] enemyRobots, MapLocation myLocation, boolean targetCombat,  boolean targetScout, boolean targetCivilian){
 
 		// Parameter to store the smallest distance to another robot
-		float minimumCombatUnitDistance = Integer.MAX_VALUE;
+		float minimumPriorityUnitDistance = Integer.MAX_VALUE;
 		float minimumTotalDistance = Integer.MAX_VALUE;
 		
 		// Parameters to store the data for the nearest combat unit (not including scout) and for any robot
 		RobotInfo anyEnemyRobot = null;
-		RobotInfo combatEnemyRobot = null;
+		RobotInfo prioirityRobot = null;
 				
 		// Parameter to store the array index of the closest robot						
 		for (RobotInfo enemyRobot: enemyRobots){
@@ -130,15 +130,15 @@ public class Todoruno extends GlobalVars {
 			float distanceTo = enemyRobot.location.distanceTo(myLocation);
 			
 			// If the distance to that robot is less than previous distances to any combat unit or if no combat unit is found, less than any distance to a unit
-			if (distanceTo < minimumCombatUnitDistance || (minimumCombatUnitDistance == 0 && distanceTo < minimumTotalDistance)){
+			if (distanceTo < minimumPriorityUnitDistance || (minimumPriorityUnitDistance == 0 && distanceTo < minimumTotalDistance)){
 				
 				// If the enemy is a combat type, and killing of combat units is allowable, track them
 				if (targetCombat && enemyRobot.type == battlecode.common.RobotType.SOLDIER || enemyRobot.type == battlecode.common.RobotType.LUMBERJACK || enemyRobot.type == battlecode.common.RobotType.TANK){
 					// Update all placeholder parameters
-					minimumCombatUnitDistance = distanceTo;
+					minimumPriorityUnitDistance = distanceTo;
 					minimumTotalDistance = distanceTo;
 					anyEnemyRobot = enemyRobot;
-					combatEnemyRobot = enemyRobot;
+					prioirityRobot = enemyRobot;
 				}
 				// If the enemy is a scout and it is given that the robot may track scouts
 				else if (enemyRobot.type == battlecode.common.RobotType.SCOUT && targetScout){
@@ -147,8 +147,14 @@ public class Todoruno extends GlobalVars {
 					anyEnemyRobot = enemyRobot;
 					
 				}
+				else if(enemyRobot.type == battlecode.common.RobotType.GARDENER){
+					minimumPriorityUnitDistance = distanceTo;
+					minimumTotalDistance = distanceTo;
+					anyEnemyRobot = enemyRobot;
+					prioirityRobot = enemyRobot;
+				}
 				// Finally if the robot is either a gardener or archon and the robot can target civilians....
-				else if (enemyRobot.type == battlecode.common.RobotType.ARCHON || enemyRobot.type == battlecode.common.RobotType.GARDENER){
+				else if (enemyRobot.type == battlecode.common.RobotType.ARCHON){
 					// Update all placeholder parameters
 					minimumTotalDistance = distanceTo;
 					anyEnemyRobot = enemyRobot;
@@ -160,9 +166,9 @@ public class Todoruno extends GlobalVars {
 			}							
 		}		
 		// If there is an enemy combat unit robot nearby...
-		if (combatEnemyRobot != null){
+		if (prioirityRobot != null){
 			// Return it
-			return combatEnemyRobot;
+			return prioirityRobot;
 		}
 		// Else attempt to return a valid robot or nothing if there has not been one fond....
 		else{

@@ -373,6 +373,7 @@ public class ScoutBot extends GlobalVars {
             			// Exit the return to defending location - actually defend!!!
             			defendLocation = null;            			
             			defendAgainstID = -1; 
+            			isTracking = true;
         
             			
             			// SYSTEM CHECK Display a yellow dot on the enemy to kill now...
@@ -389,7 +390,8 @@ public class ScoutBot extends GlobalVars {
             		else if (myLocation.distanceTo(defendLocation) <= 5){
             			
             			defendLocation = null;
-            			defendAgainstID = -1;    
+            			defendAgainstID = -1;
+            			
             			
             			// SYSTEM CHECK - display a green line to the distress location....
         				rc.setIndicatorLine(myLocation, defendLocation, 0, 128, 0);
@@ -415,7 +417,7 @@ public class ScoutBot extends GlobalVars {
             	}
 
         		// If the team currently has too few bullets and there is a bullet tree nearby and no enemies currently threaten its workers
-            	else if (teamBullets < harvestThreshold && nearestBulletTree != null && !mustDefend){
+            	else if (teamBullets < harvestThreshold && nearestBulletTree != null && !mustDefend && !isTracking){
             		
             		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
             		// System.out.println("Team requires additional bullets, so will attempt to find more");            		
