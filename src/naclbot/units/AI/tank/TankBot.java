@@ -39,6 +39,7 @@ public class TankBot extends GlobalVars {
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.TANK.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.TANK.bodyRadius;
+	private static final float sensorRadius = battlecode.common.RobotType.TANK.sensorRadius;
 
 	// The intial round in which the tank was constructed
 	public static int initRound;
@@ -382,6 +383,8 @@ public class TankBot extends GlobalVars {
                	// SYSTEM CHECK - Show desired move after path planning
     	    	System.out.println("desiredMove before final move....: " + desiredMove.toString());
     	    	
+    	    	
+    	    	
             	// See whether or not the robot can move to the completely processed desired move, and move if it does
             	if(rc.canMove(desiredMove)){
             		rc.move(desiredMove);
@@ -399,7 +402,7 @@ public class TankBot extends GlobalVars {
             	
             	boolean hasShot = false;
             	
-            	if (trackID >= 0){
+            	if (trackID >= 0 && trackedRobot != null){
             		
             		// SYSTEM CHECK - Show who the robot is aiming at...
             		System.out.println("Currently shooting at a robot with ID: " + trackID);
@@ -408,6 +411,10 @@ public class TankBot extends GlobalVars {
             		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
             		
             		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+            	}
+            	else{
+            		trackID = -1;
+            		trackedRobot = null;
             	}
             	
             	if(hasShot){            		
@@ -419,6 +426,10 @@ public class TankBot extends GlobalVars {
             		// System.out.println("The robot has not fired a shot this round....");            		
             	}
             	
+            	if(trackedRobot != null){
+            		// SYSTEM CHECK - Just see what the tank was tracking this round......
+            		rc.setIndicatorLine(myLocation, trackedRobot.location, 255, 0, 0);
+            	}
             	
             	// ------------------  Round End Updates --------------------//
                             	
@@ -473,6 +484,8 @@ public class TankBot extends GlobalVars {
     	if(trackID == -1){    		
     		// See if a robot to be tracked can be found, allow tank to track any and all units that are not scouts...
     		trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true);
+    		
+    		
     		
     		// SYSTEM CHECK - see if the robot recognizes that it is currently not tracking anything
     		// System.out.println("Currently not tracking anything");
@@ -636,6 +649,9 @@ public class TankBot extends GlobalVars {
 	
 	private static boolean decideShoot(RobotInfo[] enemyRobots, RobotInfo[] alliedRobots, TreeInfo[] nearbyAlliedTrees) throws GameActionException{
 		
+		// SYSTEM CHECK Print which robot the robot is attempting to shoot at....
+		System.out.println("This tank is currently tracking a robot with ID:" + trackID);
+
 		// Obtain a location to shoot at
 		MapLocation shootingLocation = Korosenai.getFiringLocation(trackedRobot, previousRobotData, myLocation);
 		
@@ -643,26 +659,32 @@ public class TankBot extends GlobalVars {
 		boolean hasShot;
 		
 		// If there is more than one enemy nearby, attempt to fire a pentad at the location
-		if(enemyRobots.length > 3){
+		if(enemyRobots.length > 2){
+			
+			// SYSTEM CHECK - Make sure that the tank actually wants to fire....
+			System.out.println("Going to try to fire a pentad");
 			
 			// If a pentad can be shot...
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, nearbyAlliedTrees);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, nearbyAlliedTrees, sensorRadius);
 			
 			// If that was not possible, try a triad and then a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees, sensorRadius);
 			}			
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees, sensorRadius);
 			}			
 		}
-		else{
+		else{			
+			// SYSTEM CHECK - Make sure that the tank actually wants to fire....
+			System.out.println("Going to try to fire a triad");
+			
 			// If a triad can be shot
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees, sensorRadius);
 			
 			// If that was not possible, try a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees, sensorRadius);
 			}		
 		}
 		return hasShot;

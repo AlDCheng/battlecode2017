@@ -504,8 +504,8 @@ public class BroadcastChannels extends GlobalVars {
 			MapLocation currentStored = new MapLocation(currentX, currentY);			
 			
 			// SYSTEM CHECK Draw a RED LINE to the nearest enemy so far and a BLUE LINE one to the current enemy discovered??
-				rc.setIndicatorLine(myLocation, nearestEnemy.location, 255, 0, 0);
-				rc.setIndicatorLine(myLocation, currentStored, 0, 0, 255);
+			//	rc.setIndicatorLine(myLocation, nearestEnemy.location, 255, 0, 0);
+			//	rc.setIndicatorLine(myLocation, currentStored, 0, 0, 255);
 				
 			if(nearestAllyLocation.distanceTo(currentStored) >= distanceTo || x == 0 && distanceTo > 20){
 				

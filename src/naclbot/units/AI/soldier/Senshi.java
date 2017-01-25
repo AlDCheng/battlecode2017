@@ -39,6 +39,7 @@ public class Senshi extends GlobalVars {
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.SOLDIER.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.SOLDIER.bodyRadius;
+	private static final float sensorRadius = battlecode.common.RobotType.SOLDIER.sensorRadius;
 	
 	// The intial round in which the soldier was constructed
 	public static int initRound;
@@ -284,6 +285,11 @@ public class Senshi extends GlobalVars {
 	            		}
             		}
              	}
+             	
+          		if (nearestCivilian != null){
+	         		// SYSTEM CHECK - Draw a white line to the nearest civilian's location
+	             	rc.setIndicatorLine(myLocation, nearestCivilian, 255, 255, 255);
+         		}
              	
              	if(mustDefend){
              		isCommanded = false;
@@ -647,27 +653,27 @@ public class Senshi extends GlobalVars {
 		if(enemyRobots.length >= 4){
 			
 			// If a pentad can be shot...
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, alliedTrees);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, alliedTrees, sensorRadius);
 			
 			// If that was not possible, try a triad and then a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees, sensorRadius);
 			}			
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees, sensorRadius);
 			}			
 		}
 		else if (enemyRobots.length >= 2 || trackedRobot.type == battlecode.common.RobotType.ARCHON){
 			// If a triad can be shot
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees, sensorRadius);
 			
 			// If that was not possible, try a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees, sensorRadius);
 			}		
 		}
 		else{
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots, alliedTrees);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots, alliedTrees, sensorRadius);
 		}
 		return hasShot;
 	}

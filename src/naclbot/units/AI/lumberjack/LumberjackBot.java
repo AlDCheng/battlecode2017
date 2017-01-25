@@ -14,6 +14,7 @@ import naclbot.variables.DataVars;
 import naclbot.variables.GlobalVars;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class LumberjackBot extends GlobalVars {	
 	
@@ -86,7 +87,11 @@ public class LumberjackBot extends GlobalVars {
     public static int treeID;    
     
     // To store the last known location of a civilian
-    public static MapLocation nearestCivilian;
+    public static MapLocation nearestCivilian;  
+    
+    // Store the maximum distance the lubmerjack is willing to go to get a tree....
+    public static final float distanceToSearchTree = battlecode.common.RobotType.LUMBERJACK.sensorRadius;
+    
     
     
 	// ------------- TREE VARIABLES ------------------//
@@ -413,7 +418,15 @@ public class LumberjackBot extends GlobalVars {
 			
 			
 			// See if a robot to be tracked can be found, allow soldier to track any and all units
-			trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true);
+			
+			// Allow lumberjacks to track scouts for the first 400 turns but not afterwards.....
+			if (roundNumber <= 400){
+				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true);
+			}
+			else{
+				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, false);
+			}
+
 			
 			// SYSTEM CHECK - see if the robot recognizes that it is currently not tracking anything
 			// System.out.println("Currently not tracking anything");
@@ -647,22 +660,76 @@ public class LumberjackBot extends GlobalVars {
 	}
 
 	// Function to return the nearest neutral tree to the lumberjack....
+	// Makes sure that the lumberjack can actually get to it.....
 	
-    private static TreeInfo getNearestNonFriendlyTree(TreeInfo[] nearbyTrees, MapLocation myLocation){
+    private static TreeInfo getNearestNonFriendlyTree(TreeInfo[] nearbyTrees, MapLocation myLocation) throws GameActionException{
     	
     	TreeInfo nearestNearbyTree = null;
     	float distance = Integer.MAX_VALUE;
     	
-    	for (TreeInfo nearbyTree: nearbyTrees){
+    	float[] distancesToTrees = new float[12];
+    	Arrays.fill(distancesToTrees, -1);
+    	
+    	float randomNumber = (float) Math.random();
+    	
+    	for(int i = 0; i <= 11; i++){
     		
-    		if (nearbyTree.getTeam() == Team.NEUTRAL || nearbyTree.getTeam() == enemy){
-    			if (myLocation.distanceTo(nearbyTree.location) < distance){
-    				nearestNearbyTree = nearbyTree;    	
-    				distance = myLocation.distanceTo(nearbyTree.location);
-    			}
+    		Direction directionToSearch;
+    		if (randomNumber >= 0.5){
+    			directionToSearch = new Direction ((float)(lastDirection.radians + i * Math.PI/6));
     		}
-    	}       	
-    	return nearestNearbyTree;    	
+    		else{
+    			directionToSearch = new Direction ((float)(lastDirection.radians - i * Math.PI/6));
+    		}    		
+    		
+    		for (float j = bodyRadius; j<= distanceToSearchTree; j += (float) 0.7){    			
+    			
+    			MapLocation locationToCheck =myLocation.add(directionToSearch, j);    			
+
+    			
+    			if(distancesToTrees[i] < 0 && rc.isLocationOccupiedByTree(locationToCheck)){
+    				
+    				Team treeTeam = rc.senseTreeAtLocation(locationToCheck).getTeam();
+    				if (treeTeam == enemy || treeTeam == Team.NEUTRAL){    					
+	    				
+	    				distancesToTrees[i] = j;    
+	    				rc.setIndicatorDot(locationToCheck, 255, 255, 0);
+    				}
+    				else{
+    					distancesToTrees[i] = 0;
+    					rc.setIndicatorDot(locationToCheck, 255, 0, 255);
+    				}
+    			}
+    			else{
+    				rc.setIndicatorDot(locationToCheck, 255, 0, 0);
+    			}    			
+    		}    		
+    	}
+    	float minimum = Integer.MAX_VALUE;
+    	int directionIndex = -1;
+    	for (int i = 0; i < 12; i++){
+    		
+    		if(distancesToTrees[i] < minimum && distancesToTrees[i] > 0){
+    			directionIndex = i;
+    			minimum = distancesToTrees[i];
+    		}    		
+    	}
+    	
+    	if (directionIndex >= 0){
+    	   	Direction directionToRead;
+    		if (randomNumber >= 0.5){
+				directionToRead = new Direction ((float)(lastDirection.radians + directionIndex * Math.PI/6));
+			}
+			else{
+				directionToRead = new Direction ((float)(lastDirection.radians - directionIndex * Math.PI/6));
+			}    		
+    		rc.setIndicatorDot(myLocation.add(directionToRead, minimum), 255, 255, 255);
+    		
+    		TreeInfo tree = rc.senseTreeAtLocation(myLocation.add(directionToRead, minimum));
+    		return tree;
+    	}
+    	return null;
+    	
     }
 
    

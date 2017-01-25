@@ -146,35 +146,42 @@ public class Korosenai extends GlobalVars {
     	// Iterate through each nearby ally...
     	for (RobotInfo allyData: nearbyAllies){
     		
-    		// Obtain the distance to each of these allies
-			float distanceTo = allyData.location.distanceTo(start);
-			
-			// SYSTEM CHECK - Print out the distance to this ally...
-			// System.out.println("distanceTo: " + distanceTo);
-			
-			// Obtain the direction to the ally
-			Direction directionTo = new Direction(start, allyData.location);
-			
-			// If the ally is quite close to the current location of the robot...
-    		if (distanceTo < distance){
-    			// Calculate the largest number of radians intercepted by the ally
-    			float interceptRadians = allyData.getRadius() / distanceTo;
-    			
-    			// SYSTEM CHECK - Print out the distance to this ally...
-    			// System.out.println("interceptRadians" + interceptRadians);
-    			
-    			// If the current direction to shoot will intercept the body of the currently considered ally
-    			if(Math.abs(directionTo.radians - dir.radians) <= interceptRadians){
-    				
-    				// SYSTEM CHECK - Show which allies cannot be shot at... along with a dark blue dot....
-    				System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
-    				rc.setIndicatorDot(allyData.location, 0, 0, 80); 
-    				
-    				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
-    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 80, 0, 0);
-    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 80, 0, 0);
-    				
-    				return true;
+    		if (allyData.ID == rc.getID()){
+    			// SYSTEM CHECK - Make sure that the robot throws out itself when attempting to move....
+    			System.out.println("Accidentally detected self....");
+    		}
+    		else{
+    		
+	    		// Obtain the distance to each of these allies
+				float distanceTo = allyData.location.distanceTo(start);
+				
+				// SYSTEM CHECK - Print out the distance to this ally...
+				// System.out.println("distanceTo: " + distanceTo);
+				
+				// Obtain the direction to the ally
+				Direction directionTo = new Direction(start, allyData.location);
+				
+				// If the ally is quite close to the current location of the robot...
+	    		if (distanceTo < distance){
+	    			// Calculate the largest number of radians intercepted by the ally
+	    			float interceptRadians = allyData.getRadius() / distanceTo;
+	    			
+	    			// SYSTEM CHECK - Print out the distance to this ally...
+	    			// System.out.println("interceptRadians" + interceptRadians);
+	    			
+	    			// If the current direction to shoot will intercept the body of the currently considered ally
+	    			if(Math.abs(directionTo.radians - dir.radians) <= interceptRadians){
+	    				
+	    				// SYSTEM CHECK - Show which allies cannot be shot at... along with a dark blue dot....
+	    				System.out.println("Cannot fire - there is an ally with ID: " + allyData.ID + " in the way" );
+	    				rc.setIndicatorDot(allyData.location, 0, 0, 80); 
+	    				
+	    				//  SYSTEM CHECK - Also show indicator lines showing the minimal and maximal intercept Radians of this robot from the current robot....
+	    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians + interceptRadians), distance), 80, 0, 0);
+	    				rc.setIndicatorLine(start, start.add(new Direction(dir.radians - interceptRadians), distance), 80, 0, 0);
+	    				
+	    				return true;
+	    			}
     			}
     		}    		
     	}
@@ -199,12 +206,14 @@ public class Korosenai extends GlobalVars {
 		
 		RobotInfo[] nearbyAllies, // An array storing the robot information of nearby allies		
 		
-		TreeInfo[] alliedTrees // An array storing the robot information of nearby allied trees....
+		TreeInfo[] alliedTrees, // An array storing the robot information of nearby allied trees....
+		
+		float sightRadius // the sight radius of the robot
 
     	) throws GameActionException{
     	
     	// If the gap to the target is too large, dont shoot......
-    	if (targetLocation.distanceTo(currentLocation) > 6){
+    	if (targetLocation.distanceTo(currentLocation) > sightRadius){
     		return false;
     	}
     	// If the target is in a tree >.>.>

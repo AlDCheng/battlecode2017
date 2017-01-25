@@ -520,7 +520,7 @@ public class ScoutBot extends GlobalVars {
             		// Get a list of allied trees to avoid shooting..
             		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
             		
-            		Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees);
+            		Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees, senseRadius);
             	}
     
             	// Make sure to show appreciation for the one and only best girl in the world.
