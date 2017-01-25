@@ -30,7 +30,6 @@ public class LumberjackBot extends GlobalVars {
 	private static Team enemy;
 	private static Team allies;		
 	private static final float strideRadius = battlecode.common.RobotType.LUMBERJACK.strideRadius;
-	private static final float strikeRadius = GameConstants.LUMBERJACK_STRIKE_RADIUS;
 	private static final float bodyRadius = battlecode.common.RobotType.LUMBERJACK.bodyRadius;
 	
 	// The intial round in which the soldier was constructed
@@ -187,11 +186,13 @@ public class LumberjackBot extends GlobalVars {
             	TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
             	RobotInfo nearestAlly = Chirasou.getNearestAlly(alliedRobots, myLocation);
             	
+            	// If hasn't moved and there is a nearest ally then calculate direction to move away from ally
             	if (lastDirection == null && nearestAlly != null){            
             		Direction directionToAlly = new Direction(myLocation, nearestAlly.location);
             		lastDirection = new Direction(directionToAlly.radians + (float) (Math.PI));
             		
             	}
+            	// If hasn't moved and there are no nearby allies then calculate a random direction
             	else if(lastDirection == null && nearestAlly == null){
             		lastDirection = Move.randomDirection();
             	}
@@ -202,7 +203,7 @@ public class LumberjackBot extends GlobalVars {
             	// Initialize the location the robot would like to go to as the location it is currently at..
             	MapLocation desiredMove = myLocation;
             		
-
+            	// ***************** I AM HERE ****************** //
             	MapLocation newDesiredMove = move(enemyRobots, desiredMove, nearbyTrees);
             	
             	desiredMove = newDesiredMove;
