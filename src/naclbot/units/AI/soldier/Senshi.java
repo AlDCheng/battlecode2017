@@ -105,6 +105,16 @@ public class Senshi extends GlobalVars {
     
     // Store whether or not an archon has been seen...
     public static boolean archonSeen = false;
+    
+    // Variable to determine whether or not a scout should defend a unit or not....
+    private static boolean mustDefend;
+    
+    // Location that the scout must defend...
+    private static MapLocation defendLocation;
+    
+    // Enemy to attack...
+    private static int defendAgainstID;
+    
 
     
 	/************************************************************************
@@ -150,6 +160,10 @@ public class Senshi extends GlobalVars {
         		
         // Initialize soldier so that it does not have any commands initially;
         isCommanded = false;
+        
+        // Initialize variables relating to defending....
+        defendLocation = null;
+        defendAgainstID = -1;    
 
         // Get own soldierNumber - important for broadcasting 
         soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
@@ -174,8 +188,7 @@ public class Senshi extends GlobalVars {
     	while(true){
     		
     		try{
-    			boolean mustDefend = false;
-    			
+    		
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//        
     			
             	// Get nearby enemies and allies and bullets for use in other functions            	
@@ -214,7 +227,8 @@ public class Senshi extends GlobalVars {
     			}
             	
             	// Update location of self
-            	myLocation = rc.getLocation();         	
+            	myLocation = rc.getLocation();    
+            	MapLocation desiredMove = myLocation;
             	
             	// Initialize the direction the robot would like to go to at any given round as the direction the robot moved previously....     	
             	myDirection = lastDirection;
@@ -226,9 +240,7 @@ public class Senshi extends GlobalVars {
             		myDirection = new Direction(lastDirection.radians + (float)Math.PI + newValue);
             	}
 
-            	// Placeholder for desired location to go to
-            	MapLocation tryMove = myLocation;
-            	
+                      	
             	if (goalLocation != null){
             		// SYSTEM CHECK - Show where the robot is attempting to go to.... SILVER LINE
             		rc.setIndicatorLine(myLocation, goalLocation, 192, 192, 192);
@@ -247,6 +259,9 @@ public class Senshi extends GlobalVars {
                	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
             	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, myWaifuIsOnodera);
                	
+              	// Update the distress info and retreat to a scout if necessary            	
+            	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 25);
+         
              	// Parameter to store the location of the nearest ally for the current turn - use this to determine whether or not to break out of a tracking operation.....       	
             	RobotInfo NearestAlly;
                	
@@ -294,62 +309,133 @@ public class Senshi extends GlobalVars {
              	if(mustDefend){
              		isCommanded = false;
              	}
-               	
-               	// Periodically check to go to a nearby archon......
-               	if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
-                   	
-               		// Reset the lastCommanded 
-               		lastCommanded = 0;
-               		
-               		// Read archon data
-                   	BroadcastChannels.BroadcastInfo newInfo = BroadcastChannels.readEnemyArchonLocations();
-                   	
-                   	// If no archons are left or none have been found, read an enemy location instead...                   	
-                   	if(newInfo == null && archonSeen){
-                   		newInfo = BroadcastChannels.readEnemyLocations();
-                   	}
-                   	else{
-                   		archonSeen = true;
-                   	}
-                   	
-                   	// Pseudo random number for joining the attack....
-                   	float willJoin = (float) Math.random();
-                   	
-                   	// If an archon has been seen before and the robot's pseudo random number falls within bounds to join an  attack, create the goal location
-                   	if (willJoin <= attackProbability && newInfo != null){
-                   		
-                   		// The robot now has a command to follow, so will no longer track...
-                   		isCommanded = true;
-                   		
-                   		goalLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);                    	
-                   		
-                   		// If there was a previous path.... clear it
-                   		Routing.resetRouting();
-                    	routingPath.add(goalLocation);
-                    	Routing.setRouting(routingPath);
-                   	}
-                   	else{
-                   		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
-                   		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
-                   		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
-                   		// IF there are no more enemies to be found.......
-                   		
-                   		if(finishedArchons == discoveredArchons){
-                   			isCommanded = false;
-                       		goalLocation = null;         
-                   			
-                   		}
-                   		else{
-                   			isCommanded = false;
-                       		goalLocation = null;                   			
-                   		}
-          
-                   	}
-               	}               	
+             	
+             	// If the scout found some distress signal this turn...
+            	if(distressInfo != null){
+            		
+            		// If the distressed gardener is being attacked by a scout.....
+            		if (distressInfo.enemyType == 2 || distressInfo.enemyType == -1){
+            			
+            			// Set the location to defend...
+            			defendLocation = new MapLocation (distressInfo.xPosition, distressInfo.yPosition);
+        				
+            			// Set the ID of the offending enemy
+        				defendAgainstID = distressInfo.ID;
+            		}            	
+            	}
+            	// If the robot is meant to defend........
+            	if (defendLocation != null && enemyRobots.length == 0){            		
+    				
+            		// If it already nearby or can simply sense the offending unit, track it
+            		if(rc.canSenseRobot(defendAgainstID)){
+            			
+            			// Start tracking the robot to defend against....
+            			trackID = defendAgainstID;            			
+            			trackedRobot = rc.senseRobot(trackID);
+            			
+            			// Exit the return to defending location - actually defend!!!
+            			defendLocation = null;            			
+            			defendAgainstID = -1; 
+            			isTracking = true;
+        
+            			
+            			// SYSTEM CHECK Display a yellow dot on the enemy to kill now...
+            			// rc.setIndicatorDot(trackedRobot.location, 255, 255, 0);
+            			
+            			
+            			// SYSTEM CHECK IF the robot has need to defend, it will do so...
+            			System.out.println("Found the offending enemy....");
+            			
+            			// Track the enemy....            			
+            			desiredMove = track(enemyRobots, 1, desiredMove);            			
+            		}
+            		// If the robot has arrived at the defend location and has not found the enemy.....
+            		else if (myLocation.distanceTo(defendLocation) <= 5){
+            			
+            			defendLocation = null;
+            			defendAgainstID = -1;
+            			
+            			
+            			// SYSTEM CHECK - display a green line to the distress location....
+        				// rc.setIndicatorLine(myLocation, defendLocation, 0, 128, 0);
+            			
+            			// SYSTEM CHECK IF the robot has need to defend, it will do so...
+            			System.out.println("Returned to distress call but found no one");
+            			
+            			// Exit the call to defendLocations and go on back to normal operations
+            			desiredMove = move(enemyRobots, desiredMove);
+            		}
+            		else{
+            			
+            			Direction defendDirection = myLocation.directionTo(defendLocation);
+            			desiredMove = myLocation.add(defendDirection, strideRadius);
+            			
+            			// SYSTEM CHECK - display a blue line to the distress location....
+        				// rc.setIndicatorLine(myLocation, defendLocation, 0, 0, 128);
+            			
+            			// SYSTEM CHECK IF the robot has need to defend, it will do so...
+            			System.out.println("Travelling back to defend....");
+            			
+            		}            		         		
+            	}
+
             	
-            	// Call the move function - to either track an enemy or simply 
-            	MapLocation desiredMove = move(enemyRobots, tryMove);
-            	
+            	else{
+	               	// Periodically check to go to a nearby archon......
+	            	if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
+	                   	
+	               		// Reset the lastCommanded 
+	               		lastCommanded = 0;
+	               		
+	               		// Read archon data
+	                   	BroadcastChannels.BroadcastInfo newInfo = BroadcastChannels.readEnemyArchonLocations();
+	                   	
+	                   	// If no archons are left or none have been found, read an enemy location instead...                   	
+	                   	if(newInfo == null && archonSeen){
+	                   		newInfo = BroadcastChannels.readEnemyLocations();
+	                   	}
+	                   	else{
+	                   		archonSeen = true;
+	                   	}
+	                   	
+	                   	// Pseudo random number for joining the attack....
+	                   	float willJoin = (float) Math.random();
+	                   	
+	                   	// If an archon has been seen before and the robot's pseudo random number falls within bounds to join an  attack, create the goal location
+	                   	if (willJoin <= attackProbability && newInfo != null){
+	                   		
+	                   		// The robot now has a command to follow, so will no longer track...
+	                   		isCommanded = true;
+	                   		
+	                   		goalLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);                    	
+	                   		
+	                   		// If there was a previous path.... clear it
+	                   		Routing.resetRouting();
+	                    	routingPath.add(goalLocation);
+	                    	Routing.setRouting(routingPath);
+	                   	}
+	                   	else{
+	                   		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
+	                   		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+	                   		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
+	                   		// IF there are no more enemies to be found.......
+	                   		
+	                   		if(finishedArchons == discoveredArchons){
+	                   			isCommanded = false;
+	                       		goalLocation = null;         
+	                   			
+	                   		}
+	                   		else{
+	                   			isCommanded = false;
+	                       		goalLocation = null;                   			
+	                   		}
+	          
+	                   	}
+	               	}               	
+	            	
+	            	// Call the move function - to either track an enemy or simply 
+	            	desiredMove = move(enemyRobots, desiredMove);
+            	}
             	
             	// -------------------- MOVE CORRECTION ---------------------//
             	
@@ -438,6 +524,12 @@ public class Senshi extends GlobalVars {
                 // If the robot was not tracking, increment the value by one round....
                 if (!isTracking){
                 	hasNotTracked += 1;
+                }
+                
+                // Make sure (if the above code is missing something) that trackedRobot and trackID are both null if either is..
+                if(trackedRobot == null || trackID == -1){
+                	trackID = -1;
+                	trackedRobot = null;
                 }
                 
                 // Store the data for the locations of the enemies previously.....

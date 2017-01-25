@@ -458,6 +458,7 @@ public class LumberjackBot extends GlobalVars {
 					// Update the trackID
 					trackID = trackedRobot.ID;
 					isTracking = true;
+					treeID = -1;
 				}        		
 				return moveTowardsGoalLocation(enemyRobots, desiredMove, nearbyTrees);
 			}
@@ -467,6 +468,7 @@ public class LumberjackBot extends GlobalVars {
 				// Update the trackID
 				trackID = trackedRobot.ID;
 				isTracking = true;
+				treeID = -1;
 				
 				
 				// SYSTEM CHECK - Notify what the robot will now track and set an indicator RED DOT on it
@@ -484,20 +486,12 @@ public class LumberjackBot extends GlobalVars {
 				if (treeID != -1){
 					
 					if (rc.canSenseTree(treeID)){
-						
-						if(sameTreeRounds > 45){
-						
-							treeID = -1;
-							treeToHarvest = null;
-							sameTreeRounds = 0;
-							return move(enemyRobots, desiredMove, nearbyTrees);	
-						}
+				
 						treeToHarvest = rc.senseTree(treeID);
 						System.out.println("Can see the tree, will ateempt to harvest");
 						return harvest(treeToHarvest, desiredMove, nearbyTrees);	
 					}
-					else{
-			
+					else{			
 						treeID = -1;
 						treeToHarvest = null;
 						return move(enemyRobots, desiredMove, nearbyTrees);	
@@ -505,15 +499,19 @@ public class LumberjackBot extends GlobalVars {
 				}
 				else{
 					// Get the nearest tree
-	            	TreeInfo nearestNeutralTree = getNearestNonFriendlyTree(nearbyTrees, myLocation);    
+					
+	            	TreeInfo nearestNeutralTree = getNearestNonFriendlyTree(nearbyTrees, myLocation); 
 	            	
+	            	
+	            	System.out.println("Finding a neww tree");
 	            	if (nearestNeutralTree != null && roundNumber >= initRound + 2){
+	            		System.out.println("Found a neww tree");
 	            		treeToHarvest = nearestNeutralTree;
 	            		treeID = nearestNeutralTree.ID;
 	            		return harvest(nearestNeutralTree, desiredMove, nearbyTrees);
 	            	}
 	            	else{
-				
+	            		System.out.println("Didn't find a new tree");
 	            	
 	            	
 	            		desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
@@ -718,10 +716,10 @@ public class LumberjackBot extends GlobalVars {
     			
     			if(distancesToTrees[i] < 0 && rc.isLocationOccupiedByTree(locationToCheck)){
     				
-    				Team treeTeam = rc.senseTreeAtLocation(locationToCheck).getTeam();
-    				if (treeTeam == enemy || treeTeam == Team.NEUTRAL){    					
+    				TreeInfo treeX = rc.senseTreeAtLocation(locationToCheck);
+    				if (treeX.team != allies){    					
 	    				
-	    				distancesToTrees[i] = j;    
+	    				distancesToTrees[i] = treeX.location.distanceTo(myLocation);    
 	    				rc.setIndicatorDot(locationToCheck, 255, 255, 0);
     				}
     				else{
@@ -747,10 +745,10 @@ public class LumberjackBot extends GlobalVars {
     	if (directionIndex >= 0){
     	   	Direction directionToRead;
     		if (randomNumber >= 0.5){
-				directionToRead = new Direction ((float)(lastDirection.radians + directionIndex * Math.PI/20));
+				directionToRead = new Direction ((float)(lastDirection.radians + directionIndex * Math.PI/10));
 			}
 			else{
-				directionToRead = new Direction ((float)(lastDirection.radians - directionIndex * Math.PI/20));
+				directionToRead = new Direction ((float)(lastDirection.radians - directionIndex * Math.PI/10));
 			}    		
     		rc.setIndicatorDot(myLocation.add(directionToRead, minimum), 255, 255, 255);
     		
