@@ -78,13 +78,14 @@ public class GardenerBot extends GlobalVars {
 	public static int buildingTree = 0;
 	
 	public static int spawnTime = 20;
+	public static int unfreeze = 0;
+	public static int treeGiveUp = 5;
 	
 	// Integer to store the previous health of the gardener
 	public static float previousHealth;
 	
-	//--------------------------------------------------
-	
-	
+	public static int syncRefresh = 15;
+	public static int syncMin = 500;
 	
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
@@ -123,6 +124,7 @@ public class GardenerBot extends GlobalVars {
             try {
             	Win();
             	propagateBuild();
+            	boolean syncOK = sync(rc.getRoundNum());
             	
             	MapLocation myLocation = rc.getLocation();
             	
@@ -364,7 +366,7 @@ public class GardenerBot extends GlobalVars {
                         		canMove = false;
                         	}
                     	}
-                    	if (plantDirs[1] != null){
+                    	if ((plantDirs[1] != null) && syncOK) {
 //                    		buildUnits(plantDirs[1]);
                     		buildUnitsRemastered(plantDirs[1], bulletNum, buildJacks);
                     	}
@@ -592,5 +594,21 @@ public class GardenerBot extends GlobalVars {
 		buildingSoldier = Math.max(0, buildingSoldier - 1);
 		buildingTank = Math.max(0, buildingTank - 1);
 		buildingTree = Math.max(0,  buildingTree - 1);
+		
+		unfreeze = Math.max(0, unfreeze - 1);
+	}
+	
+	public static boolean sync(int roundNum) {
+		if(roundNum > syncMin) {
+			if ((roundNum % syncRefresh) < 3) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return true;
+		}
 	}
 }
