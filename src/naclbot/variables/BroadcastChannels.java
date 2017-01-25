@@ -17,6 +17,8 @@ import naclbot.units.motion.Chirasou;
 // Enumeration of all broadcast channels that we will be using
 public class BroadcastChannels extends GlobalVars {
 	
+	public static final int BROADCAST_CLEARING_PERIOD = 50;
+	
 	// ---------------------- TEAM UNIT INFORMATION ----------------------//
 	
 	// Channel to show how many units have been produced thus far........
@@ -26,6 +28,10 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// Stores how many archons are currently in the game
 	public final static int ARCHON_NUMBER_CHANNEL = 0;
+	
+	// Channels to store the initial location of the archon....
+	public final static int ARCHON_INITIAL_LOCATION_X = 1;	
+	public final static int ARCHON_INITIAL_LOCATION_Y = 2;
 	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
@@ -103,17 +109,12 @@ public class BroadcastChannels extends GlobalVars {
 	// Stores how many channels have been updated with information this turn
 	public final static int ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL = 1001;
 	
-	// Placeholder for however many enemy locations we would like to store - indexes which ones to read
-	public final static int ENEMY_LOCATIONS_TOTAL_CHANNEL = 1002;
+	// STores whether or not an enemy has been seen before...
+	public final static int ENEMY_HAS_BEEN_SEEN_CHANNEL = 1002;
 	
 	// First channel to actually store data for enemy locations
 	public final static int ENEMY_LOCATION_START_CHANNEL = 1003;
-		
-	// Sincere there are five ints needed to convey one unit of information
-	public final static int ENEMY_INFORMATION_OFFSET = 4;
 	
-	// Upper bound on the number of enemies that can be sent in one turn (to prevent excess information levels
-	public final static int ENEMY_LOCATION_LIMIT = 5;
 	
 	// ------------------------  ENEMY ARCHON INFORMATION ----------------------//
 	
@@ -128,7 +129,7 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int DISCOVERED_ARCHON_COUNT = 1100;
 
 	// Channel to store which archon was last attacked by a group......
-	public final static int FINISHED_ARCHON_COUNT = 1101;	
+	public final static int FINISHED_ARCHON_COUNT = 1101;
 	
 	// Channels to store the IDs of the archons discovered so far....
 	public final static int ARCHON_INFORMATION_CHANNEL = 1103;
@@ -137,10 +138,8 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int ARCHON_INFORMATION_OFFSET = 5;
 	
 	// Upper bound on the number of enemies that can be sent in one turn (to prevent excess information levels
-	public final static int ARCHON_LOCATION_LIMIT = 5;
-	
-	
-	
+	public final static int ARCHON_LOCATION_LIMIT = 5;	
+
 	
 	// ------------------------- BROADCASTING RELATED AUXILLARY FUNCTIONS --------------------------- //
 	
@@ -329,6 +328,7 @@ public class BroadcastChannels extends GlobalVars {
 		}				
 	}
 
+	// Function to obtain the locations of any archons on the map, if there are any....
 	
 	public static BroadcastInfo readEnemyArchonLocations() throws GameActionException{
 				
@@ -462,6 +462,89 @@ public class BroadcastChannels extends GlobalVars {
 		else{
 			return null;
 		}		
+	}
+	
+    // Get the location of the nearest enemy and broadcast.... Clearly if you can see the enemy it is likely that they can see you as well
+    
+	public static void broadcastNearestEnemyLocation(RobotInfo[] enemyRobots, MapLocation myLocation, int unitNumber, MapLocation nearestAllyLocation, int currentRound) throws GameActionException{
+		
+		// Get information and the closest enemy
+		RobotInfo nearestEnemy = Chirasou.getNearestAlly(enemyRobots, myLocation);
+		
+		// See who last updated the enemy locations
+		int lastUpdatedUnitNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS);
+			
+		// SYSTEM CHECK - Check who last updated the channel....
+		 System.out.println("The last unit  to have updated this channel has unitNumber: " + lastUpdatedUnitNumber);
+		 
+		if (lastUpdatedUnitNumber >= unitNumber && currentRound % BROADCAST_CLEARING_PERIOD == BROADCAST_CLEARING_PERIOD + 1){ 
+			
+			// Clear the number of signals sent this turn
+			rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, 0);
+			rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, -1);
+			
+			// Reset so that minimal position can be found...
+			rc.broadcast(ENEMY_LOCATION_START_CHANNEL + 1, -100);
+			rc.broadcast(ENEMY_LOCATION_START_CHANNEL + 2, -100);
+			
+			// SYSTEM CHECK - Tell that the channel has been cleared
+			System.out.println("Updater channel for enemy locations reset");				
+		}
+		
+		// Make sure there is an enemy nearby before attempting to broadcast information.....
+		if (nearestEnemy != null && nearestAllyLocation != null && currentRound % BROADCAST_CLEARING_PERIOD != 0){
+			
+			float distanceTo = nearestAllyLocation.distanceTo(nearestEnemy.location);
+			
+			int x = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL);
+			
+			float currentX = rc.readBroadcast(ENEMY_LOCATION_START_CHANNEL + 1) / 100;
+			float currentY = rc.readBroadcast(ENEMY_LOCATION_START_CHANNEL + 2) / 100;
+			
+			MapLocation currentStored = new MapLocation(currentX, currentY);			
+			
+			// SYSTEM CHECK Draw a RED LINE to the nearest enemy so far and a BLUE LINE one to the current enemy discovered??
+				rc.setIndicatorLine(myLocation, nearestEnemy.location, 255, 0, 0);
+				rc.setIndicatorLine(myLocation, currentStored, 0, 0, 255);
+				
+			if(nearestAllyLocation.distanceTo(currentStored) >= distanceTo || x == 0 && distanceTo > 20){
+				
+				// SYSTEM CHECK.. - Since there was an enemy nearby... Notify that something may be sent
+				System.out.println("Enemy nearby - will attempt to broadcast location");
+				
+				// Broadcast all relevant information
+				rc.broadcast(ENEMY_LOCATION_START_CHANNEL, nearestEnemy.ID);
+				rc.broadcast(ENEMY_LOCATION_START_CHANNEL + 1, (int) (nearestEnemy.location.x * 100));
+				rc.broadcast(ENEMY_LOCATION_START_CHANNEL + 2, (int) (nearestEnemy.location.y * 100));
+				rc.broadcast(ENEMY_HAS_BEEN_SEEN_CHANNEL, 1);
+				
+				// Inform all that a new enemy location has been implemented....
+				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, 1);
+				rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, unitNumber);				
+			}
+		}				
+	}	
+	
+	public static BroadcastInfo readEnemyLocations() throws GameActionException{
+		
+		if(rc.readBroadcast(ENEMY_HAS_BEEN_SEEN_CHANNEL) != 0){
+		
+			int readSentID = rc.readBroadcast(ENEMY_LOCATION_START_CHANNEL);
+			int readSentX = rc.readBroadcast(ENEMY_LOCATION_START_CHANNEL + 1) / 100;
+			int readSentY = rc.readBroadcast(ENEMY_LOCATION_START_CHANNEL + 2) / 100;
+			
+			// Get rid of the test messages that are negative.....
+			if(readSentX < 0){
+				return null;
+			}
+			
+			// Create and return a packet of broadcastinfo...
+			BroadcastInfo newInfo = new BroadcastInfo(readSentID, readSentX, readSentY, -1, -1);
+			return newInfo;
+		}
+		else{
+			return null;
+		}
 	}
 }
 

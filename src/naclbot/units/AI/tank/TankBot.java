@@ -13,6 +13,16 @@ import naclbot.variables.GlobalVars;
 
 import java.util.ArrayList;
 
+
+/* ------------------   Overview ----------------------
+ * 
+ * Original TankBot
+ *
+ * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * 
+ ---------------------------------------------------- */
+
+
 public class TankBot extends GlobalVars {
     
 	// ------------- GENERAL (IMPORTANT TO SELF) VARS -------------//
@@ -85,6 +95,15 @@ public class TankBot extends GlobalVars {
     
     // Variable to store the amount of time currently in routing....
     public static int roundsRouting = 0;
+    
+    // Variable to store for how long the robot has been tracking something
+    public static int roundsTracked = 0;
+    
+    // To store the last known location of a civilian
+    public static MapLocation nearestCivilian;
+    
+    // Store whether or not an archon has been seen...
+    public static boolean archonSeen = false;
 
     
 	/************************************************************************
@@ -119,6 +138,12 @@ public class TankBot extends GlobalVars {
     	routingPath = new ArrayList<MapLocation>();    	
     	Routing.setRouting(routingPath);
     	
+        // Initialize nearest CIvilian to be the stored location of the archon...
+        int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
+        int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
+        
+        nearestCivilian = new MapLocation(archonInitialX, archonInitialY);
+    	
     	// Goal location.....
         goalLocation = null;
         		
@@ -148,6 +173,8 @@ public class TankBot extends GlobalVars {
     	while(true){
     		
     		try{
+    			boolean mustDefend = false;
+    			
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//          
     			
             	// Get nearby enemies and allies and bullets for use in other functions            	
@@ -215,18 +242,69 @@ public class TankBot extends GlobalVars {
             	
             	// ------------ ACTIONS TO BE COMPLETED -------------//
             	
-            	// If a nearby enemy is sighted, broadcast its information......
-            	
-               	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
+            	// Update the nearest enemy and archon locations            	
+               	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);                  	
+              	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, roundNumber);
                	
+             	// Parameter to store the location of the nearest ally for the current turn - use this to determine whether or not to break out of a tracking operation.....       	
+            	RobotInfo NearestAlly;
+               	
+            	// Update the location of the nearest noncombatant allied location and store into the variable Nearest Ally - which is null if no nearby ally exists
+            	
+            	if (alliedRobots.length > 0){            		
+                 	NearestAlly = getNearestCivilian(alliedRobots);
+            	}
+            	else{
+            		NearestAlly = null;
+            	}
+             	
+             	// If there is a friendly noncombatant nearby
+             	if(NearestAlly != null){
+             		
+             		nearestCivilian = NearestAlly.location;
+             		
+             		// For Initialization and for the future,- have last direction originally point away from the closest ally, rounded to 30 degree intervals             		
+             		if (myLocation.distanceTo(nearestCivilian) <= 2.5){
+	             		int randOffset = (int)(Math.random() * 4 - 2);
+	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
+	            		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
+	            		
+	            		myDirection = new Direction(newRadians);
+	            		
+	            		// SYSTEM CHECK - make sure direction is multiple of 30 degrees
+	            		// System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + myDirection.getAngleDegrees());  
+             		}
+             		// Get the nearest enemy to the scout..
+            		RobotInfo nearestEnemy = Chirasou.getNearestAlly(enemyRobots, myLocation);
+            		// If there is one...
+            		if (nearestEnemy != null){
+	            		// If the nearest enemy is close enough to the nearest ally....
+	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 20){
+	            			mustDefend = true;
+	            		}
+            		}
+             	}
+             	
+             	if(mustDefend){
+             		isCommanded = false;
+             	}
+             	
                	// Periodically check to go to a nearby archon......
-               	if (roundNumber % 25 == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
+               	if (roundNumber % BroadcastChannels.BROADCAST_CLEARING_PERIOD == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
                    	
                		// Reset the lastCommanded 
                		lastCommanded = 0;
                		
                		// Read archon data
                    	BroadcastChannels.BroadcastInfo newInfo = BroadcastChannels.readEnemyArchonLocations();
+                   	
+                   	// If no archons are left or none have been found, read an enemy location instead...                   	
+                   	if(newInfo == null && archonSeen){
+                   		newInfo = BroadcastChannels.readEnemyLocations();
+                   	}
+                   	else{
+                   		archonSeen = true;
+                   	}
                    	
                    	// Pseudo random number for joining the attack....
                    	float willJoin = (float) Math.random();
@@ -268,6 +346,7 @@ public class TankBot extends GlobalVars {
             	
             	// -------------------- MOVE CORRECTION ---------------------//
             	
+             	// Get the correction from the wrapping correct all move function....
             	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, rotationDirection, allies, myLocation, desiredMove);
             	
             	if (correctedMove != null){
@@ -312,10 +391,11 @@ public class TankBot extends GlobalVars {
             		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
             		// System.out.println("This robot did not move because it forgot to show Rem appreciation........");
             	}
+            	
             	// ------------------------ Shooting ------------------------//
             	
             	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
-            	// System.out.println("Moving on to shooting phase...................");
+            	System.out.println("Moving on to shooting phase...................");
             	
             	boolean hasShot = false;
             	
@@ -364,18 +444,20 @@ public class TankBot extends GlobalVars {
                 if (!isCommanded){
                 	lastCommanded += 1;
                 }
+                // The robot was in routing phase, so increment that counter
                 else{
                 	roundsRouting += 1;
-                }
-                
+                }    
+                // If the robot was tracking something, increment the counter for it...
+                if (isTracking){
+                	roundsTracked +=1;
+                }                
                 Clock.yield();            	
-            	
-    		
+            			
 	        } catch (Exception e) {
 	            System.out.println("Tank Exception");
 	            e.printStackTrace();
 	        }
-    	
     	}
     }
     
@@ -421,6 +503,11 @@ public class TankBot extends GlobalVars {
     			return move(enemyRobots, desiredMove);    	
     		
     		} else{ // If there is no robot to be tracked and the robot is not receiving any orders
+    			
+    			
+    			trackedRobot = null;
+    			trackID = -1;
+    			
     			// Posit the desired move location as a forward movement along the last direction
     			desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
     			
@@ -442,7 +529,6 @@ public class TankBot extends GlobalVars {
     			return track(enemyRobots, (float) 2.3, desiredMove);
     		}
     		else{
-    			// TODO Insert path planning here........
     			return moveTowardsGoalLocation(enemyRobots, desiredMove);
     		}
     	}    			
@@ -497,7 +583,7 @@ public class TankBot extends GlobalVars {
 	private static MapLocation track(RobotInfo[] enemyRobots, float multiplier, MapLocation desiredMove) throws GameActionException{
 		
 		// If the robot can currently sense the robot it was tracking in the previous turn
-    	if (rc.canSenseRobot(trackID)){
+    	if (rc.canSenseRobot(trackID) && !(roundsTracked >= 10 && trackedRobot.type == RobotType.ARCHON)){
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		// System.out.println("I am continuing to follow a normie Emilia lover with ID: " + trackID);
@@ -526,20 +612,12 @@ public class TankBot extends GlobalVars {
         	trackID = -1;       
         	isTracking = false;
         	trackedRobot = null;
+        	roundsTracked = 0;
 			
         	// SYSTEM CHECK - Notify of target loss
         	// System.out.println("Lost sight of target/Finding a new target");        	
         	
-        	// Posit the desired move location as a forward movement along the last direction
-			desiredMove = myLocation.add(myDirection, (float) (Math.random() * (strideRadius / 2)  + (strideRadius / 2)));
-			
-			// SYSTEM Check - Set LIGHT GREY LINE indicating where the tank would wish to go
-			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
-   			
-    		// SYSTEM CHECK - Notify that nothing to be scouted has been found
-    		// System.out.println("The tank cannot find anything to track"); 
-			
-			return desiredMove;
+        	return move(enemyRobots,desiredMove);
     	}	                		
     }	       
     
@@ -590,18 +668,6 @@ public class TankBot extends GlobalVars {
 		return hasShot;
 	}
 	
-	private static void readNearestEnemyLocations() throws GameActionException{
-		
-		int sentNumber = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL);
-		
-		if (sentNumber > 0){
-			
-			// SYSTEM CHECK - See if the tank has actually read a broadcast from a scout or not....
-			System.out.println("Enemy locations updated by scouts.......");			
-		}		
-	}	
-	
-	
 	// Function to notify everyone that the unit has died.
 	
     public static void manageBeingAttacked(MapLocation location) throws GameActionException{
@@ -629,7 +695,40 @@ public class TankBot extends GlobalVars {
 		        // Update soldier number for other soldiers to see.....
 		        rc.broadcast(BroadcastChannels.TANK_NUMBER_CHANNEL, currentNumberofTanks);
 			}
+		}		
+	}	    
+    
+	// Function to obtain the data for the nearest ally to the robot currently (only gardeners and archons)
+	
+	private static RobotInfo getNearestCivilian(RobotInfo[] currentAllies){
+    	
+    	float minimum = Integer.MAX_VALUE;
+		
+		int index = -1;
+		
+		for (int i = 0; i < currentAllies.length; i++){
+			// Only consider allies that are archons or gardeners
+			if (currentAllies[i].type == battlecode.common.RobotType.GARDENER){
+				
+				float dist = myLocation.distanceTo(currentAllies[i].location);
+
+				if (dist < minimum){					
+							
+					minimum = dist;
+					index = i;	
+				}		
+			}			
 		}
-	}	
+		// If such an ally has been found return its data or otherwise return null
+		if (index >= 0){
+			
+			// SYSTEM CHECK - Check to see if the robot returns a valid ally
+			// System.out.println("I have an ally nearby and its ID is: " + currentAllies[index].ID);
+			
+			return currentAllies[index];
+		} else{
+			return null;
+		}
+    }
 }	
 	 

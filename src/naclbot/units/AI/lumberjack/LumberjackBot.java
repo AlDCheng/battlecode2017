@@ -83,7 +83,10 @@ public class LumberjackBot extends GlobalVars {
     
     public static TreeInfo treeToHarvest;
     
-    public static int treeID;
+    public static int treeID;    
+    
+    // To store the last known location of a civilian
+    public static MapLocation nearestCivilian;
     
     
 	// ------------- TREE VARIABLES ------------------//
@@ -131,6 +134,13 @@ public class LumberjackBot extends GlobalVars {
         // Initialize lumberjack so that it does not have any commands initially;
         isCommanded = false;
         
+    	
+        // Initialize nearest CIvilian to be the stored location of the archon...
+        int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
+        int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
+        
+        nearestCivilian = new MapLocation(archonInitialX, archonInitialY);
+        
         // Get own lumberjackNumber - important for broadcasting 
         lumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
         currentNumberofLumberjacks = lumberjackNumber + 1;
@@ -156,6 +166,11 @@ public class LumberjackBot extends GlobalVars {
             	RobotInfo[] alliedRobots = NearbyUnits(allies, 10);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
     			
+            	// Update the nearest enemy and archon locations
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, roundNumber);
+            	
+            	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);        
+            	
             	// If the robot was just initialized or did not move last turn, set the last direction to point away from anything....
             	
     			if(lastDirection == null){

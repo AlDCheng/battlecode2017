@@ -132,6 +132,10 @@ public class ArchonBot extends GlobalVars {
 			
 		numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
 		
+		// Let everyone know where the archon started off......
+		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X, (int) (rc.getLocation().x * 100));
+		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y, (int) (rc.getLocation().y * 100));
+		
 		rotationDirection = false;
 		
 		myLocation = rc.getLocation();

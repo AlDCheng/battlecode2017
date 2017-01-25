@@ -28,7 +28,7 @@ public class Senshi extends GlobalVars {
 	// ------------- GENERAL (IMPORTANT TO SELF) VARS -------------//
 	
 	// Variable for round number
-	private static int roundNumber;
+	private static int myWaifuIsOnodera;
 	
 	// Variables for self and team recognition
 	public static int myID;
@@ -91,7 +91,7 @@ public class Senshi extends GlobalVars {
     public static int lastCommanded = attackFrequency;
     
     // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
-    public static final int giveUpOnRouting = 125;
+    public static final int giveUpOnRouting = 200;
     
     // Variable to store the amount of time currently in routing....
     public static int roundsRouting = 0;
@@ -101,6 +101,9 @@ public class Senshi extends GlobalVars {
     
     // To store the last known location of a civilian
     public static MapLocation nearestCivilian;
+    
+    // Store whether or not an archon has been seen...
+    public static boolean archonSeen = false;
 
     
 	/************************************************************************
@@ -118,8 +121,8 @@ public class Senshi extends GlobalVars {
         enemy = rc.getTeam().opponent();
         allies = rc.getTeam();        
         
-        roundNumber = rc.getRoundNum();
-        initRound = roundNumber;
+        myWaifuIsOnodera = rc.getRoundNum();
+        initRound = myWaifuIsOnodera;
         
         myID = rc.getID();
         myLocation = rc.getLocation();
@@ -134,6 +137,12 @@ public class Senshi extends GlobalVars {
         // Initialize path list and goal location
     	routingPath = new ArrayList<MapLocation>();    	
     	Routing.setRouting(routingPath);
+    	
+        // Initialize nearest CIvilian to be the stored location of the archon...
+        int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
+        int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
+        
+        nearestCivilian = new MapLocation(archonInitialX, archonInitialY);
     	
     	// Goal location.....
         goalLocation = null;
@@ -232,14 +241,16 @@ public class Senshi extends GlobalVars {
             	
             	// ------------ ACTIONS TO BE COMPLETED -------------//
             	
-            	// If a nearby enemy is sighted, broadcast its information......
-            	
-               	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
                	
-             	// Param to store the location of the nearest ally for the current turn - use this to determine whether or not to break out of a tracking operation.....       	
+            	// Update the nearest enemy and archon locations
+               	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, myWaifuIsOnodera);
+               	
+             	// Parameter to store the location of the nearest ally for the current turn - use this to determine whether or not to break out of a tracking operation.....       	
             	RobotInfo NearestAlly;
                	
             	// Update the location of the nearest noncombatant allied location and store into the variable Nearest Ally - which is null if no nearby ally exists
+            	
             	if (alliedRobots.length > 0){            		
                  	NearestAlly = getNearestCivilian(alliedRobots);
             	}
@@ -277,16 +288,23 @@ public class Senshi extends GlobalVars {
              	if(mustDefend){
              		isCommanded = false;
              	}
-
                	
                	// Periodically check to go to a nearby archon......
-               	if (roundNumber % 25 == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
+               	if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
                    	
                		// Reset the lastCommanded 
                		lastCommanded = 0;
                		
                		// Read archon data
                    	BroadcastChannels.BroadcastInfo newInfo = BroadcastChannels.readEnemyArchonLocations();
+                   	
+                   	// If no archons are left or none have been found, read an enemy location instead...                   	
+                   	if(newInfo == null && archonSeen){
+                   		newInfo = BroadcastChannels.readEnemyLocations();
+                   	}
+                   	else{
+                   		archonSeen = true;
+                   	}
                    	
                    	// Pseudo random number for joining the attack....
                    	float willJoin = (float) Math.random();
@@ -329,8 +347,7 @@ public class Senshi extends GlobalVars {
             	
             	// -------------------- MOVE CORRECTION ---------------------//
             	
-            	// Get the correction from the wrapping correct all move function....
-            	
+            	// Get the correction from the wrapping correct all move function....            	
             	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, rotationDirection, allies, myLocation, desiredMove);
             	
             	if (correctedMove != null){
@@ -406,7 +423,7 @@ public class Senshi extends GlobalVars {
             	// ------------------  Round End Updates --------------------//
                             	
             	// At the end of the turn update the round number
-                roundNumber += 1;
+                myWaifuIsOnodera += 1;
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
                 lastPosition =  rc.getLocation();
@@ -427,16 +444,16 @@ public class Senshi extends GlobalVars {
                 if (!isCommanded){
                 	lastCommanded += 1;
                 }
+                // The robot was in routing phase, so increment that counter
                 else{
                 	roundsRouting += 1;
                 }    
-                
+                // If the robot was tracking something, increment the counter for it...
                 if (isTracking){
                 	roundsTracked +=1;
                 }
-                Clock.yield();       	
+                Clock.yield();    	
             	
-    		
 	        } catch (Exception e) {
 	            System.out.println("Soldier Exception");
 	            e.printStackTrace();
@@ -511,7 +528,6 @@ public class Senshi extends GlobalVars {
     			return track(enemyRobots, (float) 1.8, desiredMove);
     		}
     		else{
-    			// TODO Insert path planning here........
     			return moveTowardsGoalLocation(enemyRobots, desiredMove);
     		}
     	}    			
@@ -519,6 +535,7 @@ public class Senshi extends GlobalVars {
     
     
     // Function to use when moving towards a certain location with a certain target.....
+    
     private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, MapLocation desiredMove) throws GameActionException{
     	
     	// If it can no longer sense the tracked enemy.....
@@ -655,17 +672,7 @@ public class Senshi extends GlobalVars {
 		return hasShot;
 	}
 	
-	private static void readNearestEnemyLocations() throws GameActionException{
-		
-		int sentNumber = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL);
-		
-		if (sentNumber > 0){
-			
-			// SYSTEM CHECK - See if the soldier has actually read a broadcast from a scout or not....
-			System.out.println("Enemy locations updated by scouts.......");			
-		}		
-	}
-	
+
 	// Function to notify everyone that the unit has died.
 	
     public static void manageBeingAttacked(MapLocation location) throws GameActionException{

@@ -46,7 +46,7 @@ public class ScoutBot extends GlobalVars {
 	// ------------- GENERAL (IMPORTANT TO SELF) VARS -------------//
 	
 	// Variable for round number
-	private static int Rem_is_better;
+	private static int onlyRemIsBestGIrl;
 	
 	// Variables for self and team recognition
 	public static int id;
@@ -179,8 +179,8 @@ public class ScoutBot extends GlobalVars {
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
         // Get the current round number......
-        Rem_is_better = rc.getRoundNum();
-        initRound = Rem_is_better;
+        onlyRemIsBestGIrl = rc.getRoundNum();
+        initRound = onlyRemIsBestGIrl;
         
         // Initialize values relating to tree broadcasting
         seenTotal = 0;
@@ -194,6 +194,12 @@ public class ScoutBot extends GlobalVars {
         isTracking = false;
         gardenerLocation = null;    
         previousRobotData = null;        
+        
+        // Initialize nearest CIvilian to be the stored location of the archon...
+        int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
+        int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
+        
+        nearestCivilian = new MapLocation(archonInitialX, archonInitialY);
         
         // Initialize variables relating to defending....
         defendLocation = null;
@@ -260,7 +266,7 @@ public class ScoutBot extends GlobalVars {
             	
             	// Since robot has not yet broadcasted this turn, set param to false by default
             	hasBroadcastedStatus = false;
-            	
+
             	// Update location of self
             	myLocation = rc.getLocation();         	
                 
@@ -312,7 +318,12 @@ public class ScoutBot extends GlobalVars {
 	            			mustDefend = true;
 	            		}
             		}
-             	}             	
+             	}      
+             	
+         		if (nearestCivilian != null){
+	         		// SYSTEM CHECK - Draw a white line to the nearest civilian's location
+	             	rc.setIndicatorLine(myLocation, nearestCivilian, 255, 255, 255);
+         		}
                 
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
             	MapLocation desiredMove = myLocation;
@@ -332,10 +343,12 @@ public class ScoutBot extends GlobalVars {
 	            	// System.out.println("Broadcasting Completed");
             	}
             	
-            	broadcastNearestEnemyLocation(enemyRobots);
+            	// Update the nearest enemy and archon locations
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, onlyRemIsBestGIrl);
             	
             	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);        
             	
+            	// Update the distress info and retreat to a scout if necessary            	
             	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 30);
          
             	
@@ -377,7 +390,7 @@ public class ScoutBot extends GlobalVars {
         
             			
             			// SYSTEM CHECK Display a yellow dot on the enemy to kill now...
-            			rc.setIndicatorDot(trackedRobot.location, 255, 255, 0);
+            			// rc.setIndicatorDot(trackedRobot.location, 255, 255, 0);
             			
             			
             			// SYSTEM CHECK IF the robot has need to defend, it will do so...
@@ -394,7 +407,7 @@ public class ScoutBot extends GlobalVars {
             			
             			
             			// SYSTEM CHECK - display a green line to the distress location....
-        				rc.setIndicatorLine(myLocation, defendLocation, 0, 128, 0);
+        				// rc.setIndicatorLine(myLocation, defendLocation, 0, 128, 0);
             			
             			// SYSTEM CHECK IF the robot has need to defend, it will do so...
             			System.out.println("Returned to distress call but found no one");
@@ -408,7 +421,7 @@ public class ScoutBot extends GlobalVars {
             			desiredMove = myLocation.add(defendDirection, strideRadius);
             			
             			// SYSTEM CHECK - display a blue line to the distress location....
-        				rc.setIndicatorLine(myLocation, defendLocation, 0, 0, 128);
+        				// rc.setIndicatorLine(myLocation, defendLocation, 0, 0, 128);
             			
             			// SYSTEM CHECK IF the robot has need to defend, it will do so...
             			System.out.println("Travelling back to defend....");
@@ -512,7 +525,7 @@ public class ScoutBot extends GlobalVars {
     
             	// Make sure to show appreciation for the one and only best girl in the world.
             	// If you are reading this and you think Emilia is best girl I have no words for you
-                Rem_is_better += 1;
+                onlyRemIsBestGIrl += 1;
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
                 lastPosition =  rc.getLocation();
@@ -555,7 +568,7 @@ public class ScoutBot extends GlobalVars {
 			desiredMove = myLocation.add(directionTo, strideRadius);
 			
 			// SYSTEM CHECK - Draw a WHITE LINE to the tree to be moved towards
-			rc.setIndicatorLine(myLocation, nearestBulletTree.location, 255, 255, 255);			
+			// rc.setIndicatorLine(myLocation, nearestBulletTree.location, 255, 255, 255);			
 		}
 		// If the robot is within strideRadius of the tree, move to its center
 		else if(distanceTo > 1){
@@ -564,7 +577,7 @@ public class ScoutBot extends GlobalVars {
 			
 			
 			// SYSTEM CHECK - Draw a WHITE LINE to the tree to be moved towards
-			rc.setIndicatorLine(myLocation, nearestBulletTree.location, 255, 255, 255);
+			// rc.setIndicatorLine(myLocation, nearestBulletTree.location, 255, 255, 255);
 		}
 		// If the robot is then within range to shake the bullets off of the tree............
 		else{
@@ -765,65 +778,8 @@ public class ScoutBot extends GlobalVars {
 		rc.broadcast(TREE_DATA_CHANNEL, currentlyStored + sentThisTurn);
 		rc.broadcast(TREES_SENT_THIS_TURN, otherSent + sentThisTurn);
     }
-	
-    
-    // Get the location of the nearest enemy and broadcast.... Clearly if you can see the enemy it is likely that they can see you as well
-    
-	private static void broadcastNearestEnemyLocation(RobotInfo[] enemyRobots) throws GameActionException{
-		
-		// Get information and the closest enemy
-		RobotInfo nearestEnemy = getNextTarget(enemyRobots);
-		
-		// See who last updated the scout index
-		int lastUpdatedUnitNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS);
-			
-		// SYSTEM CHECK - Check who last updated the channel....
-		// System.out.println("The last scout to have updated this channel has scoutNumber: " + lastUpdatedScoutNumber);
-		if (lastUpdatedUnitNumber >= unitNumber){ 
-			
-			// Clear the number of signals sent this turn
-			rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, 0);
-			rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, -1);
-			// SYSTEM CHECK - Tell that the channel has been cleared
-			System.out.println("Updater channel for enemy locations reset");				
-		}
-		
-		// Make sure there is an enemy nearby before attempting to broadcast information.....
-		if (nearestEnemy != null){
-			
-			// SYSTEM CHECK.. - Since there was an enemy nearby... Notify that something may be sent
-			System.out.println("Enemy nearby - will attempt to broadcast location");
-			
-			int x = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL);
-			
-			// Check to see if not too many enemy locations have already been broadcasted......
-			if (x < BroadcastChannels.ENEMY_LOCATION_LIMIT){
-				
-				// Get the current offset...
-				int y = rc.readBroadcast(BroadcastChannels.ENEMY_LOCATIONS_TOTAL_CHANNEL);
-				
-				// Compute the channel to broadcast at.....
-				int channelToBroadcast = BroadcastChannels.ENEMY_LOCATION_START_CHANNEL + y * BroadcastChannels.ENEMY_INFORMATION_OFFSET;
-				
-				// Inform others of the offset, that a new scout has updated the number and the total that have been updated this turn
-				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_TOTAL_CHANNEL, (y + 1) % BroadcastChannels.ENEMY_LOCATION_LIMIT);
-				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, x + 1);
-				rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, unitNumber);
-				
-				// Broadcast all relevant information
-				rc.broadcast(channelToBroadcast, nearestEnemy.ID);
-				rc.broadcast(channelToBroadcast + 1, (int) (nearestEnemy.location.x * 100));
-				rc.broadcast(channelToBroadcast + 2, (int) (nearestEnemy.location.y * 100));
-				rc.broadcast(channelToBroadcast + 3, BroadcastChannels.getRobotTypeToInt(nearestEnemy));
-				
-				// SYSTEM CHCK - If information has been sent, give overview
-				System.out.println("This unit with unitNumber:"  + unitNumber + " has updated the channel " + channelToBroadcast);
-				System.out.println("The broadcast has information on the enemy with ID: " + nearestEnemy.ID + " which has type number" + BroadcastChannels.getRobotTypeToInt(nearestEnemy));
-			}				
-		}		
-	}
-	
-    
+	    
+       
     /*****************************************************************************
 	 ****************** Tracking and Motion Related Functions ********************
 	 ****************************************************************************/   
@@ -834,7 +790,7 @@ public class ScoutBot extends GlobalVars {
     private static MapLocation move(RobotInfo[] enemyRobots) throws GameActionException{
     	
     	// If the robot is currently not tracking anything
-    	if(trackID == -1){    		
+    	if(trackID == -1 || !rc.canSenseRobot(trackID)){    		
     		// See if a robot to be tracked can be found
     		trackedRobot = findNewTrack(enemyRobots);    
     		
@@ -898,6 +854,8 @@ public class ScoutBot extends GlobalVars {
     private static MapLocation runAway(RobotInfo[] enemyRobots) throws GameActionException{
     	
     	if (rc.canSenseRobot(trackID)){
+    		
+    		trackedRobot = rc.senseRobot(trackID);
     		
     		// SYSTEM CHECK - Make scout nofity of the presence of hostile
     		//  System.out.println("Am currently running away from a hostile enemy with ID: " + trackID);
@@ -1310,5 +1268,5 @@ public class ScoutBot extends GlobalVars {
 			    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
 			}
 		}
-    }
+    }    
 }	
