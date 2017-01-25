@@ -321,8 +321,14 @@ public class GardenerBot extends GlobalVars {
                         		// To end at 0
 //                        		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
                         		if (plantDirs[0] != null) {
-                        			rc.plantTree(plantDirs[0]);
-                        			buildingTree += 20;
+                        			if(!((rc.senseNearbyTrees((float)2, rc.getTeam()).length > 0) && (canMove))) {
+//                                		System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
+                                    	if (plantDirs[0] != null) {
+                                    		rc.plantTree(plantDirs[0]);
+                                    		buildingTree += 20;
+                                    		canMove = false;
+                                    	}
+                            		}
                         		}
                         		else {
                         			treeImpossible = true;
@@ -359,12 +365,14 @@ public class GardenerBot extends GlobalVars {
                     	if (((soldierCount + lumberjackCount) > (rc.getTreeCount())) ||
                     			((Math.floor(rc.getRoundNum()/200)*gardenerCount) > (rc.getTreeCount()))) {
                     		
-                    		System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
-                        	if (plantDirs[0] != null) {
-                        		rc.plantTree(plantDirs[0]);
-                        		buildingTree += 20;
-                        		canMove = false;
-                        	}
+                    		if(!((rc.senseNearbyTrees((float)2, rc.getTeam()).length > 0) && (canMove))) {
+                        		System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
+                            	if (plantDirs[0] != null) {
+                            		rc.plantTree(plantDirs[0]);
+                            		buildingTree += 20;
+                            		canMove = false;
+                            	}
+                    		}
                     	}
                     	if ((plantDirs[1] != null) && syncOK) {
 //                    		buildUnits(plantDirs[1]);
@@ -524,7 +532,7 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void buildUnitsRemastered(Direction dirToBuild, float bullets, float lumberRatio) throws GameActionException {
-		System.out.println("Normal Build");
+		System.out.println("Normal Build: ");
 		// Check if ready to build
 		if (rc.isBuildReady()) {
 			// Prioritize by bullets; Tanks -> infantry -> scouts
@@ -532,9 +540,9 @@ public class GardenerBot extends GlobalVars {
 			if ((bullets >= 500) || ((bullets >= 300) && (TANK_RATIO*tankCount < soldierCount))) {
 				System.out.println("Try Tank");
 				// Check for spacing
-				dirToBuild = Plant.scanBuildRadiusTank(scanInt, dirToBuild.getAngleDegrees());
-				if (dirToBuild != null) {
-					rc.buildRobot(RobotType.TANK, dirToBuild);
+				Direction dir = Plant.scanBuildRadiusTank(scanInt, dirToBuild.getAngleDegrees());
+				if (dir != null) {
+					rc.buildRobot(RobotType.TANK, dir);
 					buildingTank += 20;
 					return;
 				}
@@ -549,6 +557,7 @@ public class GardenerBot extends GlobalVars {
 				// Pseudo-Random for lumberjacks or soldiers
 				if (((0.7*lumberRatio <= Math.random()) && (lumberRatio <= 1.0))
 						|| (lumberjackCount > 5*soldierCount)) {
+					System.out.println(dirToBuild);
 					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
 						rc.buildRobot(RobotType.SOLDIER, dirToBuild);
 						buildingSoldier += 20;

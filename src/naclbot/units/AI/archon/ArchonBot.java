@@ -107,7 +107,7 @@ public class ArchonBot extends GlobalVars {
     	
     	// Slight tweeks
     	if (roundNumber <= 200){
-    		return maxGardeners;
+    		return 0;
     	}
     	// Make exponential
     	else if(roundNumber <= 500){
@@ -148,7 +148,7 @@ public class ArchonBot extends GlobalVars {
         
         // Check initial tree conditions
         float crowd = checkBuildRadius((float)15, (float)5, (float)0.5);
-        float ratioTree = 2;
+        float ratioTree = 1;
         
         int treeNum = (int)((1-crowd)*ratioTree);
         if (treeNum <= 0) {
@@ -170,6 +170,8 @@ public class ArchonBot extends GlobalVars {
 		
         // Starting phase loop
         while ((hiredGardeners < maxGardeners)) {
+        	
+//        	System.out.println("Hired: " + hiredGardeners);
 
             // Try/catch blocks stop unhandled exceptions, - print stacktrace upon exception error....
             try {
@@ -231,10 +233,12 @@ public class ArchonBot extends GlobalVars {
             		if (rc.canHireGardener(gardenerDirection)){
 	            		rc.hireGardener(gardenerDirection);
 	            		
+	            		
 	            		// Increment counters.....
 	            		hiredGardener = true;
 	            		hiredGardeners += 1;
 	            		totalGardenersHired += 1;
+	            		System.out.println("You're HIRED!: " + hiredGardeners);
 	            		rc.broadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS, numberofGardenersConstructed+1);
 	            		
 	            		lastBuilt = rc.getLocation();
@@ -248,7 +252,8 @@ public class ArchonBot extends GlobalVars {
                 		desiredMove = disperseLocation;
                 	}
             		
-            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+//            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            		rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
             	}
             	else {
             		System.out.println("Moving in general direction");
@@ -256,7 +261,8 @@ public class ArchonBot extends GlobalVars {
             			Direction dir = new Direction (rc.getLocation(), initialGoal);
             			
             			desiredMove = myLocation.add(dir, strideRadius);
-            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+//            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
             			
             			/*
             			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
@@ -272,7 +278,7 @@ public class ArchonBot extends GlobalVars {
 	        	lastPosition =  rc.getLocation();
 	            lastDirection = new Direction(myLocation, lastPosition);
 //	        	lastDirection = new Direction(lastPosition, myLocation);
-                  
+	            System.out.println("Hired num: " + hiredGardeners);
 	            remIsBestGirl += 1;
 	            roundsNotConstructed += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -301,10 +307,10 @@ public class ArchonBot extends GlobalVars {
             	Win();
             	
               	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
-            	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
+//            	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
             	
             	// Get the total number of gardeners constructed thus far.....
-            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
+//            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
             	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
 
         		// Check surroundings
@@ -313,12 +319,17 @@ public class ArchonBot extends GlobalVars {
         		float soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
                 float lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
         		
-                System.out.println("Cur # Gardeners: " + gardenerCount);
+//                System.out.println("Cur # Gardeners: " + gardenerCount);
+                System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + gardenerCount 
+                		+ ", Crowded: " + crowded);
                 
-                if (!crowded || (gardenerCount <= 0)) {
-                	if ((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) &&
+                if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
+                	constructGardeners(1);
+                }
+                if (!crowded) {
+                	if ((gardenerCount < getGardenerLimit(remIsBestGirl)) &&
                 			((soldierCount + lumberjackCount) > 2*gardenerCount)) {
-                		constructGardeners(1);
+                		constructGardeners(1);                		
                 	}
                 }
             	/*if (((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) && 
@@ -354,7 +365,8 @@ public class ArchonBot extends GlobalVars {
                 		desiredMove = disperseLocation;
                 	}
             		
-            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+//            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            		rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
             	}
             	else {
             		System.out.println("Moving in general direction");
@@ -362,7 +374,9 @@ public class ArchonBot extends GlobalVars {
             			Direction dir = new Direction (rc.getLocation(), initialGoal);
             			
             			desiredMove = myLocation.add(dir, strideRadius);
-            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+//            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            			rc.setIndicatorLine(rc.getLocation(), desiredMove, 255, 0, 0);
+            			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
             			/*
             			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
             				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
