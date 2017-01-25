@@ -28,6 +28,7 @@ public class GardenerBot extends GlobalVars {
 	public static int soldierCount;
 	public static int lumberjackCount;
 	public static int tankCount;
+	public static int gardenerCount;
 	
 	public static Direction[] hexDirArray = Plant.generateHexagonalDirections();
 	public static Direction dirToOpening;
@@ -122,11 +123,13 @@ public class GardenerBot extends GlobalVars {
                 // Check number of all units currently in service
                 scoutCount = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);                
                 soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-                lumberjackCount = rc.readBroadcast(LUMBERJACK_CHANNEL);
-                tankCount = rc.readBroadcast(TANK_CHANNEL);
+                lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
+                tankCount = rc.readBroadcast(BroadcastChannels.TANK_NUMBER_CHANNEL);
+                gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
                 
                 System.out.println("Scouts: " + scoutCount + ", Soldiers: " + soldierCount + 
                 					", Lumberjacks: " + lumberjackCount + ", Tanks: " + tankCount);
+                System.out.println("Gardener: " + gardenerCount);
 
                 //generates direction of opening after gardeners partially enclose themselves in trees
                 dirToOpening = Direction.getEast().rotateLeftDegrees(300);
