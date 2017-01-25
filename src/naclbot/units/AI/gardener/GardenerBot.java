@@ -448,10 +448,24 @@ public class GardenerBot extends GlobalVars {
 					dx += (float)((ourBots[i].location.x - curLoc.x)/size);
 					dy += (float)((ourBots[i].location.y - curLoc.y)/size);
 				}
+				else if(ourBots[i].type == RobotType.ARCHON) {
+					dx += 4*(float)((ourBots[i].location.x - curLoc.x)/size);
+					dy += 4*(float)((ourBots[i].location.y - curLoc.y)/size);
+				}
 			}
 			opDir = new Direction(dx, dy);
 			opDir = opDir.opposite();
-			return opDir;
+			Direction rotLeft = opDir.rotateLeftDegrees(30);
+			Direction rotRight= opDir.rotateRightDegrees(30);
+			if (rotLeft.radians > 0) {
+				return rotLeft;
+			}
+			else if (rotRight.radians < 0) {
+				return rotRight;
+			}
+			else {
+				return opDir;
+			}
 		}
 		else {
 			return new Direction(0);

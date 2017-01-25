@@ -90,6 +90,10 @@ public class ArchonBot extends GlobalVars {
     
     public static int gardenerNumber = 0;
     
+    public static int initMove = 30;
+    
+    public static MapLocation initialGoal;
+    
     // TO BE CHANGED
     // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CIRCLE
     public static int getGardenerLimit(int roundNumber) throws GameActionException{
@@ -172,6 +176,7 @@ public class ArchonBot extends GlobalVars {
             	
             	if (remIsBestGirl == 1){
             		lastDirection = getInitialWalls();
+            		initialGoal = rc.getLocation().add(lastDirection, 10);
             	}
             	// Get the total number of gardeners constructed thus far.....
             	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
@@ -198,12 +203,12 @@ public class ArchonBot extends GlobalVars {
             	// Update the current round number.....
             	remIsBestGirl = rc.getRoundNum();
             	
-//            	Direction testDirection = null;
-            	Direction testDirection = new Direction(0);
+            	Direction testDirection = null;
+//            	Direction testDirection = new Direction(0);
             	Direction gardenerDirection = null;
             	
             	// Build if not crowded
-            	if (!crowded) {
+            	if (!crowded || (remIsBestGirl <= initMove)) {
             		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
                 	gardenerDirection = tryHireGardener(testDirection);
             	}
@@ -221,24 +226,38 @@ public class ArchonBot extends GlobalVars {
 	            		rc.broadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS, numberofGardenersConstructed+1);
 	            	}
             	}
-            	
-            	
-//            	MapLocation disperseLocation = moveAwayfromGardeners(alliedRobots);
-            	MapLocation disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
-            	
-            	if (disperseLocation != null){            		
-            		desiredMove = disperseLocation;
+            	MapLocation disperseLocation;
+            	if (remIsBestGirl > initMove) {
+//            		disperseLocation = moveAwayfromGardeners(alliedRobots);
+            		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
+            		if (disperseLocation != null){            		
+                		desiredMove = disperseLocation;
+                	}
+            		
+            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
             	}
-            	
-            	if (remIsBestGirl <= 15){
-            		desiredMove = myLocation.add(lastDirection, strideRadius);
+            	else {
+            		System.out.println("Moving in general direction");
+            		if (initialGoal != null) {
+            			Direction dir = new Direction (rc.getLocation(), initialGoal);
+            			
+            			desiredMove = myLocation.add(dir, strideRadius);
+            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            			
+            			/*
+            			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
+            				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
+            					break;
+            				}
+            			}*/
+            		}
             	}
             	// Call the function to correct a move and actually move......
-            	moveCorrect(desiredMove, rotationDirection, nearbyBullets);       	
       
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
 	        	lastPosition =  rc.getLocation();
 	            lastDirection = new Direction(myLocation, lastPosition);
+//	        	lastDirection = new Direction(lastPosition, myLocation);
                   
 	            remIsBestGirl += 1;
 	            roundsNotConstructed += 1;
@@ -312,16 +331,50 @@ public class ArchonBot extends GlobalVars {
             	remIsBestGirl = rc.getRoundNum();
   
             	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            	
+            	MapLocation disperseLocation;
+            	if (remIsBestGirl > initMove) {
+//            		disperseLocation = moveAwayfromGardeners(alliedRobots);
+            		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
+            		if (disperseLocation != null){            		
+                		desiredMove = disperseLocation;
+                	}
+            		
+            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            	}
+            	else {
+            		System.out.println("Moving in general direction");
+            		if (initialGoal != null) {
+            			Direction dir = new Direction (rc.getLocation(), initialGoal);
+            			
+            			desiredMove = myLocation.add(dir, strideRadius);
+            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+            			/*
+            			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
+            				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
+            					break;
+            				}
+            			}*/
+            		}
+            		
+//            		desiredMove = myLocation.add(lastDirection, strideRadius);
+//            		rc.setIndicatorLine(rc.getLocation(), desiredMove, 255, 0, 0);
+            	}
 
-            	//MapLocation disperseLocation = moveAwayfromGardeners(alliedRobots);
-            	MapLocation disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
+            	/*MapLocation disperseLocation;
+            	if (remIsBestGirl < 15) {
+            		disperseLocation = moveAwayfromGardeners(alliedRobots);
+            	}
+            	else {
+            		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
+            	}
             	
             	if (disperseLocation != null){            		
             		desiredMove = disperseLocation;
             	}
             	
             	// Call the function to correct a move and actually move......
-            	moveCorrect(desiredMove, rotationDirection, nearbyBullets);       	
+            	moveCorrect(desiredMove, rotationDirection, nearbyBullets);*/       	
       
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
 	        	lastPosition =  rc.getLocation();
