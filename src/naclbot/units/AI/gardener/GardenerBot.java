@@ -15,6 +15,8 @@ public class GardenerBot extends GlobalVars {
 	public static int role;
 	public static boolean iDied = false;
 	
+	public static Team enemy;
+	
 	public static ArrayList<MapLocation> plantedTrees = new ArrayList<MapLocation>();
 	public static ArrayList<MapLocation> nearbyLowHealthTrees = new ArrayList<MapLocation>();
 	public static int treeCount = 0;
@@ -68,6 +70,11 @@ public class GardenerBot extends GlobalVars {
 	public static float buildDir, prevBuildDir;
 	public static Direction buildVec = new Direction(0);
 	public static Direction prevBuildVec = new Direction(0);
+	
+	
+	// Integer to store the previous health of the gardener
+	public static float previousHealth;
+	
 	//--------------------------------------------------
 	
 	
@@ -77,6 +84,8 @@ public class GardenerBot extends GlobalVars {
 		
 		//value of initial role, set to planting trees first
 		role = 1;
+		
+		enemy = rc.getTeam().opponent();
 		
 		 // Get own soldierNumber - important for broadcasting 
         gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
@@ -106,6 +115,13 @@ public class GardenerBot extends GlobalVars {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
             	
+            	MapLocation myLocation = rc.getLocation();
+            	
+            	RobotInfo[] enemyRobots = NearbyUnits(enemy);
+            	
+            	System.out.println("Previous health: " + previousHealth);
+            	BroadcastChannels.broadcastDistress(previousHealth, enemyRobots, myLocation, unitNumber);
+            	
             	// Check if it did not die, and reset the number of gardeners and units
             	if (iDied) {
             		iDied = false;
@@ -120,11 +136,6 @@ public class GardenerBot extends GlobalVars {
                     rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
             	}
             	
-            	// Listen for home archon's location, not implemented yet
-            	// Check later
-                xPos = rc.readBroadcast(0);
-                yPos = rc.readBroadcast(1);                
-                archonLoc = new MapLocation(xPos,yPos);
                 
                 // Check number of all units currently in service
                 scoutCount = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);                
@@ -332,6 +343,9 @@ public class GardenerBot extends GlobalVars {
                 waterSurroundingTrees();
                 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+                
+                previousHealth = rc.getHealth();
+                
                 Clock.yield();
             } catch (Exception e) {
                 System.out.println("Gardener Exception");
@@ -496,5 +510,12 @@ public class GardenerBot extends GlobalVars {
 				}
 			}			
 		}	        
+	}
+	
+	// Function to obtain the robot info units in the specified team
+	
+	private static RobotInfo[] NearbyUnits(Team team){
+
+		return rc.senseNearbyRobots((float)10, team);
 	}
 }

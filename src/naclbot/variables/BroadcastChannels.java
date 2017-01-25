@@ -4,6 +4,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import naclbot.units.motion.Chirasou;
 
 /* ------------------   Overview ----------------------
  * 
@@ -34,13 +35,20 @@ public class BroadcastChannels extends GlobalVars {
 	// Stores how many gardeners have been initialized....
 	public final static int GARDENERS_CONSTRUCTED_CHANNELS = 9998;
 	
+	// The last gardener to express distress..
+	public final static int LAST_UPDATER_GARDENER_DISTRESS = 9500;	
+	
+	// Stores how many distress signals were sent out this turn...
+	public final static int DISTRESS_SIGNAL_SENT_THIS_TURN = 9501;
+	
 	// Stores information related to which gardeners are being attacked
 		// Distress Information from Scouts
 		// Bit 0 - Gives My ID
 		// Bit 1 - Gives My X
 		// Bit 2 - Gives My Y
 		// BIT 3 - Gives NearestEnemy ID
-	public final static int GARDENER_DISTRESS_CHANNEL = 9500;
+	
+	public final static int GARDENER_DISTRESS_CHANNEL = 9502;
 	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
@@ -199,6 +207,7 @@ public class BroadcastChannels extends GlobalVars {
 		public int ID;
 		public float xPosition;
 		public float yPosition;
+		public float myID;
 		
 		BroadcastInfo(int newID, float xLocation, float yLocation){	
 			
@@ -237,14 +246,14 @@ public class BroadcastChannels extends GlobalVars {
 		
 		// Placeholder to store the index of the archon in the team shared array
 		int storedIndex = -1;		
-		System.out.println(currentArchonCount);
-		System.out.println(updatedArchonID);
+		// System.out.println(currentArchonCount);
+		// System.out.println(updatedArchonID);
 
 		// Iterate through each of the  locations storing an archon ID to see if the archon can be found.....
 		for (int i = 0; i < currentArchonCount; i++){
 			
 			int readID = rc.readBroadcast(ARCHON_INFORMATION_CHANNEL + i * ARCHON_INFORMATION_OFFSET);
-			System.out.println(i + " + " + readID);
+			// System.out.println(i + " + " + readID);
 			
 			if (readID == updatedArchonID){
 				storedIndex = i;
@@ -353,6 +362,57 @@ public class BroadcastChannels extends GlobalVars {
 		}
 	}
 	
+	// Function for gardeners and archons to show that they are being attacked.......
+	public static void broadcastDistress(float previousHealth, RobotInfo[] nearestEnemies, MapLocation myLocation, int unitNumber) throws GameActionException{
+		
+		// Get the current health of the robot
+		float currentHealth = rc.getHealth();
+		
+		// The last updater to the data...
+		int lastUpdatedGardenerNumber = rc.readBroadcast(LAST_UPDATER_GARDENER_DISTRESS);
+		
+		// Have the first active unit running the distress calls clear....
+		if (lastUpdatedGardenerNumber >= unitNumber){
+			
+			// Make the total signals sent this turn zero, and reset the last updater to be -1...
+			rc.broadcast(LAST_UPDATER_GARDENER_DISTRESS, -1);
+			rc.broadcast(DISTRESS_SIGNAL_SENT_THIS_TURN, 0);		
+			
+			// SYSTEM CHECK - Tell that the channel has been cleared
+			System.out.println("Updater channel for gardener distress signals reset");	
+		}		
+
+		
+		// If the robot has lost health in the previous round...
+		if (currentHealth < previousHealth){
+			
+			// Get the nearest enemy...
+			RobotInfo nearestEnemy = Chirasou.getNearestAlly(nearestEnemies, myLocation);
+			
+			// SYSTEM CHECK - Check to see if the gardener is actuall going to send a distress signal
+			System.out.println("Am currently being attacked, will attempt to broadcast");
+			
+			// Broadcast ID, position and enemy ID  to the distress channel
+			rc.broadcast(GARDENER_DISTRESS_CHANNEL, rc.getID());
+			rc.broadcast(GARDENER_DISTRESS_CHANNEL, (int)(myLocation.x * 100));
+			rc.broadcast(GARDENER_DISTRESS_CHANNEL, (int)(myLocation.y * 100));
+			
+			// If the gardener can sense a robot near it...
+			if(nearestEnemy != null){
+				rc.broadcast(GARDENER_DISTRESS_CHANNEL, nearestEnemy.ID);
+				
+				// SYSTEM CHECK Print out that the gardener is actually sensing a nearby unit
+				System.out.println("The acttacker has ID: " + nearestEnemy.ID);
+			}
+			else{
+				rc.broadcast(GARDENER_DISTRESS_CHANNEL, -1);
+				// SYSTEM CHECK Print out that the gardener cannot sense what is attacking it
+				System.out.println("Unfortunately cannot sense who attacker might be.....");
+			}
+			rc.broadcast(LAST_UPDATER_GARDENER_DISTRESS, unitNumber);
+			rc.broadcast(DISTRESS_SIGNAL_SENT_THIS_TURN, 1);			
+		}
+	}	
 }
 
 

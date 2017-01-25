@@ -429,25 +429,6 @@ public class Senshi extends GlobalVars {
     	}
     }
     
-    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
-		boolean beingAttacked = iFeed.willBeAttacked(loc);
-		if (beingAttacked) {
-			boolean willDie = iFeed.willFeed(loc);
-			if (willDie) {
-				iDied = true;
-				// Get own soldierNumber - important for broadcasting 
-		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-		        currentNumberofSoldiers = soldierNumber - 1;
-		        
-		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
-		        
-		        // Update soldier number for other soldiers to see.....
-		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
-
-			}
-		}
-	}
     
 	/******************************************************************
 	******************* Functions for Movement  ***********************
@@ -674,6 +655,26 @@ public class Senshi extends GlobalVars {
 			// SYSTEM CHECK - See if the soldier has actually read a broadcast from a scout or not....
 			System.out.println("Enemy locations updated by scouts.......");			
 		}		
+	}
+	
+    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		if (beingAttacked) {
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				iDied = true;
+				// Get own soldierNumber - important for broadcasting 
+		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
+		        currentNumberofSoldiers = soldierNumber - 1;
+		        
+		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+		        
+		        // Update soldier number for other soldiers to see.....
+		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
+
+			}
+		}
 	}
 	
 }	

@@ -215,9 +215,11 @@ public class ScoutBot extends GlobalVars {
         while (true) {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
             	// ------------------------- RESET/UPDATE VARIABLES ----------------//            	
             	
-            	// Check if it did not die and reset scout and unit counts
+            	
+            	// If the iFeed function incorrectly thought that the unit had died.....
             	if (iDied) {
             		iDied = false;
             		
@@ -295,7 +297,7 @@ public class ScoutBot extends GlobalVars {
             		// If there is one...
             		if (nearestEnemy != null){
 	            		// If the nearest enemy is close enough to the nearest ally....
-	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 10){
+	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 20){
 	            			mustDefend = true;
 	            		}
             		}
@@ -448,26 +450,6 @@ public class ScoutBot extends GlobalVars {
             }
         }
     }	
-
-
-    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
-		boolean beingAttacked = iFeed.willBeAttacked(loc);
-		if (beingAttacked) {
-			boolean willDie = iFeed.willFeed(loc);
-			if (willDie) {
-				iDied = true;
-				// Get own scoutNumber  and unitNumber- important for broadcasting 
-			    scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
-			    currentNumberofScouts = scoutNumber - 1;
-			    
-			    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-			    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
-			    
-			    // Update the number of scouts so that other scouts can recognize....
-			    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
-			}
-		}
-    }
     
 	// Function for idle scout - does nothing until something triggers it to move
 	// TODO
@@ -709,11 +691,11 @@ public class ScoutBot extends GlobalVars {
 		RobotInfo nearestEnemy = getNextTarget(enemyRobots);
 		
 		// See who last updated the scout index
-		int lastUpdatedScoutNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS);
+		int lastUpdatedUnitNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS);
 			
 		// SYSTEM CHECK - Check who last updated the channel....
 		// System.out.println("The last scout to have updated this channel has scoutNumber: " + lastUpdatedScoutNumber);
-		if (lastUpdatedScoutNumber >= scoutNumber){ 
+		if (lastUpdatedUnitNumber >= unitNumber){ 
 			
 			// Clear the number of signals sent this turn
 			rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, 0);
@@ -742,7 +724,7 @@ public class ScoutBot extends GlobalVars {
 				// Inform others of the offset, that a new scout has updated the number and the total that have been updated this turn
 				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_TOTAL_CHANNEL, (y + 1) % BroadcastChannels.ENEMY_LOCATION_LIMIT);
 				rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, x + 1);
-				rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, scoutNumber);
+				rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_LOCATIONS, unitNumber);
 				
 				// Broadcast all relevant information
 				rc.broadcast(channelToBroadcast, nearestEnemy.ID);
@@ -751,8 +733,8 @@ public class ScoutBot extends GlobalVars {
 				rc.broadcast(channelToBroadcast + 3, BroadcastChannels.getRobotTypeToInt(nearestEnemy));
 				
 				// SYSTEM CHCK - If information has been sent, give overview
-				System.out.println("This scout with scoutNumber:"  + scoutNumber + " has updated the channel " + channelToBroadcast);
-				System.out.println("The broadcast have information on the enemy with ID: " + nearestEnemy.ID + " which has type number" + BroadcastChannels.getRobotTypeToInt(nearestEnemy));
+				System.out.println("This unit with unitNumber:"  + unitNumber + " has updated the channel " + channelToBroadcast);
+				System.out.println("The broadcast has information on the enemy with ID: " + nearestEnemy.ID + " which has type number" + BroadcastChannels.getRobotTypeToInt(nearestEnemy));
 			}				
 		}		
 	}
@@ -894,7 +876,7 @@ public class ScoutBot extends GlobalVars {
 	    	desiredMove = myLocation.add(targetDir, (float) strideRadius);
 	    	
 	    	// SYSTEM CHECK Print a YELLOW LINE from current location to intended move location
-	    	rc.setIndicatorLine(myLocation, desiredMove, 255, 255, 0);   
+	    	// rc.setIndicatorLine(myLocation, desiredMove, 255, 255, 0);   
 	    	
 	    	// Reset the enemy track ID, since it is not something that the robot would like to follow at the moment
 	    	trackID = -1;
@@ -1094,7 +1076,7 @@ public class ScoutBot extends GlobalVars {
     		// Update location of tracked robot 
     		trackedRobot = rc.senseRobot(trackID);
     		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
-    		// rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
+    		rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
     		
     		// Increment number of rounds tracked
         	roundsCurrentlyTracked +=1;
@@ -1213,5 +1195,35 @@ public class ScoutBot extends GlobalVars {
 		} else{			
 			return null;
 		}		
-	}	
+	}
+	
+	// Function to notify everyone that the unit has died.
+	
+    public static void manageBeingAttacked(MapLocation location) throws GameActionException{
+    	
+    	// Boolean to determine whether or not the scout will lose health if it moves to a certain location
+		boolean beingAttacked = iFeed.willBeAttacked(location);
+		
+		//If it will lose health for going there...
+		if (beingAttacked) {
+			
+			// Check if the unit will die from the damage
+			boolean willDie = iFeed.willFeed(location);
+			
+			//If it will die, broadcast to all relevant channesl.....
+			
+			if (willDie) {
+				iDied = true;
+				// Get own scoutNumber  and unitNumber- important for broadcasting 
+			    scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
+			    currentNumberofScouts = scoutNumber - 1;
+			    
+			    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+			    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+			    
+			    // Update the number of scouts so that other scouts can recognize....
+			    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
+			}
+		}
+    }
 }	
