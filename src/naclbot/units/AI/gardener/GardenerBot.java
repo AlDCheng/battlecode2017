@@ -451,11 +451,11 @@ public class GardenerBot extends GlobalVars {
 	public static Direction dirAway(MapLocation curLoc) throws GameActionException {
 		RobotInfo[] ourBots = rc.senseNearbyRobots(RobotType.GARDENER.sensorRadius, rc.getTeam());
 		
-		MapLocation destination = Plant.findOptimalSpace(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4, 0);
+		MapLocation destination = Plant.findOptimalSpaceOpp(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4, 0);
 		
 		Direction opDir = new Direction(curLoc, destination);
 		
-		opDir = opDir.opposite();
+//		opDir = opDir.opposite();
 		Direction rotLeft = opDir.rotateLeftDegrees(30);
 		Direction rotRight= opDir.rotateRightDegrees(30);
 		if (rotLeft.radians > 0) {
@@ -566,8 +566,14 @@ public class GardenerBot extends GlobalVars {
 //				if (scoutCount > START_SCOUT_COUNT) {
 					
 				// Pseudo-Random for lumberjacks or soldiers
-				if (((0.7*lumberRatio <= Math.random()) && (lumberRatio <= 1.0))
-						|| (lumberjackCount > 5*soldierCount)) {
+				if ((soldierCount >= 5) && (5*lumberjackCount <= soldierCount)) {
+					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
+						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
+						buildingLumberjack += 20;
+						return;
+					}
+				}
+				else if ((0.7*lumberRatio <= Math.random()) && (lumberRatio <= 1.0)) {
 					System.out.println(dirToBuild);
 					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
 						rc.buildRobot(RobotType.SOLDIER, dirToBuild);
