@@ -354,6 +354,8 @@ public class Senshi extends GlobalVars {
             			
             			defendLocation = null;
             			defendAgainstID = -1;
+            			trackID = -1;
+            			trackedRobot = null;
             			
             			
             			// SYSTEM CHECK - display a green line to the distress location....
@@ -499,7 +501,13 @@ public class Senshi extends GlobalVars {
             		// Get a list of allied trees to avoid shooting..
             		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
             		
-            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+            		if(rc.canSenseRobot(trackID)){
+            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+            		}
+            		else{
+            			trackID= -1;
+            			trackedRobot = null;
+            		}
             	}
             	
             	if(hasShot){            		
@@ -531,6 +539,7 @@ public class Senshi extends GlobalVars {
                 	trackID = -1;
                 	trackedRobot = null;
                 }
+         
                 
                 // Store the data for the locations of the enemies previously.....
                 previousRobotData = enemyRobots;
@@ -685,7 +694,7 @@ public class Senshi extends GlobalVars {
     		
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
-    		// System.out.println("I am continuing to follow a normie Emilia lover with ID: " + trackID);
+    		System.out.println("I am continuing to follow a normie Emilia lover with ID: " + trackID);
     		
     		// Update location of tracked robot 
     		trackedRobot = rc.senseRobot(trackID);

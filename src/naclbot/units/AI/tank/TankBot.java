@@ -410,7 +410,13 @@ public class TankBot extends GlobalVars {
             		// Get a list of allied trees to avoid shooting..
             		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
             		
-            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+              		if(rc.canSenseRobot(trackID)){
+            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+            		}
+            		else{
+            			trackID= -1;
+            			trackedRobot = null;
+            		}
             	}
             	else{
             		trackID = -1;
