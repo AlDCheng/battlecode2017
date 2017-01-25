@@ -173,7 +173,9 @@ public class Plant extends GlobalVars {
 						float treeLen = rc.senseNearbyTrees(potLoc, radius, null).length;
 						openness += treeLen;
 						if(treeLen > 0) {
-							congestion += angleInterval/360;	
+							if (rc.senseNearbyTrees(potLoc, radius, Team.NEUTRAL).length > 0) {
+								congestion += angleInterval/(float)360.0;
+							}
 						}
 						
 						// Unit weighting (for own Team)
@@ -242,9 +244,9 @@ public class Plant extends GlobalVars {
 				}
 				else {
 					if (rc.senseTreeAtLocation(newLoc) != null) {
-						congestion += angleInterval/360;
+						congestion += angleInterval/(float)360.0;
 					}
-					if((!(rc.isCircleOccupied(newLoc,(float)0.5))) && (rc.onTheMap(newLoc, (float)0.5))) {
+					if((!(rc.isCircleOccupied(newLoc.add(dir, 1),(float)0.5))) && (rc.onTheMap(newLoc.add(dir, 1), (float)1))) {
 						finalDir[1] = dir;
 					}
 				}
@@ -266,6 +268,53 @@ public class Plant extends GlobalVars {
 			totalAngle += angleInterval;
 			
 //			System.out.println("Angle: " + dir + ", Total Angle: " + totalAngle);
+		}
+		
+		return finalDir;
+	}
+	
+	// Scans immediate radius for building Tank
+	public static Direction scanBuildRadiusTank(float angleInterval, float start) throws GameActionException {
+		
+		// Storage output
+		Direction finalDir = null;
+		
+		// Define direction variable
+		Direction dir = new Direction((float)Math.toRadians(start));
+		
+		MapLocation curLoc = rc.getLocation();
+		
+		// Make sure only one revolution is check
+		float totalAngle = 0;
+		
+		// Scan for 1 revolution
+		while (totalAngle < 360) {
+			
+			MapLocation newLoc = curLoc.add(dir,2);
+			// Check if tree can be planted
+			if(rc.canBuildRobot(RobotType.TANK, dir)) {
+//				rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
+				if(!(rc.isCircleOccupied(newLoc.add(dir, 2),(float)2)) && (rc.onTheMap(newLoc.add(dir, 2), (float)2))) {
+					finalDir = dir;
+				}
+			}
+			else {
+//				rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
+				/*if ((finalDir[0] != null) && (finalDir[1] != null)) {
+					break;
+				}*/
+			}
+			
+			// Increment values
+			if (start <= 0) {
+				dir = dir.rotateLeftDegrees(angleInterval);
+			}
+			else {
+				dir = dir.rotateRightDegrees(angleInterval);
+			}
+			totalAngle += angleInterval;
+			
+//				System.out.println("Angle: " + dir + ", Total Angle: " + totalAngle);
 		}
 		
 		return finalDir;

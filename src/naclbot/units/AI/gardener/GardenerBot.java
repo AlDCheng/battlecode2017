@@ -99,7 +99,7 @@ public class GardenerBot extends GlobalVars {
 		
 		boolean override = false;
 		RobotType overrideType = RobotType.SOLDIER;
-        boolean buildJacks = false;   
+        float buildJacks = 0;   
 		
         while (true) {
         	//System.out.println(role);
@@ -204,10 +204,12 @@ public class GardenerBot extends GlobalVars {
                 if (rc.senseNearbyRobots(rc.getLocation(), rc.getType().sensorRadius, rc.getTeam().opponent()).length > 0) {
                 	earlyGame = false;
                 	override = true;
+                	overrideType = RobotType.SOLDIER;
                 	
-                	if (buildJacks) {
+                	/*
+                	if (buildJacks >=  Math.random()) {
                 		overrideType = RobotType.LUMBERJACK;
-                	}
+                	}*/
                 	                	
                 }
 
@@ -217,7 +219,13 @@ public class GardenerBot extends GlobalVars {
                 float bulletNum = rc.getTeamBullets();
                 if (bulletNum > GameConstants.BULLET_TREE_COST) {
                 	float newBuildDir = buildDir;
+                	
+                	float treeCongestion = Plant.congestion;
+                	
                 	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
+                	if (treeCongestion < Plant.congestion) {
+                		treeCongestion = Plant.congestion;
+                	}
                 	
                 	if (plantDirs[1] != null) {
                 		newBuildDir = plantDirs[1].getAngleDegrees();
@@ -225,25 +233,40 @@ public class GardenerBot extends GlobalVars {
             			
                 	
                 	//--------------------------------------------------------------------------------
-                	System.out.println("Tree Congestion: " + Plant.congestion);
+                	System.out.println("Tree Congestion: " + treeCongestion);
                     
                     // Fixed constant values in here
                     // Check for surrouding trees
                     if (Plant.congestion > 0.75) {
-                    	buildJacks = true;
+                    	System.out.println("Already congested");
+                    	buildJacks = 1;
                     }
                     else {
-                    	int treeNum = rc.senseNearbyTrees().length;
-                    	if (treeNum > 10) {
-                    		buildJacks = true;
-                    	}
-                    	else {
-                    		buildJacks = false;
+                    	System.out.println("Sense periphery");
+                    	TreeInfo[] trees = rc.senseNearbyTrees(rc.getType().sensorRadius, Team.NEUTRAL);
+                    	int treeNum = trees.length;
+                    	System.out.println("Tree Length: " + treeNum);
+                		buildJacks = (float)treeNum/(float)10.0;
+                    	for (int i = 0; i < treeNum; i++) {
+                    		if (trees[i].getContainedRobot() != null) {
+                    			buildJacks = 1;
+                    			break;
+                    		}
                     	}
                     }
+                    
+                    System.out.println("Build Jacks: " + buildJacks);
                     //--------------------------------------------------------------------------------
                     if (override) {
+                    	System.out.println("Overruled!");
                 		override = false;
+                		if (bulletNum > 600) {
+                			Direction dirToBuild = Plant.scanBuildRadiusTank(scanInt, newBuildDir);
+            				if (dirToBuild != null) {
+            					rc.buildRobot(RobotType.TANK, dirToBuild);
+            				}
+                			
+                		}
                 		buildUnitNew(overrideType, bulletNum, newBuildDir);             		
                 	}
                     else if (earlyGame) {
@@ -265,13 +288,9 @@ public class GardenerBot extends GlobalVars {
                         	}
                         	canMove = false;
                         }
-                    	else if (scoutCount < minScouts2) {
-                    		System.out.println("Scouts2");
-                        	buildUnitNew(RobotType.SCOUT, bulletNum, newBuildDir);
-                        }
-                    	// Toggle with lumberjack
+                		// Toggle with lumberjack
                     	else if (soldierCount < minSoldiers1) {
-                    		if (buildJacks) {
+                    		if (buildJacks >= Math.random()) {
                     			System.out.println("Soldiers1 -> Lumberjacks");
                             	buildUnitNew(RobotType.LUMBERJACK, bulletNum, newBuildDir);
                     		}
@@ -279,6 +298,10 @@ public class GardenerBot extends GlobalVars {
                     			System.out.println("Soldiers1");
                             	buildUnitNew(RobotType.SOLDIER, bulletNum, newBuildDir);                    			
                     		}
+                        }
+                    	else if (scoutCount < minScouts2) {
+                    		System.out.println("Scouts2");
+                        	buildUnitNew(RobotType.SCOUT, bulletNum, newBuildDir);
                         }
                     	else {
 //                    		minSat = true;
@@ -291,13 +314,16 @@ public class GardenerBot extends GlobalVars {
                 	else if (!earlyGame) {
                     	System.out.println("Satisfication");
 //                    	Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
-                    	System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
-                    	if (plantDirs[0] != null) {
-                    		rc.plantTree(plantDirs[0]);
-                    		canMove = false;
+                    	if ((soldierCount + lumberjackCount) > (rc.getTreeCount())) {
+                    		System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
+                        	if (plantDirs[0] != null) {
+                        		rc.plantTree(plantDirs[0]);
+                        		canMove = false;
+                        	}
                     	}
                     	else if (plantDirs[1] != null){
-                    		buildUnits(plantDirs[1]);
+//                    		buildUnits(plantDirs[1]);
+                    		buildUnitsRemastered(plantDirs[1], bulletNum, buildJacks);
                     	}
                     }                	
                 }
@@ -419,7 +445,56 @@ public class GardenerBot extends GlobalVars {
 	        
 	}
 	
-	public static void buildOverwrite() throws GameActionException {
-		
+	public static void buildUnitsRemastered(Direction dirToBuild, float bullets, float lumberRatio) throws GameActionException {
+		System.out.println("Normal Build");
+		// Check if ready to build
+		if (rc.isBuildReady()) {
+			// Prioritize by bullets; Tanks -> infantry -> scouts
+			// Try Tank
+			if ((bullets >= 500) || ((bullets >= 300) && (TANK_RATIO*tankCount < soldierCount))) {
+				System.out.println("Try Tank");
+				// Check for spacing
+				dirToBuild = Plant.scanBuildRadiusTank(scanInt, dirToBuild.getAngleDegrees());
+				if (dirToBuild != null) {
+					rc.buildRobot(RobotType.TANK, dirToBuild);
+					return;
+				}
+			}
+			
+			// Try Infantry
+			if (bullets >= 100) {
+				System.out.println("Try Infantry");
+				// Check for enough scouts
+//				if (scoutCount > START_SCOUT_COUNT) {
+					
+				// Pseudo-Random for lumberjacks or soldiers
+				if (0.7*lumberRatio <= Math.random()) {
+					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
+						rc.buildRobot(RobotType.SOLDIER, dirToBuild);
+						return;
+					}
+				}
+				else {
+					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
+						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
+						return;
+					}
+				}
+//				}
+			}
+			
+			// Build scouts if nothing else (change later)
+			if (bullets >= 80) {
+				System.out.println("Try Scout");
+				if (soldierCount > 3*scoutCount) {
+					if ((scoutCount < (rc.getRoundNum()/200 + 2)) && (scoutCount < SCOUT_LIMIT)) {
+						if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild)) {
+					        rc.buildRobot(RobotType.SCOUT, dirToBuild);
+					        return;
+						}
+					}
+				}
+			}			
+		}	        
 	}
 }

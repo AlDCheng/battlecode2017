@@ -86,15 +86,24 @@ public class ArchonBot extends GlobalVars {
     public static int roundsNotConstructed = 0;
     
     // Determines what is considered empty
-    public static float crowdThresh = (float)0.6;
+    public static float crowdThresh = (float)0.5;
+    
+    public static int gardenerNumber = 0;
     
     // TO BE CHANGED
     // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CIRCLE
-    public static int getGardenerLimit(int roundNumber){
-    	
-    	if (roundNumber <= 200){
-    		return 4;
+    public static int getGardenerLimit(int roundNumber) throws GameActionException{
+    	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+    	int maxGardeners = gardenerCount - gardenerNumber;
+    	if (gardenerCount > maxGardeners) {
+    		maxGardeners = gardenerCount;
     	}
+    	
+    	// Slight tweeks
+    	if (roundNumber <= 200){
+    		return maxGardeners;
+    	}
+    	// Make exponential
     	else if(roundNumber <= 500){
     		return (2 + roundNumber / 100);
     	}
@@ -261,13 +270,26 @@ public class ArchonBot extends GlobalVars {
             	
             	// Get the total number of gardeners constructed thus far.....
             	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
+            	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
 
         		// Check surroundings
-        		boolean crowded = (checkBuildRadius((float)30, (float)2.5, (float)0.5) >= crowdThresh);
+        		boolean crowded = (checkBuildRadius((float)30, (float)3, (float)0.5) >= crowdThresh);
         		
-            	if ((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) && (!crowded)) {
+        		float soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
+                float lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
+        		
+                System.out.println("Cur # Gardeners: " + gardenerCount);
+                
+                if (!crowded || (gardenerCount <= 0)) {
+                	if ((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) &&
+                			((soldierCount + lumberjackCount) > 2*gardenerCount)) {
+                		constructGardeners(1);
+                	}
+                }
+            	/*if (((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) && 
+            			(!crowded) && ((soldierCount + lumberjackCount) > 2*gardenerNumber)) || (gardenerCount <= 0)) {
             		constructGardeners(1);
-            	}
+            	}*/
             	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Currently not doing anything..............." );
@@ -541,7 +563,7 @@ public class ArchonBot extends GlobalVars {
 			}
 			else {
 				// Increase factor
-				crowdedFactor += angleInterval/360;
+				crowdedFactor += angleInterval/(float)360.0;
 			}
 			dir = dir.rotateLeftDegrees(angleInterval);
 			totalAngle += angleInterval; 
@@ -599,8 +621,8 @@ public class ArchonBot extends GlobalVars {
 				if(rc.onTheMap(potLoc)) {
 					
 					// Add penalty for cases on edge of map (equivalent to 3 trees)
-					if(!(rc.onTheMap(potLoc, 3))) {
-						openness = 18;
+					if(!(rc.onTheMap(potLoc, 2))) {
+//						openness = (float)0.5;
 					} else {
 						openness = 0;
 						// Tree weighting; radius = 1 (body) + 2 (tree)
