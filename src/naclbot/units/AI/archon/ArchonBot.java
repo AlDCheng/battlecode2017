@@ -94,6 +94,8 @@ public class ArchonBot extends GlobalVars {
     
     public static MapLocation initialGoal;
     
+    public static MapLocation lastBuilt;
+    
     // TO BE CHANGED
     // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CIRCLE
     public static int getGardenerLimit(int roundNumber) throws GameActionException{
@@ -209,7 +211,13 @@ public class ArchonBot extends GlobalVars {
             	
             	// Build if not crowded
             	if (!crowded || (remIsBestGirl <= initMove)) {
-            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+//            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		if (lastBuilt != null) {
+            			testDirection = new Direction(rc.getLocation(), lastBuilt); 
+            		}
+            		else {
+            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		}
                 	gardenerDirection = tryHireGardener(testDirection);
             	}
   
@@ -224,6 +232,8 @@ public class ArchonBot extends GlobalVars {
 	            		hiredGardeners += 1;
 	            		totalGardenersHired += 1;
 	            		rc.broadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS, numberofGardenersConstructed+1);
+	            		
+	            		lastBuilt = rc.getLocation();
 	            	}
             	}
             	MapLocation disperseLocation;
@@ -690,7 +700,7 @@ public class ArchonBot extends GlobalVars {
 								openness += 1;
 							}
 							else {
-								openness += 0.1;
+								//openness += 0.1;
 							}
 						}
 						// Unit weighting (for enemy Team)

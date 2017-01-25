@@ -214,7 +214,7 @@ public class Plant extends GlobalVars {
 	
 	// Scans immediate radius of gardener (in degrees)
 	// Output Format: [0]last availible tree plant space; [1]reserved unit building space
-	public static Direction[] scanBuildRadius(float angleInterval, float start) throws GameActionException {
+	public static Direction[] scanBuildRadius(float angleInterval, float start, float dist, float extend) throws GameActionException {
 		
 		congestion = 0;
 		
@@ -232,7 +232,7 @@ public class Plant extends GlobalVars {
 		// Scan for 1 revolution
 		while (totalAngle < 360) {
 			
-			MapLocation newLoc = curLoc.add(dir,2);
+			MapLocation newLoc = curLoc.add(dir,dist);
 			// Check if tree can be planted
 			if(rc.canPlantTree(dir)) {
 				rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
@@ -246,7 +246,7 @@ public class Plant extends GlobalVars {
 					if (rc.senseTreeAtLocation(newLoc) != null) {
 						congestion += angleInterval/(float)360.0;
 					}
-					if((!(rc.isCircleOccupied(newLoc.add(dir, 1),(float)0.5))) && (rc.onTheMap(newLoc.add(dir, 1), (float)1))) {
+					if((!(rc.isCircleOccupied(newLoc.add(dir, extend),(float)0.5))) && (rc.onTheMap(newLoc.add(dir, extend), (float)1))) {
 						finalDir[1] = dir;
 					}
 				}
