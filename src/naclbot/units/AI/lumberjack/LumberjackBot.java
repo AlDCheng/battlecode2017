@@ -350,9 +350,15 @@ public class LumberjackBot extends GlobalVars {
                 	roundsRouting += 1;
                 }
                 
+                // If the previously tracked tree was identical to the currently tracked tree
                 if(previousTreeID == treeID && treeID != -1){
                 	sameTreeRounds += 1;
                 }
+                // If not, make the number of rounds previously tracked -
+                else{
+                	sameTreeRounds = 0;
+                }
+                 
                 previousTreeID = treeID;
 				
 				// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -477,13 +483,21 @@ public class LumberjackBot extends GlobalVars {
 				
 				if (treeID != -1){
 					
-					if (rc.canSenseTree(treeID) || sameTreeRounds > 30){
+					if (rc.canSenseTree(treeID)){
+						
+						if(sameTreeRounds > 45){
+						
+							treeID = -1;
+							treeToHarvest = null;
+							sameTreeRounds = 0;
+							return move(enemyRobots, desiredMove, nearbyTrees);	
+						}
 						treeToHarvest = rc.senseTree(treeID);
 						System.out.println("Can see the tree, will ateempt to harvest");
 						return harvest(treeToHarvest, desiredMove, nearbyTrees);	
 					}
 					else{
-
+			
 						treeID = -1;
 						treeToHarvest = null;
 						return move(enemyRobots, desiredMove, nearbyTrees);	
