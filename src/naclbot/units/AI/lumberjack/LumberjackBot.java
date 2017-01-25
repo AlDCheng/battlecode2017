@@ -24,6 +24,7 @@ public class LumberjackBot extends GlobalVars {
 	
 	// Variables for self and team recognition
 	public static int myID;
+	public static boolean iDied = false;
 	public static int lumberjackNumber;
 	public static int unitNumber;
 	private static Team enemy;
@@ -136,14 +137,14 @@ public class LumberjackBot extends GlobalVars {
         // Initialize lumberjack so that it does not have any commands initially;
         isCommanded = false;
         
-        // Get own soldierNumber - important for broadcasting 
+        // Get own lumberjackNumber - important for broadcasting 
         lumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
         currentNumberofLumberjacks = lumberjackNumber + 1;
         
         unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
-        // Update soldier number for other soldiers to see.....
+        // Update lumberjack number for other units to see.....
         rc.broadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL, currentNumberofLumberjacks);
 
         main();
@@ -155,6 +156,24 @@ public class LumberjackBot extends GlobalVars {
         while (true) {
 
             try {
+            	
+            	// Check if it did not die, and reset the number of gardeners and units
+            	if (iDied) {
+            		
+            		iDied = false;
+            		
+            		// Get own lumberjackNumber - important for broadcasting 
+                    lumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
+                    currentNumberofLumberjacks = lumberjackNumber + 1;
+                    
+                    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+                    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+                    
+                    // Update lumberjack number for other lumberjacks to see.....
+                    rc.broadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL, currentNumberofLumberjacks);
+
+            	}
+            	
             	// ------------------------- RESET/UPDATE VARIABLES ----------------//      
             	
 
@@ -242,6 +261,7 @@ public class LumberjackBot extends GlobalVars {
             	
               	// See whether or not the robot can move to the completely processed desired move, and move if it does
             	if(rc.canMove(desiredMove)){
+            		manageBeingAttacked(desiredMove);
             		rc.move(desiredMove);
             	}
             	// If the robot wasn't able to move....
@@ -312,6 +332,26 @@ public class LumberjackBot extends GlobalVars {
 	
         }
     }
+    
+    public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		if (beingAttacked) {
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				iDied = true;
+				// Get own lumberjackNumber - important for broadcasting 
+		        lumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
+		        currentNumberofLumberjacks = lumberjackNumber - 1;
+		        
+		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
+		        
+		        // Update lumberjack number for other units to see.....
+		        rc.broadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL, currentNumberofLumberjacks);
+
+			}
+		}
+	}
     
     private static MapLocation moveTowardsTree(TreeInfo tree, MapLocation desiredMove){
     	
