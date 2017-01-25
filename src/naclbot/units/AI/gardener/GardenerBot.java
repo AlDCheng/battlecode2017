@@ -103,6 +103,7 @@ public class GardenerBot extends GlobalVars {
             	
             	// Check if it did not die, and reset the number of gardeners and units
             	if (iDied) {
+            		iDied = false;
             		 // Get own soldierNumber - important for broadcasting 
                     gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
                     currentNumberofGardeners = gardenerNumber + 1;
@@ -269,9 +270,13 @@ public class GardenerBot extends GlobalVars {
 			// BIT 3 - GIVES NEAREST ENEMY
 			RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, rc.getID());
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, (int) loc.x);
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, (int) loc.y);
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, nearbyEnemies[0].getID());
+			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+1, (int) loc.x);
+			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+2, (int) loc.y);
+			if (nearbyEnemies.length > 0) {
+				rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+3, nearbyEnemies[0].getID());
+			} else {
+				rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+3, -1);
+			}
 			boolean willDie = iFeed.willFeed(loc);
 			if (willDie) {
 				iDied = true;
