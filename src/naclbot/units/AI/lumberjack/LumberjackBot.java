@@ -92,6 +92,12 @@ public class LumberjackBot extends GlobalVars {
     // Store the maximum distance the lubmerjack is willing to go to get a tree....
     public static final float distanceToSearchTree = battlecode.common.RobotType.LUMBERJACK.sensorRadius;
     
+    // Variable to store the number of rounds the lumberjack has been attempting to go to the same tree
+    public static int sameTreeRounds;
+    
+    // variable to store the previous Tree ID of the robot...
+    public static int previousTreeID;
+    
     
     
 	// ------------- TREE VARIABLES ------------------//
@@ -283,6 +289,9 @@ public class LumberjackBot extends GlobalVars {
 	    	    	// System.out.println("desiredMove after collision correcetion " + desiredMove.toString());
             	}
             	
+            	if (desiredMove == null){
+            		desiredMove = myLocation;
+            	}
               	// See whether or not the robot can move to the completely processed desired move, and move if it does
             	if(rc.canMove(desiredMove)){
             		manageBeingAttacked(desiredMove);
@@ -340,6 +349,11 @@ public class LumberjackBot extends GlobalVars {
                 else{
                 	roundsRouting += 1;
                 }
+                
+                if(previousTreeID == treeID && treeID != -1){
+                	sameTreeRounds += 1;
+                }
+                previousTreeID = treeID;
 				
 				// Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
 				Clock.yield();
@@ -462,7 +476,8 @@ public class LumberjackBot extends GlobalVars {
 				System.out.println("Seeing if able to harvest....");
 				
 				if (treeID != -1){
-					if (rc.canSenseTree(treeID)){
+					
+					if (rc.canSenseTree(treeID) || sameTreeRounds > 30){
 						treeToHarvest = rc.senseTree(treeID);
 						System.out.println("Can see the tree, will ateempt to harvest");
 						return harvest(treeToHarvest, desiredMove, nearbyTrees);	
@@ -533,7 +548,7 @@ public class LumberjackBot extends GlobalVars {
     	}
     	
     	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
-    	if (myLocation.distanceTo(goalLocation) < 12 || roundsRouting >= giveUpOnRouting){
+    	if (myLocation.distanceTo(goalLocation) < 2 || roundsRouting >= giveUpOnRouting){
     		
     		// Reset the values necessary for switching into a command phase
     		goalLocation = null;
@@ -667,22 +682,22 @@ public class LumberjackBot extends GlobalVars {
     	TreeInfo nearestNearbyTree = null;
     	float distance = Integer.MAX_VALUE;
     	
-    	float[] distancesToTrees = new float[12];
+    	float[] distancesToTrees = new float[20];
     	Arrays.fill(distancesToTrees, -1);
     	
     	float randomNumber = (float) Math.random();
     	
-    	for(int i = 0; i <= 11; i++){
+    	for(int i = 0; i < 20; i++){
     		
     		Direction directionToSearch;
     		if (randomNumber >= 0.5){
-    			directionToSearch = new Direction ((float)(lastDirection.radians + i * Math.PI/6));
+    			directionToSearch = new Direction ((float)(lastDirection.radians + i * Math.PI/10));
     		}
     		else{
-    			directionToSearch = new Direction ((float)(lastDirection.radians - i * Math.PI/6));
+    			directionToSearch = new Direction ((float)(lastDirection.radians - i * Math.PI/10));
     		}    		
     		
-    		for (float j = bodyRadius; j<= distanceToSearchTree; j += (float) 0.7){    			
+    		for (float j = bodyRadius; j <= distanceToSearchTree - 1; j += 1){    			
     			
     			MapLocation locationToCheck =myLocation.add(directionToSearch, j);    			
 
@@ -707,7 +722,7 @@ public class LumberjackBot extends GlobalVars {
     	}
     	float minimum = Integer.MAX_VALUE;
     	int directionIndex = -1;
-    	for (int i = 0; i < 12; i++){
+    	for (int i = 0; i < 20; i++){
     		
     		if(distancesToTrees[i] < minimum && distancesToTrees[i] > 0){
     			directionIndex = i;
@@ -718,10 +733,10 @@ public class LumberjackBot extends GlobalVars {
     	if (directionIndex >= 0){
     	   	Direction directionToRead;
     		if (randomNumber >= 0.5){
-				directionToRead = new Direction ((float)(lastDirection.radians + directionIndex * Math.PI/6));
+				directionToRead = new Direction ((float)(lastDirection.radians + directionIndex * Math.PI/20));
 			}
 			else{
-				directionToRead = new Direction ((float)(lastDirection.radians - directionIndex * Math.PI/6));
+				directionToRead = new Direction ((float)(lastDirection.radians - directionIndex * Math.PI/20));
 			}    		
     		rc.setIndicatorDot(myLocation.add(directionToRead, minimum), 255, 255, 255);
     		

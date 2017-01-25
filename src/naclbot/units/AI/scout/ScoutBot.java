@@ -185,7 +185,7 @@ public class ScoutBot extends GlobalVars {
         // Initialize values relating to tree broadcasting
         seenTotal = 0;
         sentTotal = 0;
-        receivedTotal = 0;   
+        receivedTotal = 0;  
         
         // Initialize variables important to self
         myLocation = rc.getLocation();
@@ -193,7 +193,10 @@ public class ScoutBot extends GlobalVars {
         noTrackUpdateIndex = 0;
         isTracking = false;
         gardenerLocation = null;    
-        previousRobotData = null;        
+        previousRobotData = null;                
+        
+        // Initialize lastDirection to go towards the enemy robot...
+        lastDirection = myLocation.directionTo(rc.getInitialArchonLocations(enemy)[0]);
         
         // Initialize nearest CIvilian to be the stored location of the archon...
         int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
@@ -232,7 +235,7 @@ public class ScoutBot extends GlobalVars {
         while (true) {
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	
+             	
             	// ------------------------- RESET/UPDATE VARIABLES ----------------//            	
             	
             	
@@ -268,7 +271,13 @@ public class ScoutBot extends GlobalVars {
             	hasBroadcastedStatus = false;
 
             	// Update location of self
-            	myLocation = rc.getLocation();         	
+            	myLocation = rc.getLocation();     
+            	
+               	// Set the scout to try to move to the enemy archon for the first ten turns...
+            	if(onlyRemIsBestGIrl <= 10){            		
+            		
+            	    lastDirection = myLocation.directionTo(rc.getInitialArchonLocations(enemy)[0]);            		
+            	}
                 
             	// Get nearby enemies and allies and bullets for use in other functions            	
             	RobotInfo[] enemyRobots = NearbyUnits(enemy);
@@ -297,7 +306,7 @@ public class ScoutBot extends GlobalVars {
              	if(NearestAlly != null){
              		
              		nearestCivilian = NearestAlly.location;
-             		
+             		/*
              		// For Initialization and for the future,- have last direction originally point away from the closest ally, rounded to 30 degree intervals             		
              		if (myLocation.distanceTo(nearestCivilian) <= 2.5){
 	             		int randOffset = (int)(Math.random() * 4 - 2);
@@ -308,7 +317,9 @@ public class ScoutBot extends GlobalVars {
 	            		
 	            		// SYSTEM CHECK - make sure direction is multiple of 30 degrees
 	            		// System.out.println("Direction updated: nearest ally is in direction opposite to roughly" + myDirection.getAngleDegrees());  
+             		
              		}
+             		*/
              		// Get the nearest enemy to the scout..
             		RobotInfo nearestEnemy = Chirasou.getNearestAlly(enemyRobots, myLocation);
             		// If there is one...
