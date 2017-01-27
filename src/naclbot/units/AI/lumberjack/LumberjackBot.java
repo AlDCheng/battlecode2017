@@ -65,7 +65,7 @@ public class LumberjackBot extends GlobalVars {
     public static Direction enemyDir = null;
     
     // Arraylist to store path for routing....    
-    public static ArrayList<MapLocation> routingPath;
+//    public static ArrayList<MapLocation> routingPath;
     
     // Maplocation to store a target location when being told to go to a location
     public static MapLocation goalLocation;
@@ -136,8 +136,8 @@ public class LumberjackBot extends GlobalVars {
         trackedRobot = null;
         
         // Initialize path list and goal location
-       	routingPath = new ArrayList<MapLocation>();    	
-       	Routing.setRouting(routingPath);
+//       	routingPath = new ArrayList<MapLocation>();    	
+//       	Routing.setRouting(routingPath);
        	
     	// Goal location.....
         goalLocation = null;        		
