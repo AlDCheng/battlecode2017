@@ -60,28 +60,39 @@ public class BroadcastChannels extends GlobalVars {
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
 	// Stores how many lumber jacks have been constructed so far......
-	public final static int LUMBERJACK_NUMBER_CHANNEL = 9992;
+	public final static int LUMBERJACK_NUMBER_CHANNEL = 9950;
 	
 	// Stores how many lumber jacks are currently alive
-	public final static int LUMBERJACKS_ALIVE_CHANNEL = 9980;
+	public final static int LUMBERJACKS_ALIVE_CHANNEL = 9951;
 	 
 
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
-	// Stores how many scouts and harvest scouts there are
-	public final static int SCOUT_NUMBER_CHANNEL = 9995;
+	// Stores how many scouts have been constructed thus far
+	public final static int SCOUT_NUMBER_CHANNEL = 9960;
 	
-	public final static int SCOUT_HARVESTER_NUMBER_CHANNEL = 9996;
+	// Stores how many scouts are currently harvesting (unused).....	
+	public final static int SCOUT_HARVESTER_NUMBER_CHANNEL = 9961;
+	
+	// Stores how many scouts are currently active on the map....
+	public final static int SCOUTS_ALIVE_CHANNEL = 9962;
+	
+	
 	
 	// ---------------------- SOLDIER INFORMATION -------------------------//
 	
 	// Stores how many channels have been updated with information this turn
-	public final static int SOLDIER_NUMBER_CHANNEL = 9993;
+	public final static int SOLDIER_NUMBER_CHANNEL = 9970;
+	
+	// Stores how many soldiers are currently alive on a given turn....
+	public final static int SOLDIERS_ALIVE_CHANNEL = 9971;
 	
 	// ---------------------- SOLDIER INFORMATION -------------------------//
 	
 	// Stores how many channels have been updated with information this turn
-	public final static int TANK_NUMBER_CHANNEL = 9994;
+	public final static int TANK_NUMBER_CHANNEL = 9980;
+	
+	
 		
 	
 	// ----------------------- TREE INFORMATION -------------------------//
@@ -232,6 +243,10 @@ public class BroadcastChannels extends GlobalVars {
 		for (RobotInfo enemyInfo: nearbyEnemies){
 			// If the type of the enemy is an archon....
 			if (enemyInfo.type == battlecode.common.RobotType.ARCHON){
+				
+				// SYSTEM CHECK - Draw a line to the enemy archon to show that it has been spotted....
+				rc.setIndicatorLine(rc.getLocation(), enemyInfo.location, 255, 0, 0);
+				
 				// Call the function to update the team shared array
 				updateEnemyArchonLocations(nearbyEnemies, enemyInfo);
 			}

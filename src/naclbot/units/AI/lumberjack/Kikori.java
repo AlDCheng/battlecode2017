@@ -4,11 +4,11 @@ package naclbot.units.AI.lumberjack;
 import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
-import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Yuurei;
-import naclbot.units.motion.routing.Routing;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
+import naclbot.units.interact.iFeed;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,7 +81,7 @@ public class Kikori extends GlobalVars {
     // Variables related to tree harvesting...
     private static int treeID; // Stores the ID of the tree the lumberjack is currently attempting to harvest
     private static TreeInfo treeToHarvest; // Stores the information of the tree that the lumberjack is currently attempting to harvest
-    private static final float maxTreeSearchRange = 5; // The maximal distance the robot will search in order to find a new tree
+    private static final float maxTreeSearchRange = 4; // The maximal distance the robot will search in order to find a new tree
     private static final int treeSearchAngleNumber = 20; // The number of angles that the lumberjack will search in order to find a new tree
     private static final float interactDistance = (float) 0.2; // How close the robot will attempt to get to a tree before attempting to interact with it.....
     
@@ -184,7 +184,7 @@ public class Kikori extends GlobalVars {
 			
 			// Main actions of the lumberjack........
 			try{
-			    // SYSTEM CHECK  Make sure the robot finishes its turn
+			    // SYSTEM CHECK  Make sure the robot starts its turn
                 System.out.println("Beginning Turn!");
 				
 				// ------------------------ INTERNAL VARIABLES UPDATE ------------------------ //
@@ -237,6 +237,7 @@ public class Kikori extends GlobalVars {
             	// ------------------------ MOVEMENT FUNCTIONS------------------------ //
             	
 		       	MapLocation desiredMove = move(enemyRobots, nearbyTrees);
+		       	
 		       	if(desiredMove != null){
 			       	// SYSTEM CHECK - Print out where the desired move is.....
 			       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());
@@ -1046,8 +1047,5 @@ public class Kikori extends GlobalVars {
         // Update lumberjack number for other units to see.....
         rc.broadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL, currentLumberjackNumber + 1);
     	
-    }
-    
-    
-    
+    }   
 }

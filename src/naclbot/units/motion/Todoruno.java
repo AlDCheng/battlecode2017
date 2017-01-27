@@ -179,5 +179,35 @@ public class Todoruno extends GlobalVars {
 				return null;
 			}
 		}			
-	}	
+	}		
+	
+	// Simple function to return the information regarding the nearest gardener to the lumberjack at present....
+	
+	public static RobotInfo getNearestGardener(RobotInfo[] nearbyRobots, MapLocation myLocation){
+		
+		// Variable to store the data to be returned...
+		RobotInfo returnRobot = null;
+		
+		// Variable to store the minimum distance thus far....		
+		float distance = Integer.MAX_VALUE;
+		
+		// Iterate through the list
+		for(RobotInfo nearbyRobot: nearbyRobots){
+			
+			// If the robot is a gardener...
+			if (nearbyRobot.type == RobotType.GARDENER){
+				
+				// If the robot is the closest gardener thus far update the placeholders
+				if (myLocation.distanceTo(nearbyRobot.location) <= distance){
+					
+					returnRobot = nearbyRobot;
+					distance = myLocation.distanceTo(nearbyRobot.location);
+				}
+			}			
+		}	
+		
+		// After the correct information has been ascertained, return it.....
+		return returnRobot;
+	}
+	
 }
