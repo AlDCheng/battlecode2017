@@ -47,7 +47,7 @@ public class WallFollowing extends GlobalVars{
 	// Functions below:
 	
 	// Set path for routing
-	public static void setRouting(MapLocation destination) {
+	public static void setWallFollowing(MapLocation destination) {
 		System.out.println("Set Wall Following");
 		
 		try {

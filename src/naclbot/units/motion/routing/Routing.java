@@ -138,7 +138,7 @@ public class Routing extends GlobalVars{
 		    		else {
 //		    			pastLoc.remove(0);
 		    			pastLoc = new ArrayList<MapLocation>();
-		    			WallFollowing.setRouting(FD);
+		    			WallFollowing.setWallFollowing(FD);
 		    		}
 	    		}
 	    		else{
@@ -204,7 +204,7 @@ public class Routing extends GlobalVars{
 	    		}
 	    		else if(!WallFollowing.wallFollow && !togglePP) {
 	    			System.out.println("BP3");
-	    			WallFollowing.setRouting(FD);
+	    			WallFollowing.setWallFollowing(FD);
 	    		}
 	    		else {
 //	    			resetRouting();
