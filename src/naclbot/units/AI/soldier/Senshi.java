@@ -77,7 +77,7 @@ public class Senshi extends GlobalVars {
     public static boolean rotationDirection;
     
     // Arraylist to store path for routing....    
-    public static ArrayList<MapLocation> routingPath;
+//    public static ArrayList<MapLocation> routingPath;
     
     // Maplocation to store a target location when being told to go to a location
     public static MapLocation goalLocation;
@@ -146,8 +146,8 @@ public class Senshi extends GlobalVars {
         previousRobotData = null;
         
         // Initialize path list and goal location
-    	routingPath = new ArrayList<MapLocation>();    	
-    	Routing.setRouting(routingPath);
+//    	routingPath = new ArrayList<MapLocation>();    	
+//    	Routing.setRouting(routingPath);
     	
         // Initialize nearest CIvilian to be the stored location of the archon...
         int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
@@ -412,9 +412,10 @@ public class Senshi extends GlobalVars {
 	                   		goalLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);                    	
 	                   		
 	                   		// If there was a previous path.... clear it
-	                   		Routing.resetRouting();
-	                    	routingPath.add(goalLocation);
-	                    	Routing.setRouting(routingPath);
+//	                   		Routing.resetRouting();
+	                   		Routing.setRouting(goalLocation);
+//	                    	routingPath.add(goalLocation);
+//	                    	Routing.setRouting(routingPath);
 	                   	}
 	                   	else{
 	                   		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 

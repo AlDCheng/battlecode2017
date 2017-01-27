@@ -141,8 +141,8 @@ public class Kikori extends GlobalVars {
         treeToHarvest = null;
        
         // Initialize path list and goal location
-       	routingPath = new ArrayList<MapLocation>();    	
-       	Routing.setRouting(routingPath);
+//       	routingPath = new ArrayList<MapLocation>();    	
+//       	Routing.setRouting(routingPath);
        	
        	// In order to get the closest current ally..... obtain data for the nearest allied units and then the gardener if it exists....
      	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
