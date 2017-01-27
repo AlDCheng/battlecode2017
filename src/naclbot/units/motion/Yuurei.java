@@ -522,7 +522,10 @@ public class Yuurei extends GlobalVars {
     		
     	) throws GameActionException{
     	    	
-	   
+	   if(desiredMove == null){
+		   return null;
+	   }
+    	
 	    // Check if the initially selected position was out of bounds...
 		
 	   	// SYSTEM CHECK - Show desired move after path planning
@@ -649,4 +652,97 @@ public class Yuurei extends GlobalVars {
 		
 	    return desiredMove;
     }
+    
+    // Function that returns true if the robot is near a corner or false if not....
+    public static int checkIfNearCorner(float bodyRadius, float strideRadius, MapLocation myLocation) throws GameActionException{
+    	
+    	// Get locations surrounding robot....    	
+    	MapLocation northLocation = new MapLocation (myLocation.x, myLocation.y + 2 * bodyRadius + strideRadius);
+    	MapLocation southLocation = new MapLocation (myLocation.x, myLocation.y - 2 * bodyRadius - strideRadius);
+    	MapLocation eastLocation = new MapLocation (myLocation.x + 2 * bodyRadius + strideRadius, myLocation.y);
+    	MapLocation westLocation = new MapLocation (myLocation.x - 2 * bodyRadius - strideRadius, myLocation.y);
+    	
+    	// If the robot is in the top right corner...
+    	if(!rc.onTheMap(eastLocation) && !rc.onTheMap(northLocation)){
+    		return 1;
+    	}
+    	
+    	// If the robot is in the top left corner....
+    	else if(!rc.onTheMap(westLocation) && !rc.onTheMap(northLocation)){
+    		return 2;
+    	}
+    	
+    	// If the robot is in the bottom left corner....
+    	else if(!rc.onTheMap(westLocation) && !rc.onTheMap(southLocation)){
+    		return 3;
+    	}
+    	
+    	// If the robot is in the bottom right corner....
+    	else if(!rc.onTheMap(eastLocation) && !rc.onTheMap(southLocation)){
+    		return 4;
+    	}
+    	else{
+    		return 0;
+    	}   	
+    }   
+    
+    // Function to remove a robot from a corner...
+    
+    public static MapLocation moveOutOfCorner(float strideRadius, int corner, MapLocation myLocation){
+    	
+    	// Generate a random direction to choose which direction to move to....
+    	float randomNumber = (float) Math.random();
+    	
+    	for (int i = 5; i >= 0; i--){
+			
+			// Get the distance to move away for..... and the resulting map location
+			float testDistance = strideRadius / 5 * i;	
+			
+			// Placeholder for the location to test to go to......
+			MapLocation testLocation = null;
+	    	
+			// Generate the locations to test.....
+	    	if (corner == 1){    		
+	    		if(randomNumber >= 0.5){	    			
+	    			testLocation =  myLocation.add(Direction.getWest(), testDistance);
+	    		} else{
+	    			testLocation =  myLocation.add(Direction.getSouth(), testDistance);	
+	    		}
+	    	}
+	    	else if (corner == 2){
+	    		if(randomNumber >= 0.5){	    			
+	    			testLocation =  myLocation.add(Direction.getSouth(), testDistance);
+	    		} else{
+	    			testLocation =  myLocation.add(Direction.getEast(), testDistance);	
+	    		}
+	    	}
+	    	else if (corner == 3){
+	    		if(randomNumber >= 0.5){	    			
+	    			testLocation =  myLocation.add(Direction.getEast(), testDistance);
+	    		} else{
+	    			testLocation =  myLocation.add(Direction.getNorth(), testDistance);	
+	    		}
+	    	}
+	    	else if (corner == 4){
+	    		if(randomNumber >= 0.5){	    			
+	    			testLocation =  myLocation.add(Direction.getNorth(), testDistance);
+	    		} else{
+	    			testLocation =  myLocation.add(Direction.getWest(), testDistance);	
+	    		}
+	    	}
+			// If the robot can move in that direction....
+			if (rc.canMove(testLocation)){
+				// SYSTEM CHECK - Print a BLUE DOT in the location that the robot can move...
+				rc.setIndicatorDot(testLocation, 0, 0, 255);
+				return testLocation;
+			}
+			else{
+				// SYSTEM CHECK - Print a DARK BLUE DOT that the location canno move to...
+				rc.setIndicatorDot(testLocation, 0, 0, 102);	    			
+    		}    	
+    	}
+    	// If no corner locations can be found...
+    	return myLocation;
+    }
 }
+

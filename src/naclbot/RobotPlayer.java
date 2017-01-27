@@ -2,7 +2,7 @@ package naclbot;
 import battlecode.common.*;
 import naclbot.units.AI.archon.ArchonBot;
 import naclbot.units.AI.gardener.GardenerBot;
-import naclbot.units.AI.lumberjack.LumberjackBot;
+import naclbot.units.AI.lumberjack.Kikori;
 import naclbot.units.AI.scout.ScoutBot;
 import naclbot.units.AI.soldier.Senshi;
 import naclbot.units.AI.tank.TankBot;
@@ -41,7 +41,7 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    TankBot.init();
 			    break;
 			case LUMBERJACK:
-			    LumberjackBot.init();
+			    Kikori.init();
 			    break;
 			case SCOUT:
 			    ScoutBot.init();

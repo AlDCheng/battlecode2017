@@ -59,8 +59,11 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
-	// Stores how many lumber jacks exist
+	// Stores how many lumber jacks have been constructed so far......
 	public final static int LUMBERJACK_NUMBER_CHANNEL = 9992;
+	
+	// Stores how many lumber jacks are currently alive
+	public final static int LUMBERJACKS_ALIVE_CHANNEL = 9980;
 	 
 
 	// ----------------------- SCOUT INFORMATION -------------------------//
