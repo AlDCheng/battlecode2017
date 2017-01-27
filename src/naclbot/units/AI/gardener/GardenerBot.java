@@ -321,8 +321,14 @@ public class GardenerBot extends GlobalVars {
                         		// To end at 0
 //                        		Direction plantDirs[] = Plant.scanBuildRadius(scanInt, buildDir);
                         		if (plantDirs[0] != null) {
-                        			rc.plantTree(plantDirs[0]);
-                        			buildingTree += 20;
+                        			if(!((rc.senseNearbyTrees((float)2, rc.getTeam()).length > 0) && (canMove))) {
+//                                		System.out.println("Empty spaces: " + plantDirs[0] + ", " + plantDirs[1]);
+                                    	if (plantDirs[0] != null) {
+                                    		rc.plantTree(plantDirs[0]);
+                                    		buildingTree += 20;
+                                    		canMove = false;
+                                    	}
+                            		}
                         		}
                         		else {
                         			treeImpossible = true;
@@ -447,28 +453,11 @@ public class GardenerBot extends GlobalVars {
 			}
 		}		
 	}
-
-	public static Direction dirAway(MapLocation curLoc) throws GameActionException {
+	
+	public static Direction dirAway(MapLocation curLoc) {
 		RobotInfo[] ourBots = rc.senseNearbyRobots(RobotType.GARDENER.sensorRadius, rc.getTeam());
+		Direction opDir;
 		
-		MapLocation destination = Plant.findOptimalSpaceOpp(30, (float)rc.getType().sensorRadius-4, (float)rc.getType().sensorRadius-4, 0);
-		
-		Direction opDir = new Direction(curLoc, destination);
-		
-//		opDir = opDir.opposite();
-		Direction rotLeft = opDir.rotateLeftDegrees(30);
-		Direction rotRight= opDir.rotateRightDegrees(30);
-		if (rotLeft.radians > 0) {
-			return rotLeft;
-		}
-		else if (rotRight.radians < 0) {
-			return rotRight;
-		}
-		else {
-			return opDir;
-		}
-		
-		/*
 		float dx = 0;
 		float dy = 0;
 		int size = ourBots.length;
@@ -499,7 +488,7 @@ public class GardenerBot extends GlobalVars {
 		}
 		else {
 			return new Direction(0);
-		}*/
+		}
 	}
 	
 	public static void waterSurroundingTrees() throws GameActionException {
@@ -566,14 +555,8 @@ public class GardenerBot extends GlobalVars {
 //				if (scoutCount > START_SCOUT_COUNT) {
 					
 				// Pseudo-Random for lumberjacks or soldiers
-				if ((soldierCount >= 5) && (5*lumberjackCount <= soldierCount)) {
-					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
-						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
-						buildingLumberjack += 20;
-						return;
-					}
-				}
-				else if ((0.7*lumberRatio <= Math.random()) && (lumberRatio <= 1.0)) {
+				if (((0.7*lumberRatio <= Math.random()) && (lumberRatio <= 1.0))
+						|| (lumberjackCount > 5*soldierCount)) {
 					System.out.println(dirToBuild);
 					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
 						rc.buildRobot(RobotType.SOLDIER, dirToBuild);

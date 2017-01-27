@@ -156,8 +156,8 @@ public class ArchonBot extends GlobalVars {
         }
         
 	    // Initialize path list and goal location
-       	routingPath = new ArrayList<MapLocation>();    	
-       	Routing.setRouting(routingPath);
+//       	routingPath = new ArrayList<MapLocation>();    	
+//       	Routing.setRouting(routingPath);
 		constructGardeners(treeNum);	
 	}
 	
