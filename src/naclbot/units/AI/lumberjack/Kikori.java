@@ -4,11 +4,11 @@ package naclbot.units.AI.lumberjack;
 import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
-import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Yuurei;
-import naclbot.units.motion.routing.Routing;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
+import naclbot.units.interact.iFeed;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -184,7 +184,7 @@ public class Kikori extends GlobalVars {
 			
 			// Main actions of the lumberjack........
 			try{
-			    // SYSTEM CHECK  Make sure the robot finishes its turn
+			    // SYSTEM CHECK  Make sure the robot starts its turn
                 System.out.println("Beginning Turn!");
 				
 				// ------------------------ INTERNAL VARIABLES UPDATE ------------------------ //
@@ -237,6 +237,7 @@ public class Kikori extends GlobalVars {
             	// ------------------------ MOVEMENT FUNCTIONS------------------------ //
             	
 		       	MapLocation desiredMove = move(enemyRobots, nearbyTrees);
+		       	
 		       	if(desiredMove != null){
 			       	// SYSTEM CHECK - Print out where the desired move is.....
 			       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());

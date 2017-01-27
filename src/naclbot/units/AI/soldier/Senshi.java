@@ -25,95 +25,83 @@ import java.util.ArrayList;
 
 public class Senshi extends GlobalVars {
 	
-	// ------------- GENERAL (IMPORTANT TO SELF) VARS -------------//
+	// ----------------------------------------------------------------------------------//
+	// ------------------------- VARIABLES FOR USE BY THE ROBOT -------------------------//
+	// ----------------------------------------------------------------------------------//	
 	
-	// Variable for round number
-	private static int myWaifuIsOnodera;
+	// ------------- GAME VARIABLES -------------//
 	
-	// Variables for self and team recognition
-	public static int myID;
-	public static boolean iDied;
-	public static int soldierNumber;
-	public static int unitNumber;
-	private static Team enemy;	
-	private static Team allies;		
-	private static final float strideRadius = battlecode.common.RobotType.SOLDIER.strideRadius;
-	private static final float bodyRadius = battlecode.common.RobotType.SOLDIER.bodyRadius;
-	private static final float sensorRadius = battlecode.common.RobotType.SOLDIER.sensorRadius;
+	// Variable to store the round number
+	private static int roundNumber;
 	
-	// The intial round in which the soldier was constructed
-	public static int initRound;
+	// Variables to store the teams currently in the game
+	public static Team enemies;
+	public static Team allies;
 	
-	// Parameters to store locations of self and the nearest archon
-	public static MapLocation myLocation;	
+	// Gamne-defined robot class related parameters
+	private static float strideRadius = battlecode.common.RobotType.SOLDIER.strideRadius;
+	private static float bodyRadius = battlecode.common.RobotType.SOLDIER.bodyRadius;
+	private static float sensorRadius = battlecode.common.RobotType.SOLDIER.sensorRadius;
 	
-	// The total number of soldiers in active service
-	private static int currentNumberofSoldiers;
+	// ------------- PERSONAL VARIABLES -------------//
 	
-	// Boolean to store whether or not the soldier current has orders to go somewhere....
-	private static boolean isCommanded;
+	// Self-identifiers...
+	public static int myID; // Game-designated ID of the robot
+	public static int unitNumber; // Team-generated unit number - represents order in which units were built
+	public static int soldierNumber; // Team generated number - represents order in which soldiers were built
 	
-	// Array to store the data of enemy robots from the previous turn.....
-	private static RobotInfo[] previousRobotData;
+	private static int initRound; // The initial round in which the robot was constructed
+
 	
-	// ------------- MOVEMENT VARIABLES -------------//
+	// Personal movement variables
+	private static MapLocation myLocation; // The current location of the soldier...
+	private static MapLocation lastPosition; // The previous location that the soldier was at...
+	private static Direction lastDirection; // The direction in which the soldier last traveled
+	private static boolean rotationDirection = true; // Boolean for rotation direction - true for counterclockwise, false for clockwise
 	
-	// Direction at which the soldier traveled last
-	private static Direction lastDirection;
-	private static MapLocation lastPosition;
+	// ------------- OPERATION VARIABLES -------------//
 	
-	// Direction for use each round
-	private static Direction myDirection;
+	// Variables related to tracking....
+	private static int trackID; // The robot that the soldier is currently tracking....
+	private static RobotInfo trackedRobot; // The Robot that the soldier is currently tracking....
+	private static boolean isTracking; // Boolean to show whether or not the soldier is currently tracking something or not...
+    private static int roundsTracked = 0; // Variable to store for how long the robot has been tracking something
+    
+	// Path-planning variables
+	private static boolean isCommanded; // Boolean to store whether or not the soldier current has orders to go somewhere....
+    public static MapLocation goalLocation; // End location of the path planning
+    public static int roundsRouting = 0; // FVariable to store the length of time the robot has been in path planning mode....
+    
+    
+    // Routing constants
+    public static final int attackFrequency = 25; // Asserts how often robots will attempt to go on the attack after completing a prior attack....
+    public static final float attackProbability = (float) 1; // Gives probability of joining an attack at a particular time....
+    private static int lastCommanded = attackFrequency; // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
+    public static final int giveUpOnRouting = 250; // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
+    
+    // Enemy data variables....
+	private static RobotInfo[] previousRobotData; // Array to store the data of enemy robots from the previous turn.....
+
+    // Variables related to gardener defense.....
+    private static boolean mustDefend; // Variable to determine whether or not a scout should defend a unit or not...
+    private static MapLocation defendLocation; // Location that the scout must defend...
+    private static int defendAgainstID; // Enemy to search for once the scout has reached that location	
 	
-	// The ID of the robot the soldier is currently tracking and its information
-	public static int trackID;	
-	public static RobotInfo trackedRobot;
-	public static boolean isTracking;
-    
-    // Variable to see how long the robot has not tracked another unit for
-    public static int hasNotTracked;   
-    
-    // Variable to determine in which direction the soldier will rotate about a particular robot when tracking it....
-    public static boolean rotationDirection;
-    
-    // Arraylist to store path for routing....    
-//    public static ArrayList<MapLocation> routingPath;
-    
-    // Maplocation to store a target location when being told to go to a location
-    public static MapLocation goalLocation;
-    
-    // Asserts how often robots will attempt to go on the attack after completing a prior attack....
-    public static final int attackFrequency = 25;
-    
-    // Gives probability of joining an attack at a particular time....
-    public static final float attackProbability = (float) 1;
-    
-    // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
-    public static int lastCommanded = attackFrequency;
-    
-    // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
-    public static final int giveUpOnRouting = 200;
-    
-    // Variable to store the amount of time currently in routing....
-    public static int roundsRouting = 0;
-    
-    // Variable to store for how long the robot has been tracking something
-    public static int roundsTracked = 0;
-    
-    // To store the last known location of a civilian
-    public static MapLocation nearestCivilian;
-    
+	// ------------- ADDITIONAL VARIABLES/CONSTANTS -------------//
+
+	// Variables related to operational behavior...
+	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
+
     // Store whether or not an archon has been seen...
     public static boolean archonSeen = false;
     
-    // Variable to determine whether or not a scout should defend a unit or not....
-    private static boolean mustDefend;
+    // Miscellaneous variables.....
+ 	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
+  
     
-    // Location that the scout must defend...
-    private static MapLocation defendLocation;
+    // GET RID OF THIS PIECE OF SHIT VARIABLE
     
-    // Enemy to attack...
-    private static int defendAgainstID;
+	private static Direction myDirection;
     
 
     
@@ -125,58 +113,61 @@ public class Senshi extends GlobalVars {
     
     public static void init() throws GameActionException{
     	
-    	// SYSTEM CHECK - See if the soldier has initialized...    	
-    	System.out.println("I'm an soldier!");
-    	
-    	// Initialize variables important to self and team recognition
-        enemy = rc.getTeam().opponent();
-        allies = rc.getTeam();        
+        // Important parameters for self
+        enemies = rc.getTeam().opponent();
+        allies = rc.getTeam();
+        myID = rc.getID();      
         
-        myWaifuIsOnodera = rc.getRoundNum();
-        initRound = myWaifuIsOnodera;
-        
-        myID = rc.getID();
+        roundNumber = rc.getRoundNum();
+        initRound = roundNumber;
+
+        // Get own scoutNumber  and unitNumber- important for broadcasting 
+        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);        
+        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);      
+          
+        // Get the current round number......
+        roundNumber = rc.getRoundNum();
+        initRound = roundNumber;
+ 
+        // Initialize variables important to self
         myLocation = rc.getLocation();
-        
-        // Initialize Tracking Variables...
         trackID = -1;
         isTracking = false;
         trackedRobot = null;
-        rotationDirection = false;
         previousRobotData = null;
-        
-        // Initialize path list and goal location
-//    	routingPath = new ArrayList<MapLocation>();    	
-//    	Routing.setRouting(routingPath);
     	
-        // Initialize nearest CIvilian to be the stored location of the archon...
-        int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
-        int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
-        
-        nearestCivilian = new MapLocation(archonInitialX, archonInitialY);
-    	
-    	// Goal location.....
-        goalLocation = null;
-        		
-        // Initialize soldier so that it does not have any commands initially;
-        isCommanded = false;
+    	// In order to get the closest current ally..... obtain data for the nearest allied units and then the gardener if it exists....
+     	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
+       	RobotInfo nearestGardener = Todoruno.getNearestGardener(alliedRobots, myLocation);
+       	
+       	// If there is a gardener nearby, set the nearest civilian location accordingly...
+       	if (nearestGardener != null){       		
+       		nearestCivilianLocation = nearestGardener.location;
+       	}
+       	// Otherwise use the data stored in the broadcast of the initial archon locations...
+       	else{           	
+       		// Get the locations from the archon broadcasts
+            int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
+            int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
+    		
+            // Set the nearestCivilianLocation using the data gained...
+            nearestCivilianLocation = new MapLocation(archonInitialX, archonInitialY);       		
+       	}
+       	
+       	// Set the soldier to first attempt to move away from the nearest civilian initially....
+       	lastDirection = nearestCivilianLocation.directionTo(myLocation);
         
         // Initialize variables relating to defending....
         defendLocation = null;
-        defendAgainstID = -1;    
-
-        // Get own soldierNumber - important for broadcasting 
-        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-        currentNumberofSoldiers = soldierNumber + 1;
+        defendAgainstID = -1;     
         
-        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+       	// Retrieve the number of active lumberjacks and increment......
+       	int numberOfActiveScouts = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
+       	rc.broadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL, numberOfActiveScouts + 1);    
+        
+        // Update the number of soldiers so other soldiers can know....
+        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, soldierNumber + 1);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
-        
-        // Update soldier number for other soldiers to see.....
-        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
-        
-        // SYSTEM CHECK to see if init() is completed   
-        // System.out.println("Soldier successfully initialized!");		
         
         main();
     }
@@ -192,8 +183,8 @@ public class Senshi extends GlobalVars {
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//        
     			
             	// Get nearby enemies and allies and bullets for use in other functions            	
-            	RobotInfo[] enemyRobots = NearbyUnits(enemy);
-            	RobotInfo[] alliedRobots = NearbyUnits(allies);
+            	RobotInfo[] enemyRobots = NearbyUnits(enemies, sensorRadius);
+            	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
     			
             	// If the robot was just initialized or did not move last turn, set the last direction to point away from anything....
@@ -209,22 +200,10 @@ public class Senshi extends GlobalVars {
     		        }
     			}    			  
     			
-    			// Check if unit actually died or not
-    			if (iDied) {
-    				
-    				iDied = false;
-    				
-    				// Get own soldierNumber - important for broadcasting 
-    		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-    		        currentNumberofSoldiers = soldierNumber + 1;
-    		        
-    		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-    		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
-    		        
-    		        // Update soldier number for other soldiers to see.....
-    		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
-
-    			}
+    	    	// If the robot thought it died previously but didn't.... update information...
+            	if(believeHasDied){
+            		fixAccidentalDeathNotification();
+            	}
             	
             	// Update location of self
             	myLocation = rc.getLocation();    
@@ -257,7 +236,7 @@ public class Senshi extends GlobalVars {
                	
             	// Update the nearest enemy and archon locations
                	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
-            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, myWaifuIsOnodera);
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilianLocation, roundNumber);
                	
               	// Update the distress info and retreat to a scout if necessary            	
             	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 25);
@@ -268,7 +247,7 @@ public class Senshi extends GlobalVars {
             	// Update the location of the nearest noncombatant allied location and store into the variable Nearest Ally - which is null if no nearby ally exists
             	
             	if (alliedRobots.length > 0){            		
-                 	NearestAlly = getNearestCivilian(alliedRobots);
+                 	NearestAlly =  Todoruno.getNearestGardener(alliedRobots, myLocation);
             	}
             	else{
             		NearestAlly = null;
@@ -277,12 +256,12 @@ public class Senshi extends GlobalVars {
              	// If there is a friendly noncombatant nearby
              	if(NearestAlly != null){
              		
-             		nearestCivilian = NearestAlly.location;
+             		nearestCivilianLocation = NearestAlly.location;
              		
              		// For Initialization and for the future,- have last direction originally point away from the closest ally, rounded to 30 degree intervals             		
-             		if (myLocation.distanceTo(nearestCivilian) <= 2.5){
+             		if (myLocation.distanceTo(nearestCivilianLocation) <= 2.5){
 	             		int randOffset = (int)(Math.random() * 4 - 2);
-	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
+	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilianLocation).radians + (float) (Math.PI + randOffset * Math.PI/8));
 	            		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
 	            		
 	            		myDirection = new Direction(newRadians);
@@ -295,15 +274,15 @@ public class Senshi extends GlobalVars {
             		// If there is one...
             		if (nearestEnemy != null){
 	            		// If the nearest enemy is close enough to the nearest ally....
-	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 20){
+	            		if(nearestEnemy.location.distanceTo(nearestCivilianLocation) < 20){
 	            			mustDefend = true;
 	            		}
             		}
              	}
              	
-          		if (nearestCivilian != null){
+          		if (nearestCivilianLocation != null){
 	         		// SYSTEM CHECK - Draw a white line to the nearest civilian's location
-	             	rc.setIndicatorLine(myLocation, nearestCivilian, 255, 255, 255);
+	             	rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);
          		}
              	
              	if(mustDefend){
@@ -384,7 +363,7 @@ public class Senshi extends GlobalVars {
             	
             	else{
 	               	// Periodically check to go to a nearby archon......
-	            	if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
+	            	if (roundNumber % BroadcastChannels.BROADCAST_CLEARING_PERIOD == 0 && !isCommanded && lastCommanded >= attackFrequency && trackID == -1){
 	                   	
 	               		// Reset the lastCommanded 
 	               		lastCommanded = 0;
@@ -476,17 +455,18 @@ public class Senshi extends GlobalVars {
                	// SYSTEM CHECK - Show desired move after path planning
     	    	System.out.println("desiredMove before final move....: " + desiredMove.toString());
     	    	
-            	// See whether or not the robot can move to the completely processed desired move, and move if it does
-            	if(rc.canMove(desiredMove)){
-            		manageBeingAttacked(desiredMove);
-            		rc.move(desiredMove);
-            	}
-            	// If the robot wasn't able to move....
-            	else{
-            		// SYSTEM CHECK - Make sure that the robot didn't move because it didn't want to....
-            		// System.out.println("This robot did not move because it forgot to show Rem appreciation........");
-            	}
-            	
+    	       	// If the robot can move to the location it wishes to go to.....
+		       	if(rc.canMove(desiredMove)){
+		       		// Check to see if the robot will die there
+		       		checkDeath(desiredMove);
+		       		// Move to the target location
+		       		rc.move(desiredMove);
+		       	}
+		       	
+		       	// If the robot didn't move along, check if it would die from staying in its current location....
+		       	else{
+		       		checkDeath(myLocation);
+		       	}  	
             	// ------------------------ Shooting ------------------------//
             	
             	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
@@ -524,16 +504,12 @@ public class Senshi extends GlobalVars {
             	// ------------------  Round End Updates --------------------//
                             	
             	// At the end of the turn update the round number
-                myWaifuIsOnodera += 1;
+                roundNumber += 1;
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
                 lastPosition =  rc.getLocation();
                 lastDirection = new Direction(myLocation, lastPosition);
                 
-                // If the robot was not tracking, increment the value by one round....
-                if (!isTracking){
-                	hasNotTracked += 1;
-                }
                 
                 // Make sure (if the above code is missing something) that trackedRobot and trackID are both null if either is..
                 if(trackedRobot == null || trackID == -1){
@@ -570,9 +546,9 @@ public class Senshi extends GlobalVars {
     }
     
     
-	/******************************************************************
-	******************* Functions for Movement  ***********************
-	*******************************************************************/   
+	// ----------------------------------------------------------------------------------//
+	// ------------------------------- MOVEMENT FUNCTIONS -------------------------------//
+	// ----------------------------------------------------------------------------------//	 
     
     private static MapLocation move(RobotInfo[] enemyRobots, MapLocation desiredMove) throws GameActionException{
     	
@@ -710,7 +686,6 @@ public class Senshi extends GlobalVars {
         	//  rc.setIndicatorLine(myLocation, desiredMove, 0, 200, 200);   	
         	
         	isTracking = true;
-        	hasNotTracked = 0;
         	
         	return desiredMove;
         	
@@ -731,15 +706,15 @@ public class Senshi extends GlobalVars {
     }	       
     
     
-	/******************************************************************
-	******************* Miscellaneous Functions************************
-	*******************************************************************/   	
+	// ----------------------------------------------------------------------------------//
+	// --------------------------- MISCELLANEOUS FUNCTIONS ------------------------------//
+	// ----------------------------------------------------------------------------------//	
 	
 	// Function to obtain the robot info units in the specified team
 	
-	private static RobotInfo[] NearbyUnits(Team team){
+	private static RobotInfo[] NearbyUnits(Team team, float distance){
 	
-	return rc.senseNearbyRobots(myLocation, (float)10, team);
+	return rc.senseNearbyRobots(myLocation, distance , team);
 	}
 	
 	
@@ -778,71 +753,54 @@ public class Senshi extends GlobalVars {
 			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots, alliedTrees, sensorRadius);
 		}
 		return hasShot;
-	}
-	
+	}	
 
-	// Function to notify everyone that the unit has died.
+	// Function to check if the robot thinks it will die this turn and broadcast if it will.............
 	
-    public static void manageBeingAttacked(MapLocation location) throws GameActionException{
+    public static void checkDeath(MapLocation location) throws GameActionException{
     	
-    	// Boolean to determine whether or not the scout will lose health if it moves to a certain location
+    	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
 		boolean beingAttacked = iFeed.willBeAttacked(location);
 		
-		//If it will lose health for going there...
+		// If it will get hit from that location....
 		if (beingAttacked) {
 			
-			// Check if the unit will die from the damage
+			// SYSTEM CHECK - Print out that the robot thinks it will die this turn....
+			System.out.println("Moving to desired location will result in death........");
+			
+			// If the soldier will lose all of its health from moving to that location....
 			boolean willDie = iFeed.willFeed(location);
 			
-			//If it will die, broadcast to all relevant channesl.....
-			
-			if (willDie) {	
-				iDied = true;
-				// Get own soldierNumber - important for broadcasting 
-		        soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-		        currentNumberofSoldiers = soldierNumber - 1;
+			// If the soldier believes that it will die this turn....
+			if (willDie) {
+				
+				// Set the belief variable to true.....
+				believeHasDied = true;
+				
+				// Get the current number of soldiers in service
+		        int currentSoldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
 		        
-		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
-		        
-		        // Update soldier number for other soldiers to see.....
-		        rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, currentNumberofSoldiers);
+		        // Update soldier number for other units to see.....
+		        rc.broadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL, currentSoldierNumber - 1);
+
 			}
 		}
-	}	
+	}
     
-	// Function to obtain the data for the nearest ally to the robot currently (only gardeners and archons)
-	
-	private static RobotInfo getNearestCivilian(RobotInfo[] currentAllies){
+    // Function to correct an accidental death update
+    
+    public static void fixAccidentalDeathNotification() throws GameActionException{
     	
-    	float minimum = Integer.MAX_VALUE;
-		
-		int index = -1;
-		
-		for (int i = 0; i < currentAllies.length; i++){
-			// Only consider allies that are archons or gardeners
-			if (currentAllies[i].type == battlecode.common.RobotType.GARDENER){
-				
-				float dist = myLocation.distanceTo(currentAllies[i].location);
+    	// Reset belief in the robot dying this round....
+    	believeHasDied = false;    	
 
-				if (dist < minimum){					
-							
-					minimum = dist;
-					index = i;	
-				}		
-			}			
-		}
-		// If such an ally has been found return its data or otherwise return null
-		if (index >= 0){
-			
-			// SYSTEM CHECK - Check to see if the robot returns a valid ally
-			// System.out.println("I have an ally nearby and its ID is: " + currentAllies[index].ID);
-			
-			return currentAllies[index];
-		} else{
-			return null;
-		}
-    }
+		// Get the current number of soldiers in service
+        int currentSoldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
+        
+        // Update soldier number for other units to see.....
+        rc.broadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL, currentSoldierNumber + 1);
+    	
+    }   	
 	
 }	
 	

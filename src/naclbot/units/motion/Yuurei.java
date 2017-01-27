@@ -417,6 +417,9 @@ public class Yuurei extends GlobalVars {
 		
 		) throws GameActionException {
     	
+    	// SYSTEM CHECK - Print out that the robot has been told to attempt to move in a certain direction...
+    	System.out.println("Attempting to move in the direction...." + dir.radians);    	
+    	
     	// Generate distances to test - prioritize initial input direction
     	for (int i = 1; i <= 5; i++){
     		
@@ -445,7 +448,7 @@ public class Yuurei extends GlobalVars {
 	            }
 	            // Since no move has been performed, check to a higher offset on either side....
 	            currentCheck+=1;
-	        }
+	        }	         
 		}
 	    // A move through the checks cannot happen, so return a null to express this
         return null;
@@ -456,7 +459,7 @@ public class Yuurei extends GlobalVars {
     public static MapLocation attemptRandomMove(MapLocation myLocation, MapLocation desiredLocation, float strideDistance) throws GameActionException{
     	
     	// SYSTEM CHECK - Show that this function has been called.....................
-    	System.out.println("The robot cannot move even to the corrected desired move location... attempting to recalculate further.......");
+    	System.out.println("The robot cannot move to the intended location... attempting a random move....");
     	
     	// Obtain the desired direction wanted to travel
     	Direction directionTo = new Direction(myLocation, desiredLocation);
