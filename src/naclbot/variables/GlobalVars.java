@@ -324,6 +324,7 @@ public class GlobalVars {
 	}
 	
 	public static void Win() throws GameActionException{
+		/*
 		if((rc.getTeamBullets() / (GameConstants.VP_INCREASE_PER_ROUND * rc.getRoundNum() + GameConstants.VP_BASE_COST))
     			> (GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints())) {
     		rc.donate(rc.getTeamBullets());
@@ -333,7 +334,9 @@ public class GlobalVars {
     	else if (rc.getTeamBullets() > 3000) {
     		rc.donate(rc.getTeamBullets() - 2000);
     	}
+    	*/
 	}
+	
 
 }
 
