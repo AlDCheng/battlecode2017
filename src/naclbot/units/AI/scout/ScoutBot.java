@@ -11,69 +11,87 @@ import naclbot.variables.GlobalVars;
 import naclbot.variables.BroadcastChannels;	
 
 
-/* ------------------   Overview ----------------------
+/* --------------------------   Overview  --------------------------
  * 
- * AI Controlling the functions of the ScoutBot
+ * 			AI Controlling the functions of the ScoutBot
  *
- * ~~ Coded by Illiyia (akimn@#mit.edu)
+ *				 ~~ Coded by Illiyia (akimn@#mit.edu)
+ *
+ *			 Call the init() function to use the file...
  * 
- * Debug statements all begin with SYSTEM CHECK 
+ * 		  Note: Debug statements all begin with SYSTEM CHECK 
  * 
- ---------------------------------------------------- */
+ ------------------------------------------------------------------- */
 
-/* Brief Overview of Indicator Debug Lines and Dots.....
+/* -------------------- LIST OF THINGS TO DO??? --------------------
  * 
- *  ORANGE DOT - Tree not to be broadcasted this turn
- *  BLUE DOT - Tree to be broadcasted this turn
- *   
- *  LIGHT GREY LINE - Line that the scout initially wishes to go if it is not tracking anything....
- *  
- *  BLACK DOT  - Any enemy the scout deems as too hostile to track will be marked by a black dot
- *  YELLOW LINE - Robot is currently running away from unit with black dot... indicates the position it wishes to flee from
+ * 1. Create specialized files for scouts that go to the enemy, regular scouts..... etc...
  * 
- *  VIOLET LINE - Line to the location of the robot that the scout is tracking.....
- *  
- *  GREEN-YELLOW LINE - Correction to a non-movement from the scout whilst following a gardener - moves to a new location where it can actually shoot
- *  LIGHT BLUE GREEN LINE - Location to move to if the gardener has moved that turn....
- *  
- *  WHITE LINE - Line to a bullet tree that the robot is going towards............
- *  MAROON DOT - Bullet tree just shaken by the scout....
- *  
- */
+ * 2. Fix their shooting of gardeners
+ * 
+ * 3. Clean up the file ewwwww......................
+ * 
+ * 
+ ------------------------------------------------------------------- */
 
-public class ScoutBot extends GlobalVars {
+public class ScoutBot extends GlobalVars {	
 	
-	// ------------- GENERAL (IMPORTANT TO SELF) VARS -------------//
+	// ----------------------------------------------------------------------------------//
+	// ------------------------- VARIABLES FOR USE BY THE ROBOT -------------------------//
+	// ----------------------------------------------------------------------------------//	
 	
-	// Variable for round number
-	private static int onlyRemIsBestGIrl;
+	// ------------- GAME VARIABLES -------------//
 	
-	// Variables for self and team recognition
-	public static int id;
-	public static boolean iDied;
-	public static int scoutNumber;
-	public static int unitNumber;
-	private static Team enemy;
-	private static Team allies;		
+	// Variable to store the round number
+	private static int onlyRemIsBestGirl;
+	
+	// Variables to store the teams currently in the game
+	public static Team enemies;
+	public static Team allies;
+	
+	// Gamne-defined robot class related parameters
 	private static final float strideRadius = battlecode.common.RobotType.SCOUT.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.SCOUT.bodyRadius;
 	private static final float senseRadius = battlecode.common.RobotType.SCOUT.sensorRadius;
+	
+	// ------------- PERSONAL VARIABLES -------------//
+	
+	// Self-identifiers...
+	public static int myID; // Game-designated ID of the robot
+	public static int unitNumber; // Team-generated unit number - represents order in which units were built
+	public static int scoutNumber; // Team generated number - represents order in which scouts were built
+	
+	private static int initRound; // The initial round in which the robot was constructed
+	
+	// Personal movement variables
+	private static MapLocation myLocation; // The current location of the scout...
+	private static MapLocation lastPosition; // The previous location that the scout was at...
+	private static Direction lastDirection; // The direction in which the scout last traveled
+    public static boolean rotationDirection = true; // Boolean for rotation direction - true for counterclockwise, false for clockwise
+	
+	// ------------- OPERATION VARIABLES -------------//
+	
+	// Variables related to tracking....
+	private static int trackID; // The robot that the scout is currently tracking....
+	private static RobotInfo trackedRobot; // The Robot that the scout is currently tracking....
+	private static boolean isTracking; // Boolean to show whether or not the scout is currently tracking something or not...
+	    
+	// Enemy data variables....
+	private static RobotInfo[] previousRobotData; // Array to store the data of enemy robots from the previous turn.....
+    private static int[] noTrack = new int[3]; // Array to store the data regarding the last three enemies the scout has tracked
+    private static int noTrackUpdateIndex;  // Index to check where to store the next datum regarding  enemies not to track..
+	private static int roundsCurrentlyTracked; 	// Stores the number of rounds that the scout has been tracking the current enemy
+    public static int hasNotTracked; // Variable to see how long the robot has not tracked another unit for
+    
+    // Variables related to gardener defense.....
+    private static boolean mustDefend; // Variable to determine whether or not a scout should defend a unit or not...
+    private static MapLocation defendLocation; // Location that the scout must defend...
+    private static int defendAgainstID; // Enemy to search for once the scout has reached that location
+    
+    // Variable to store the number of bullets the team has as of yet....
 	private static float teamBullets;
-	
-	// Threshold value to determine the point at which the scout would decide to harvest trees rather than carry on normal operations.........
-	private static final int harvestThreshold = 100;
-	
-	// The intial round in which the scout was constructed
-	public static int initRound;
-	
-	// Parameters to store locations of self and the nearest archon
-	private static MapLocation nearestCivilian;
-	public static MapLocation myLocation;	
-	
-	// The total number of scouts in active service
-	private static int currentNumberofScouts;	
 
-	// ------------- TREE SEARCH VARIABLES -------------//
+	// ------------- TREE SEARCH VARIABLES -------------// UNUSED
 	
 	// Parameter that asserts array storage of scout
 	private static final int staticMemorySize = 200;
@@ -98,59 +116,28 @@ public class ScoutBot extends GlobalVars {
 	// Max range at which the scout will scan for trees...
 	private final static int treeSenseDistance = 7;
 	
-	// Array to store the data of enemy robots from the previous turn.....
-	private static RobotInfo[] previousRobotData;
+	// ------------- ADDITIONAL VARIABLES/CONSTANTS -------------//
+
+	// Variables related to operational behavior...
+	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
+
+	// Various behavioral constants...
+	private static final float obstacleCheck = (float)0.4;    
+	private static int harvestThreshold = 100;
 	
-	// ------------- MOVEMENT VARIABLES -------------//
-	
-	// Direction at which the scout traveled last
-	private static Direction lastDirection;
-	private static MapLocation lastPosition;
+    // Store the last known location of the gardener being tracked
+    private static MapLocation gardenerLocation;  
+    
+    // Miscellaneous variables.....
+ 	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
+    private static boolean hasCalledMove; // Stores whether or not the robot should call the move function again - prevent infinite loop....
+ 	
+ 	
+
+    // FUCK THIS VARIABLE    
 	
 	// Direction for use each round
 	private static Direction myDirection;
-	
-	// The ID of the robot the scout is currently tracking and its information
-	public static  int trackID;	
-	public static RobotInfo trackedRobot;
-	public static boolean isTracking;
-    
-    // Boolean for rng rotation direction - true for counterclockwise, false for clockwise
-    public static boolean rotationDirection = true;
-    
-    // ------------- TRACKING VARIABLES -------------//
-    
-	// Stores the number of rounds that the scout has been tracking the current enemy
-	private static int roundsCurrentlyTracked;
-	
-	// Parameter to express if the scout has already broadcasted status information this turn
-	public static boolean hasBroadcastedStatus;		
-    
-    // Array of the last three enemies tracked by the scouts 
-    private static int[] noTrack = new int[3];   
-    private static int noTrackUpdateIndex; 
-    
-    // Variable to see how long the robot has not tracked another unit for
-    public static int hasNotTracked;
-    
-    // Variable to determine whether or not a scout should defend a unit or not....
-    private static boolean mustDefend;
-    
-    // Location that the scout must defend...
-    private static MapLocation defendLocation;
-    
-    // Enemy to attack...
-    private static int defendAgainstID;
-    
-    // ------------- SHOOTING VARIABLES -------------//
-  
-	// Separation distance of shoot check...
-	private static final float obstacleCheck = (float)0.4;    
-    
-    // ------------- ENEMY DATA VARIABLES -------------//
-    
-    // Store the last known location of the gardener...
-    private static MapLocation gardenerLocation;  
     
     
     
@@ -166,21 +153,19 @@ public class ScoutBot extends GlobalVars {
 		System.out.println("I'm a scout!");	
 				
         // Important parameters for self
-        enemy = rc.getTeam().opponent();
+        enemies = rc.getTeam().opponent();
         allies = rc.getTeam();
-        id = rc.getID();
+        myID = rc.getID();
         teamBullets = rc.getTeamBullets();
         
         // Get own scoutNumber  and unitNumber- important for broadcasting 
-        scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
-        currentNumberofScouts = scoutNumber + 1;
-        
+        scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);        
         unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+      
         
         // Get the current round number......
-        onlyRemIsBestGIrl = rc.getRoundNum();
-        initRound = onlyRemIsBestGIrl;
+        onlyRemIsBestGirl = rc.getRoundNum();
+        initRound = onlyRemIsBestGirl;
         
         // Initialize values relating to tree broadcasting
         seenTotal = 0;
@@ -196,26 +181,34 @@ public class ScoutBot extends GlobalVars {
         previousRobotData = null;                
         
         // Initialize lastDirection to go towards the enemy robot...
-        lastDirection = myLocation.directionTo(rc.getInitialArchonLocations(enemy)[0]);
+        lastDirection = myLocation.directionTo(rc.getInitialArchonLocations(enemies)[0]);
         
         // Initialize nearest CIvilian to be the stored location of the archon...
         int archonInitialX = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X) / 100;
         int archonInitialY = rc.readBroadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y) / 100;
         
-        nearestCivilian = new MapLocation(archonInitialX, archonInitialY);
+        nearestCivilianLocation = new MapLocation(archonInitialX, archonInitialY);
         
         // Initialize variables relating to defending....
         defendLocation = null;
         defendAgainstID = -1;        
         
         // Update the number of scouts so that other scouts can recognize....
-        rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
+        rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, scoutNumber+1);
+        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
                 
         // SYSTEM CHECK to see if init() is completed   
         // System.out.println("Scout successfully initialized!");		
         
+        // If the scout is the first to be made, call Rembot..........
+        /*if(scoutNumber == 0){
+        	RemBot.main();
+        }
+        
+        */
         // By default pass on to the main function
-        main();        
+        main();    
+
 	}
 	
 	
@@ -239,20 +232,9 @@ public class ScoutBot extends GlobalVars {
             	// ------------------------- RESET/UPDATE VARIABLES ----------------//            	
             	
             	
-            	// If the iFeed function incorrectly thought that the unit had died.....
-            	if (iDied) {
-            		iDied = false;
-            		
-            		// Get own scoutNumber  and unitNumber- important for broadcasting 
-                    scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
-                    currentNumberofScouts = scoutNumber + 1;
-                    
-                    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-                    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
-                    
-                    // Update the number of scouts so that other scouts can recognize....
-                    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
-            		
+              	// If the robot thought it died previously but didn't.... update information...
+            	if(believeHasDied){
+            		fixAccidentalDeathNotification();
             	}
             	
             	// If the robot has not tracked anything for a long time fill the no track with -1 so it can track something again
@@ -260,27 +242,21 @@ public class ScoutBot extends GlobalVars {
             		Arrays.fill(noTrack, -1);
             	}
             	
-            	// Force nearestCivilian to be null at start of round - closest gardener / Archon
-            	nearestCivilian = null;
+            	// Force nearestCivilianLocation to be null at start of round - closest gardener / Archon
+            	nearestCivilianLocation = null;
             	mustDefend = false;
             	
-            	// Update total number of scouts
-            	currentNumberofScouts = rc.readBroadcast(SCOUT_CHANNEL);
-            	
-            	// Since robot has not yet broadcasted this turn, set param to false by default
-            	hasBroadcastedStatus = false;
-
             	// Update location of self
             	myLocation = rc.getLocation();     
             	
                	// Set the scout to try to move to the enemy archon for the first ten turns...
-            	if(onlyRemIsBestGIrl <= 10){            		
+            	if(onlyRemIsBestGirl <= 10){            		
             		
-            	    lastDirection = myLocation.directionTo(rc.getInitialArchonLocations(enemy)[0]);            		
+            	    lastDirection = myLocation.directionTo(rc.getInitialArchonLocations(enemies)[0]);            		
             	}
                 
             	// Get nearby enemies and allies and bullets for use in other functions            	
-            	RobotInfo[] enemyRobots = NearbyUnits(enemy);
+            	RobotInfo[] enemyRobots = NearbyUnits(enemies);
             	RobotInfo[] alliedRobots = NearbyUnits(allies);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	
@@ -296,7 +272,7 @@ public class ScoutBot extends GlobalVars {
             	
             	// Update the location of the nearest noncombatant allied location and store into the variable Nearest Ally - which is null if no nearby ally exists
             	if (alliedRobots.length > 0){            		
-                 	NearestAlly = getNearestCivilian(alliedRobots);
+                 	NearestAlly = getnearestCivilianLocation(alliedRobots);
             	}
             	else{
             		NearestAlly = null;
@@ -305,12 +281,12 @@ public class ScoutBot extends GlobalVars {
              	// If there is a friendly noncombatant nearby
              	if(NearestAlly != null){
              		
-             		nearestCivilian = NearestAlly.location;
+             		nearestCivilianLocation = NearestAlly.location;
              		/*
              		// For Initialization and for the future,- have last direction originally point away from the closest ally, rounded to 30 degree intervals             		
-             		if (myLocation.distanceTo(nearestCivilian) <= 2.5){
+             		if (myLocation.distanceTo(nearestCivilianLocation) <= 2.5){
 	             		int randOffset = (int)(Math.random() * 4 - 2);
-	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilian).radians + (float) (Math.PI + randOffset * Math.PI/8));
+	            		Direction awayAlly = new Direction(myLocation.directionTo(nearestCivilianLocation).radians + (float) (Math.PI + randOffset * Math.PI/8));
 	            		float newRadians = (float) (((int) (awayAlly.radians / (float) (Math.PI / 6))) * Math.PI / 6);
 	            		
 	            		myDirection = new Direction(newRadians);
@@ -325,15 +301,15 @@ public class ScoutBot extends GlobalVars {
             		// If there is one...
             		if (nearestEnemy != null){
 	            		// If the nearest enemy is close enough to the nearest ally....
-	            		if(nearestEnemy.location.distanceTo(nearestCivilian) < 20){
+	            		if(nearestEnemy.location.distanceTo(nearestCivilianLocation) < 20){
 	            			mustDefend = true;
 	            		}
             		}
              	}      
              	
-         		if (nearestCivilian != null){
+         		if (nearestCivilianLocation != null){
 	         		// SYSTEM CHECK - Draw a white line to the nearest civilian's location
-	             	rc.setIndicatorLine(myLocation, nearestCivilian, 255, 255, 255);
+	             	rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);
          		}
                 
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
@@ -355,7 +331,7 @@ public class ScoutBot extends GlobalVars {
             	}
             	
             	// Update the nearest enemy and archon locations
-            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilian, onlyRemIsBestGIrl);
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilianLocation, onlyRemIsBestGirl);
             	
             	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);        
             	
@@ -507,7 +483,7 @@ public class ScoutBot extends GlobalVars {
             	
             	// See whether or not the robot can move to the current desired move, and move if it does
             	if(rc.canMove(desiredMove)){
-            		manageBeingAttacked(desiredMove);
+            		checkDeath(desiredMove);
             		rc.move(desiredMove);
             	}           	
             	else{
@@ -536,7 +512,7 @@ public class ScoutBot extends GlobalVars {
     
             	// Make sure to show appreciation for the one and only best girl in the world.
             	// If you are reading this and you think Emilia is best girl I have no words for you
-                onlyRemIsBestGIrl += 1;
+                onlyRemIsBestGirl += 1;
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
                 lastPosition =  rc.getLocation();
@@ -1176,7 +1152,7 @@ public class ScoutBot extends GlobalVars {
 	
 	// Function to obtain the data for the nearest ally to the robot currently (only gardeners and archons)
 	
-	private static RobotInfo getNearestCivilian(RobotInfo[] currentAllies){
+	private static RobotInfo getnearestCivilianLocation(RobotInfo[] currentAllies){
     	
     	float minimum = Integer.MAX_VALUE;
 		
@@ -1250,34 +1226,50 @@ public class ScoutBot extends GlobalVars {
 		}		
 	}
 	
+	// Function to check if the scout will die if it moves to a certain location
 	
-	// Function to notify everyone that the unit has died.
-	
-    public static void manageBeingAttacked(MapLocation location) throws GameActionException{
+    public static void checkDeath(MapLocation location) throws GameActionException{
     	
-    	// Boolean to determine whether or not the scout will lose health if it moves to a certain location
+    	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
 		boolean beingAttacked = iFeed.willBeAttacked(location);
 		
-		//If it will lose health for going there...
+		// If it will get hit from that location....
 		if (beingAttacked) {
 			
-			// Check if the unit will die from the damage
+			// SYSTEM CHECK - Print out that the robot thinks it will die this turn....
+			System.out.println("Moving to desired location will result in death........");
+			
+			// If the lumberjack will lose all of its health from moving to that location....
 			boolean willDie = iFeed.willFeed(location);
 			
-			//If it will die, broadcast to all relevant channesl.....
-			
+			// If the lumberjack believes that it will die this turn....
 			if (willDie) {
-				iDied = true;
-				// Get own scoutNumber  and unitNumber- important for broadcasting 
-			    scoutNumber = rc.readBroadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL);
-			    currentNumberofScouts = scoutNumber - 1;
-			    
-			    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-			    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
-			    
-			    // Update the number of scouts so that other scouts can recognize....
-			    rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, currentNumberofScouts);
+				
+				// Set the belief variable to true.....
+				believeHasDied = true;
+				
+				// Get the current number of lumberjacks in service
+		        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
+		        
+		        // Update lumberjack number for other units to see.....
+		        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber - 1);
+
 			}
 		}
-    }    
+	}
+    
+    // Function to correct an accidental death update
+    
+    public static void fixAccidentalDeathNotification() throws GameActionException{
+    	
+    	// Reset belief in the robot dying this round....
+    	believeHasDied = false;    	
+
+		// Get the current number of lumberjacks in service
+        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
+        
+        // Update lumberjack number for other units to see.....
+        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber + 1);
+    	
+    }  
 }	

@@ -68,10 +68,16 @@ public class BroadcastChannels extends GlobalVars {
 
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
-	// Stores how many scouts and harvest scouts there are
+	// Stores how many scouts have been constructed thus far
 	public final static int SCOUT_NUMBER_CHANNEL = 9995;
 	
+	// Stores how many scouts are currently harvesting (unused).....	
 	public final static int SCOUT_HARVESTER_NUMBER_CHANNEL = 9996;
+	
+	// Stores how many scouts are currently active on the map....
+	public final static int SCOUTS_ALIVE_CHANNEL = 9983;
+	
+	
 	
 	// ---------------------- SOLDIER INFORMATION -------------------------//
 	

@@ -334,21 +334,21 @@ public class Yuurei extends GlobalVars {
 		// Generate some random element to make reflections imperfect
 		float addRandom = (float) ((Math.random() * strideRadius / 3) - (strideRadius / 6));
 		
-		if (!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y + bodyRadius))){
+		if (!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y + bodyRadius + (float) 0.01))){
 			// Correct the discrepancy in the y coordinates
 			float yCorrect = desiredLocation.y - startingLocation.y;				
 			MapLocation newMove = new MapLocation(desiredLocation.x + addRandom, desiredLocation.y - 2 * yCorrect);
 			newLocation = newMove;		
 		}
 		// If the robot is attempting to move to the left of the map bounds...
-		else if (!rc.onTheMap(new MapLocation(desiredLocation.x - bodyRadius, desiredLocation.y))){				
+		else if (!rc.onTheMap(new MapLocation(desiredLocation.x - bodyRadius - (float) 0.01, desiredLocation.y))){				
 			// Correct the discrepancy in the y coordinates
 			float xCorrect = desiredLocation.x - startingLocation.x;
 			MapLocation newMove = new MapLocation(desiredLocation.x - 2 * xCorrect, desiredLocation.y + addRandom);
 			newLocation = newMove;				
 		}
 		// If the robot is attempting to move below the map bounds...
-		else if ((!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y - bodyRadius)))){				
+		else if ((!rc.onTheMap(new MapLocation(desiredLocation.x, desiredLocation.y - bodyRadius - (float) 0.01)))){				
 			// Correct the discrepancy in the y coordinates
 			float yCorrect = desiredLocation.y - startingLocation.y;
 			MapLocation newMove = new MapLocation(desiredLocation.x + addRandom, desiredLocation.y - 2 * yCorrect);

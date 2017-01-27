@@ -81,7 +81,7 @@ public class Kikori extends GlobalVars {
     // Variables related to tree harvesting...
     private static int treeID; // Stores the ID of the tree the lumberjack is currently attempting to harvest
     private static TreeInfo treeToHarvest; // Stores the information of the tree that the lumberjack is currently attempting to harvest
-    private static final float maxTreeSearchRange = 5; // The maximal distance the robot will search in order to find a new tree
+    private static final float maxTreeSearchRange = 4; // The maximal distance the robot will search in order to find a new tree
     private static final int treeSearchAngleNumber = 20; // The number of angles that the lumberjack will search in order to find a new tree
     private static final float interactDistance = (float) 0.2; // How close the robot will attempt to get to a tree before attempting to interact with it.....
     
@@ -1046,8 +1046,5 @@ public class Kikori extends GlobalVars {
         // Update lumberjack number for other units to see.....
         rc.broadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL, currentLumberjackNumber + 1);
     	
-    }
-    
-    
-    
+    }   
 }
