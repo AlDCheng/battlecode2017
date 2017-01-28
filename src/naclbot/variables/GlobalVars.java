@@ -340,9 +340,9 @@ public class GlobalVars {
     	} else if (rc.getTeamBullets() > 3000) {
     		//if we have excess of bullets
     		rc.donate(rc.getTeamBullets() - 1000);
-    	} else if (rc.getTreeCount() > 40 && rc.getTeamBullets() >= VP_COST*5) {
+    	} else if (rc.getTreeCount() > 40 && rc.getTeamBullets() >= VP_COST) {
     		//if we have a booming economy (50 trees) then slowly exchange bullets
-    		rc.donate(VP_COST*5);
+    		rc.donate(VP_COST);
     	}
     	
 	}
