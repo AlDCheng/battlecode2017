@@ -94,24 +94,7 @@ public class GardenerBot extends GlobalVars {
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		
-		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
-		MapLocation myLocation = rc.getLocation();
-		float minDistance = 100000;
-		
-		for (MapLocation archon: archons) {
-			if (myLocation.distanceTo(archon) < minDistance) {
-				myArchon = archon;
-				minDistance = myLocation.distanceTo(archon);
-			} 
-		}
-		
-		System.out.print("My archon is: ");
-		System.out.println(myArchon);
-		oppositeEnemyArchon = EnemyArchonSearch.opposingEnemyArchon(myArchon);
-		
-		System.out.print("Opposite enemy archon is: ");
-		System.out.println(oppositeEnemyArchon);
-		rc.setIndicatorDot(oppositeEnemyArchon, 0, 0, 100);
+		manageCorrespondingArchon();
 		
 		//value of initial role, set to planting trees first
 		role = 1;
@@ -417,6 +400,45 @@ public class GardenerBot extends GlobalVars {
                 e.printStackTrace();
             }
         }
+	}
+	
+	public static void manageCorrespondingArchon() throws GameActionException {
+		
+		// Declare variables
+		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation myLocation = rc.getLocation();
+		float minDistance = 100000;
+		
+		// Determine archon that hired this particular gardener 
+		for (MapLocation archon: archons) {
+			if (myLocation.distanceTo(archon) < minDistance) {
+				myArchon = archon;
+				minDistance = myLocation.distanceTo(archon);
+			} 
+		}
+		
+		System.out.print("My archon is: ");
+		System.out.println(myArchon);
+		oppositeEnemyArchon = EnemyArchonSearch.opposingEnemyArchon(myArchon);
+		
+		System.out.print("Opposite enemy archon is: ");
+		System.out.println(oppositeEnemyArchon);
+		rc.setIndicatorDot(oppositeEnemyArchon, 0, 0, 100);
+		
+		// Broadcast to channel
+		if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_1) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_1, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 2, oppositeEnemyArchon.y);
+		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_2) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_2, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 2, oppositeEnemyArchon.y);
+		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_3) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_3, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 2, oppositeEnemyArchon.y);
+		}
 	}
 	
 	public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
