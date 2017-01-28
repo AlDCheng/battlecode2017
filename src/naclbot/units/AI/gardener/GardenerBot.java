@@ -14,7 +14,6 @@ import java.util.ArrayList;
 public class GardenerBot extends GlobalVars {
 	
 	public static int role;
-	public static boolean iDied = false;
 	
 	public static Team enemy;
 	
@@ -91,6 +90,9 @@ public class GardenerBot extends GlobalVars {
 	public static MapLocation myArchon = null;
 	public static MapLocation oppositeEnemyArchon;
 	
+	 // Miscellaneous variables.....
+ 	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
+	
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		
@@ -107,6 +109,10 @@ public class GardenerBot extends GlobalVars {
         
         unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
+        
+     // Retrieve the number of active gardeners and increment......
+       	int numberOfActiveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+       	rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfActiveGardeners + 1);    
         
         // Update soldier number for other soldiers to see.....
         rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
@@ -139,18 +145,10 @@ public class GardenerBot extends GlobalVars {
             	System.out.println("Previous health: " + previousHealth);
             	BroadcastChannels.broadcastDistress(previousHealth, enemyRobots, myLocation, unitNumber);
             	
-            	// Check if it did not die, and reset the number of gardeners and units
-            	if (iDied) {
-            		iDied = false;
-            		 // Get own soldierNumber - important for broadcasting 
-                    gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
-                    currentNumberofGardeners = gardenerNumber + 1;
-                    
-                    unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-                    rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
-                    
-                    // Update soldier number for other soldiers to see.....
-                    rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
+            	
+            	// If the robot thought it died previously but didn't.... update information...
+            	if(believeHasDied){
+            		fixAccidentalDeathNotification();
             	}
             	
                 
@@ -402,6 +400,17 @@ public class GardenerBot extends GlobalVars {
         }
 	}
 	
+	public static void fixAccidentalDeathNotification() throws GameActionException {
+		// Reset belief in the robot dying this round....
+    	believeHasDied = false;    	
+
+		// Get the current number of soldiers in service
+        int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+        
+        // Update soldier number for other units to see.....
+        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners + 1);
+	}
+	
 	public static void manageCorrespondingArchon() throws GameActionException {
 		
 		// Declare variables
@@ -459,16 +468,14 @@ public class GardenerBot extends GlobalVars {
 			}
 			boolean willDie = iFeed.willFeed(loc);
 			if (willDie) {
-				iDied = true;
-				// Get own gardenerNumber - important for broadcasting 
-		        gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
-		        currentNumberofGardeners = gardenerNumber - 1;
+				believeHasDied = true;
+				
+				// Get the current number of soldiers in service
+		        int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
 		        
-		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
-		        
-		        // Update gardener number for other gardeners to see.....
-		        rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
+		        // Update soldier number for other units to see.....
+		        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners - 1);
+
 			}
 		}
 	}

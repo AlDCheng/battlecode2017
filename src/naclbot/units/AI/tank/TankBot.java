@@ -32,7 +32,6 @@ public class TankBot extends GlobalVars {
 	
 	// Variables for self and team recognition
 	public static int myID;
-	public static boolean iDied;
 	public static int tankNumber;
 	public static int unitNumber;
 	private static Team enemy;	
@@ -40,6 +39,9 @@ public class TankBot extends GlobalVars {
 	private static final float strideRadius = battlecode.common.RobotType.TANK.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.TANK.bodyRadius;
 	private static final float sensorRadius = battlecode.common.RobotType.TANK.sensorRadius;
+	
+	// Miscellaneous variables.....
+ 	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
 
 	// The intial round in which the tank was constructed
 	public static int initRound;
@@ -161,6 +163,10 @@ public class TankBot extends GlobalVars {
         // Update soldier number for other soldiers to see.....
         rc.broadcast(BroadcastChannels.TANK_NUMBER_CHANNEL, currentNumberofTanks);
         
+        // Retrieve the number of active tanks and increment......
+       	int numberOfActiveTanks = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
+       	rc.broadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL, numberOfActiveTanks + 1);    
+        
         // SYSTEM CHECK to see if init() is completed   
         // System.out.println("Soldier successfully initialized!");		
         
@@ -196,22 +202,10 @@ public class TankBot extends GlobalVars {
     		        }
     			}
     	    			
-     			// Check if unit actually died or not
-    			if (iDied) {
-    				
-    				iDied = false;
-    				
-    				// Get own soldierNumber - important for broadcasting 
-    		        tankNumber = rc.readBroadcast(BroadcastChannels.TANK_NUMBER_CHANNEL);
-    		        currentNumberofTanks = tankNumber + 1;
-    		        
-    		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-    		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
-    		        
-    		        // Update soldier number for other soldiers to see.....
-    		        rc.broadcast(BroadcastChannels.TANK_NUMBER_CHANNEL, currentNumberofTanks);
-
-    			}
+    			// If the robot thought it died previously but didn't.... update information...
+            	if(believeHasDied){
+            		fixAccidentalDeathNotification();
+            	}
             	
             	// Update location of self
             	myLocation = rc.getLocation();         	
@@ -713,19 +707,31 @@ public class TankBot extends GlobalVars {
 			//If it will die, broadcast to all relevant channesl.....
 			
 			if (willDie) {	
-				iDied = true;
-				// Get own soldierNumber - important for broadcasting 
-		        tankNumber = rc.readBroadcast(BroadcastChannels.TANK_NUMBER_CHANNEL);
-		        currentNumberofTanks = tankNumber - 1;
+				believeHasDied = true;
+				
+				// Get the current number of soldiers in service
+		        int numberOfAliveTanks = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
 		        
-		        unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
-		        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber - 1);
-		        
-		        // Update soldier number for other soldiers to see.....
-		        rc.broadcast(BroadcastChannels.TANK_NUMBER_CHANNEL, currentNumberofTanks);
+		        // Update soldier number for other units to see.....
+		        rc.broadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL, numberOfAliveTanks - 1);
 			}
 		}		
 	}	    
+    
+    // Function to correct an accidental death update
+    
+    public static void fixAccidentalDeathNotification() throws GameActionException{
+    	
+    	// Reset belief in the robot dying this round....
+    	believeHasDied = false;    	
+
+		// Get the current number of soldiers in service
+        int numberOfAliveTanks = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
+        
+        // Update soldier number for other units to see.....
+        rc.broadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL, numberOfAliveTanks + 1);
+    	
+    }   
     
 	// Function to obtain the data for the nearest ally to the robot currently (only gardeners and archons)
 	
