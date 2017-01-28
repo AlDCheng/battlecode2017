@@ -38,6 +38,9 @@ public class BroadcastChannels extends GlobalVars {
 	// Stores how many gardeners  exist
 	public final static int GARDENER_NUMBER_CHANNEL = 9991;
 	
+	// Stores how many gardeners are currently alive....
+	public final static int GARDENERS_ALIVE_CHANNEL = 9992;
+	
 	// Stores how many gardeners have been initialized....
 	public final static int GARDENERS_CONSTRUCTED_CHANNELS = 9998;
 	
@@ -92,8 +95,8 @@ public class BroadcastChannels extends GlobalVars {
 	// Stores how many channels have been updated with information this turn
 	public final static int TANK_NUMBER_CHANNEL = 9980;
 	
-	
-		
+	// Stores how many tanks are currently alive on a given turn....
+	public final static int TANK_ALIVE_CHANNEL = 9981;
 	
 	// ----------------------- TREE INFORMATION -------------------------//
 	
