@@ -30,6 +30,8 @@ public class GlobalVars {
 	public static int SCOUT_RATIO;
 	public static int START_SCOUT_COUNT;
 	
+	public static int SPARCITY_CHANNEL;
+	
 	public static int TANK_CHANNEL;
 	
 	public static int TOTAL_TREE_BROADCAST_LIMIT;
@@ -133,6 +135,8 @@ public class GlobalVars {
 		SCOUT_RATIO = 5; 
 		
 		START_SCOUT_COUNT = 5; //builds 5 scouts before other units
+		
+		SPARCITY_CHANNEL = 105; //channel where archons can relay to gardeners how dense surrounding area is with trees
 		
 		LUMBERJACK_CHANNEL = 140;
 		START_LUMBERJACK_COUNT = 3; //builds 10 lumberjacks before soldiers/tanks

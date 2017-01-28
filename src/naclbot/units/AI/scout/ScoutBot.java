@@ -83,7 +83,6 @@ public class ScoutBot extends GlobalVars {
     public static int hasNotTracked; // Variable to see how long the robot has not tracked another unit for
     
     // Variables related to gardener defense.....
-    protected static boolean mustDefend; // Variable to determine whether or not a scout should defend a unit or not...
     private static MapLocation defendLocation; // Location that the scout must defend...
     private static int defendAgainstID; // Enemy to search for once the scout has reached that location
     
@@ -130,9 +129,7 @@ public class ScoutBot extends GlobalVars {
     
     // Miscellaneous variables.....
  	protected static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
-    private static boolean hasCalledMove; // Stores whether or not the robot should call the move function again - prevent infinite loop....
-    
-    
+     
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- RUNTIME FUNCTIONS -------------------------------//
 	// ----------------------------------------------------------------------------------//	
@@ -248,12 +245,11 @@ public class ScoutBot extends GlobalVars {
 		    	
 		    	// Update positional and directional variables
 		        myLocation = rc.getLocation();
-		        
-		        // Update behavioral variables...
-		        mustDefend = false;
+	
 		        
 		    	// See if there is a gardener and update the location of the nearest civilian if there is one....
 		    	RobotInfo nearestGardener = Todoruno.getNearestGardener(alliedRobots, myLocation);
+		    	
 		    	// Set the nearest civilian location accordingly...
 		       	if (nearestGardener != null){   
 		       		
@@ -268,7 +264,7 @@ public class ScoutBot extends GlobalVars {
 		       	}	
             	
 		       	// SYSTEM CHECK - Show where the scout believes its nearest civilian is using a WHITE LINE
-		       	rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);		       	
+		       	// rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);		       	
             	
             	// If the robot has not tracked anything for a long time fill the no track with -1 so it can track something again // UPDATE
             	if (hasNotTracked > 25){
@@ -444,7 +440,7 @@ public class ScoutBot extends GlobalVars {
     	}
 		
     	// If the team currently doesn't have too many bullets and the robot is currently not tracking anything...... call the harvest function
-    	else if ((teamBullets < harvestThreshold && nearestBulletTree != null) && !mustDefend && !isTracking){
+    	else if ((teamBullets < harvestThreshold && nearestBulletTree != null) && !isTracking){
     		
     		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
     		System.out.println("Team requires additional bullets, so will attempt to find more");            		
