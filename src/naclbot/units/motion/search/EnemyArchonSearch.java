@@ -3,26 +3,33 @@ import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class EnemyArchonSearch extends GlobalVars {
 	
 	public static MapLocation opposingEnemyArchon(MapLocation myArchon) {
 		
+		// Initialize variables
+		MapLocation realArchon;
+		
 		// Initialize arrays
 		ArrayList<ArchonPairs> pairs = new ArrayList<ArchonPairs>();
-		ArrayList<MapLocation> misfits = new ArrayList<MapLocation>();
 		
 		// The enemy team's archon positions sorted by increasing x, ties broken by increasing y
 		MapLocation[] enemyArchons = rc.getInitialArchonLocations(rc.getTeam().opponent());
 		
 		// The allied team's archon positions sorted by increasing x, ties broken by increasing y
-		MapLocation[] alliedArchons = rc.getInitialArchonLocations(rc.getTeam().opponent());
+		MapLocation[] alliedArchons = rc.getInitialArchonLocations(rc.getTeam());
 		
 		// If there is just one for each team then we know where the enemy one is
 		if (enemyArchons.length == 1) {
 			return enemyArchons[0];
 		// If there is more than one for each team then go through a more thorough analysis of positioning
 		} else if (enemyArchons.length > 1){
+			
+			realArchon = findRealArchon(myArchon, alliedArchons);
+			System.out.print("archon");
+			System.out.println(realArchon);
 			
 			// Determine the x midpoint 
 			float midpointX = Math.abs(determineXMidpoint(alliedArchons,enemyArchons));
@@ -57,12 +64,8 @@ public class EnemyArchonSearch extends GlobalVars {
 					
 				}
 				
-				// If there are no pairs, then misfit 
-				if (miniPairsX.size() == 0 && miniPairsY.size() == 0) {
-					misfits.add(enemyArchon);
-				
 				// If there is only one pair then add that to pairs
-				} else if (miniPairsX.size() == 1 && miniPairsY.size() == 0) {
+				if (miniPairsX.size() == 1 && miniPairsY.size() == 0) {
 					pairs.add(miniPairsX.get(0));
 				} else if (miniPairsX.size() == 0 && miniPairsY.size() == 1) {
 					pairs.add(miniPairsY.get(0));
@@ -98,21 +101,77 @@ public class EnemyArchonSearch extends GlobalVars {
 				
 			}
 			
-			// Check if given archon already has a pair
-			int i;
-			for (i=0 ; i < pairs.size() ; i++) {
-				if (pairs.get(i).getAlly() == myArchon) {
-					return pairs.get(i).getEnemy();
+			if (pairs.size() > 0) {
+				// Check if given archon already has a pair
+				int i;
+				for (i=0 ; i < pairs.size() ; i++) {
+					if (pairs.get(i).getAlly() == realArchon) {
+						return pairs.get(i).getEnemy();
+					}
 				}
-			}
-			// If it doesn't have a pair then check misfits
-			if (misfits.size() == 1) {
-				return misfits.get(0);
+			} else {
+			
+				// If there are no pairs then take distances 
+				return takeDistances(enemyArchons, alliedArchons, realArchon);
 			}
 		} 
-		
-		// Did not find its pair (SHOULDN'T EVER RETURN NULL)
 		return null;
+	}
+	
+	public static MapLocation takeDistances(MapLocation[] enemyArchons, MapLocation[] alliedArchons, MapLocation archon) {
+		
+		// Initialize arrays
+		ArrayList<ArchonPairs> pairs = new ArrayList<ArchonPairs>();
+		
+		for (MapLocation enemy: enemyArchons) {
+			for (MapLocation ally: alliedArchons) {
+				ArchonPairs pair = new ArchonPairs(ally,enemy);
+				pairs.add(pair);
+			}
+		}
+		
+		float greatestDistance = 0;
+		float leastDistance = 10000;
+		ArchonPairs greatestDistancePair = null;
+		ArchonPairs leastDistancePair = null;
+		
+		int i;
+		for (i=0; i<pairs.size(); i++) {
+
+			float distance = pairs.get(i).getDistanceBetween();
+
+			if (distance > greatestDistance) {
+				greatestDistance = distance;
+				greatestDistancePair = pairs.get(i);
+			} else if (distance < leastDistance) {
+				leastDistance = distance;
+				leastDistancePair = pairs.get(i);
+			}
+		}
+		
+		if (archon == greatestDistancePair.getAlly()) {
+			return greatestDistancePair.getEnemy();
+		} else if (archon == leastDistancePair.getAlly()) {
+			return leastDistancePair.getEnemy();
+		// Choose random one gg 
+		} else {
+			Random rand = new Random();
+			int index = rand.nextInt(enemyArchons.length);
+			return enemyArchons[index];
+		}
+		
+	}
+	
+	public static MapLocation findRealArchon(MapLocation currentArchon, MapLocation[] allies) {
+		float distance = 1000;
+		MapLocation realArchon = null;
+		for (MapLocation ally: allies) {
+			if (currentArchon.distanceTo(ally) < distance) {
+				realArchon = ally;
+				distance = currentArchon.distanceTo(ally);
+			}
+		}
+		return realArchon;
 	}
 	
 	public static float determineXMidpoint(MapLocation[] enemies, MapLocation[] allies) {
@@ -197,6 +256,10 @@ public class EnemyArchonSearch extends GlobalVars {
 		
 		public MapLocation getEnemy() {
 			return enemy;
+		}
+		
+		public float getDistanceBetween() {
+			return ally.distanceTo(enemy);
 		}
 	}
 	

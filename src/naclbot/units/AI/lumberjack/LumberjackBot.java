@@ -441,10 +441,10 @@ public class LumberjackBot extends GlobalVars {
 			
 			// Allow lumberjacks to track scouts for the first 400 turns but not afterwards.....
 			if (roundNumber <= 400){
-				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true);
+				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);
 			}
 			else{
-				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, false);
+				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, false, false);
 			}
 
 			

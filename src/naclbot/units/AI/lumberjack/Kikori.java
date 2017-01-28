@@ -358,10 +358,10 @@ public class Kikori extends GlobalVars {
 			// Check to see there is a new robot for which the lumberjack to attack.....
 			if (roundNumber <= 400){
 				// Allow the robot to target scouts and civilians for the first four hundred turns but not afterwards....
-				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true);
+				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);
 			}
 			else{
-				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, false);
+				trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true, false);
 			}
 
 			// If the above check found a robot for the lumberjack to track
