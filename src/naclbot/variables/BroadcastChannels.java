@@ -153,6 +153,21 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// Upper bound on the number of enemies that can be sent in one turn (to prevent excess information levels
 	public final static int ARCHON_LOCATION_LIMIT = 5;	
+	
+	// Enemy archon initial locations information from gardeners 
+			// Bit 0 - Gives Archon X
+			// Bit 1 - Gives Archon Y
+	
+	
+	// Channel to store if there is an available enemy archon 1 
+	public final static int OPPOSING_ARCHON_1 = 1200; // 1201 & 1202 for X and Y values
+	
+	// Channel to store if there is an available enemy archon 2
+	public final static int OPPOSING_ARCHON_2 = 1203; // 1204 & 1205 for X and Y values
+	
+	// Channel to store if there is an available enemy archon 3
+	public final static int OPPOSING_ARCHON_3 = 1206; // 1207 & 1208 for X and Y values
+	
 
 	
 	// ------------------------- BROADCASTING RELATED AUXILLARY FUNCTIONS --------------------------- //
