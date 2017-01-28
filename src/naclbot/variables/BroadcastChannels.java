@@ -96,7 +96,7 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int TANK_NUMBER_CHANNEL = 9980;
 	
 	// Stores how many tanks are currently alive on a given turn....
-	public final static int TANK_ALIVE_CHANNEL = 9981;
+	public final static int TANKS_ALIVE_CHANNEL = 9981;
 	
 	// ----------------------- TREE INFORMATION -------------------------//
 	
