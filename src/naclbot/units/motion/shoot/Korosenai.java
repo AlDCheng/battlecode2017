@@ -208,24 +208,27 @@ public class Korosenai extends GlobalVars {
 		
 		TreeInfo[] alliedTrees, // An array storing the robot information of nearby allied trees....
 		
-		float sightRadius // the sight radius of the robot
+		float sightRadius, // the sight radius of the robot
+		
+		RobotInfo targetedEnemy // The Enemy being targeted at present....
 
     	) throws GameActionException{
     	
-    	// If the gap to the target is too large, dont shoot......
-    	if (targetLocation.distanceTo(currentLocation) > sightRadius){
-    		return false;
-    	}
-    	// If the target is in a tree >.>.>
-    	if (rc.isLocationOccupiedByTree(targetLocation)){
-    		
-    		// SYSTEM CHECK - Tell that shot unsuccesfull because there was a tree
-    		System.out.println("Targetlocation is a tree - cannot shoot");
-    		return false;
-    	}    	
+    	// Obtain the direction is shooting at
+    	Direction targetedDirection = currentLocation.directionTo(targetLocation);
     	
-    	// Obtain the direction wanted to shoot at....
-    	Direction dirToShoot = new Direction (currentLocation, targetLocation);
+    	// First check if the gap is small enough to check
+    	if (targetLocation.distanceTo(currentLocation) < sightRadius){
+    		
+    		// If the target is in a tree >.>.>
+        	if (rc.isLocationOccupiedByTree(targetLocation)){
+        		
+        		// SYSTEM CHECK - Tell that shot unsuccesfull because there was a tree
+        		System.out.println("Targetlocation is a tree - cannot shoot");
+        		
+        		return false;
+        	}    	
+    	}    	
     	
     	// If the robot wishes to fire a single shot....
     	if (shotType == 0){
@@ -234,18 +237,39 @@ public class Korosenai extends GlobalVars {
     		System.out.println("Attempting to fire single shot");
     		
     		// If no allies are going to be instantly hit by the bullets... 
-    		if (!isDirectionOccupiedByAlly(currentLocation, dirToShoot, nearbyAllies, maximumAllyCheckDistance) && 
-    				!isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){
+    		if (!isDirectionOccupiedByAlly(currentLocation, targetedDirection, nearbyAllies, maximumAllyCheckDistance) && 
+    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
     			
-    			// Make sure your team is rich enough for you to fire something at them......
-    			if(rc.canFireSingleShot()){
-	    			// Fire!
-	    			rc.fireSingleShot(dirToShoot);	    			
-	    			
-	        		// SYSTEM CHECK Print out that the unit has fired a single shot
-	        		System.out.println("Fired single shot");
-	    			return true;    	
+    			// If the opponent is a gardener, attempt to shoot through a tree....
+    			if(targetedEnemy.type == RobotType.GARDENER){
+    				
+	    			// Make sure your team is rich enough for you to fire something at them.....    			
+	    			if(rc.canFireSingleShot()){
+	    				
+		    			// Fire!
+		    			rc.fireSingleShot(targetedDirection);	    			
+		    			
+		        		// SYSTEM CHECK Print out that the unit has fired a single shot
+		        		System.out.println("Fired single shot");
+		        		
+		    			return true;    	
+	    			}
     			}
+    			// Otherwise don't shoot through trees....
+    			else{
+    				
+    				// Make sure your team is rich enough for you to fire something at them.....    			
+        			if(rc.canFireSingleShot() && !isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius), 1)){
+        				
+    	    			// Fire!
+    	    			rc.fireSingleShot(targetedDirection);	    			
+    	    			
+    	        		// SYSTEM CHECK Print out that the unit has fired a single shot
+    	        		System.out.println("Fired single shot");
+    	        		
+    	    			return true;    	
+        			}    				
+    			}   		
     		}    	
     	}
     	else if (shotType == 1){
@@ -255,67 +279,77 @@ public class Korosenai extends GlobalVars {
     		
     		// Iterate over the three bullets to be fired
     		for (int j = -1; j <= 1; j++){
+    			
     			// Get the direction that the bullet will be traveling at
-    			Direction fireDirection = new Direction (dirToShoot.radians + j * triadOffset);
+    			Direction fireDirection = new Direction (targetedDirection.radians + j * triadOffset);
+    			
     			// If no allies are going to be instantly hit by the bullets... 
 	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) || 
-	    				isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){			
+	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+	    				
 	    			return false;	    			
-	    		}     
-    		}   		
-    		// Make sure your team is rich enough for you to fire something at them......
-			if(rc.canFireTriadShot()){
-    			// Fire!
-    			rc.fireTriadShot(dirToShoot);
-    			
-    			// SYSTEM CHECK Print out that the unit has fired a triad shot
-        		System.out.println("Fired triad shot");
-    			return true; 
-			}else{
-    			return false;
-    		}
+	    		}    
+	    		if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius), 1)){
+	    			
+	    			// SYSTEM CHECK - Print out that there was as tree in the way....
+	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack");
+	    			
+    				return false;	    			
+	    		}    		
+    		}   
+   
+			if(rc.canFireTriadShot() && rc.getTeamBullets() > 50){
+				// Fire!
+				rc.fireTriadShot(targetedDirection);
+				
+				// SYSTEM CHECK Print out that the unit has fired a triad shot
+	    		System.out.println("Fired triad shot");
+				
+	    		return true; 		    		
+			}
+			return false;
     	}
 		else if (shotType == 2){
 			
 			// SYSTEM CHECK Print out that attempting to fire single shot
     		System.out.println("attempting to fire pentad shot");
-			
-			if(isLineBLockedByTree(currentLocation, targetLocation, 1)){
-				return false;
-			}
-		    		
+			    		
     		// Iterate over the five bullets to be fired
     		for (int j = -2; j <= 2; j++){
+
     			// Get the direction that the bullet will be traveling at
-    			Direction fireDirection = new Direction (dirToShoot.radians + j * pentadOffset);
+    			Direction fireDirection = new Direction (targetedDirection.radians + j * pentadOffset);
+    			
     			// Check to see if no allies are going to be hit by bullets.....
 	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
-	    				!isDirectionOccupiedByAllyTree(currentLocation, dirToShoot, alliedTrees, maximumAllyTreeCheckDistance)){
-	    			
-	    			
+	    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
 	    			
 	    			return false;
 	    		}
-    			// Make sure your team is rich enough for you to fire something at them......
-    			if(rc.canFirePentadShot()){
-	    			// Fire!
-	    			rc.firePentadShot(dirToShoot);
+				if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius), 1)){
 	    			
-	    			// SYSTEM CHECK Print out that the unit has fired a pentad shot
-	        		System.out.println("Fired pentad shot");
+	    			// SYSTEM CHECK - Print out that there was as tree in the way....
+	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack");
 	    			
-	    			return true;    	
-    			} else{
-    				return false;
-	    		}    	
+					return false;	    			
+		    	}
     		}
-    	}
-    	// Invalid shotType
-		else{ 
-			return false;
+		    			
+			// Make sure your team is rich enough for you to fire something at them......
+			if(rc.canFirePentadShot()&& rc.getTeamBullets() > 100){
+    			// Fire!
+    			rc.firePentadShot(targetedDirection);
+    			
+    			// SYSTEM CHECK Print out that the unit has fired a pentad shot
+        		System.out.println("Fired pentad shot");
+        		
+        		return true;
+			}    		
+        	// Desired shot is not possible, return false...
+        	return false;
 		}
-    	// Desired shot is not possible, return false...
-    	return false;
+    	// Invalid shot number....
+		return false;
     }
     
     

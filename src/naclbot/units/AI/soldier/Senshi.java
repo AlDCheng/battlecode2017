@@ -102,10 +102,12 @@ public class Senshi extends GlobalVars {
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
 	private static final float separationDistance = sensorRadius; // stores how large of a distance soldiers will attempt to keep from nearby units when they engage them...
+	private static MapLocation archonLocation; // Stores the location of the archon that the soldier is by default sent to attack....
 	
     // Miscellaneous variables.....
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
  	private static boolean checkArchons = true; // Stores whether or not the robot will attempt to look for archons or not....
+ 	
   
  	
 	// ----------------------------------------------------------------------------------//
@@ -173,6 +175,9 @@ public class Senshi extends GlobalVars {
         rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, soldierNumber + 1);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
+     // Utilize the first archonlocation by default....... // TODO
+        archonLocation = rc.getInitialArchonLocations(enemies)[0];
+        
         main();
     }
     
@@ -211,6 +216,9 @@ public class Senshi extends GlobalVars {
 		       	
 		       	// If the robot hadn't moved the previous turn... this value may be null
 		       	if (lastDirection == null){
+		       		
+		       		// SYSTEM CHECK - Print out that the last turn, lastDirection was null....
+		       		System.out.println("Last direction was previously null....");
 		       		
 		       		// Set the direction to go to as away from the last known nearest civilian
 		       		lastDirection = nearestCivilianLocation.directionTo(myLocation);
@@ -284,36 +292,40 @@ public class Senshi extends GlobalVars {
 		       		}		       		
 		       	}
 		       	          	
-            	/*
+		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to dodge....
+		       	System.out.println("Bytecode used prior to dodge: " + Clock.getBytecodeNum());
+            	
             	// --------------------------- DODGING ------------------------ //
-            	
-              	// SYSTEM CHECK - Notify that the robot is now attempting to call the dodge function
-            	// System.out.println("Calling the dodge function");
-            	
-              	// Placeholder Variable for any dodge that the dodge function creates....
-            	MapLocation dodgeLocation;
-            	
-            	// Currently does nothing may use later XD
-            	boolean canDodge = false;
-            	
-            	// SYSTEM CHECK - Make sure that the dodge function is called...
-            	// System.out.println("Calling Dodge Function....");
-            	
+
             	// Call the dodge function
-            	dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, canDodge);
-            	            	
+		       	MapLocation dodgeLocation = null;
+		       	
+		       	if (normieEmiliaLover != null){
+		       		
+		       		// SYSTEM CHECK - Print out that the dodge function has been called with an enemy nearby....
+		       		System.out.println("Calling dodge with a nearby enemy....");
+		       		
+		       		dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, normieEmiliaLover.location, nearbyBullets, strideRadius, bodyRadius); 
+		       	}
+		       	else{		
+		       		
+		       		// SYSTEM CHECK - Print out that the dodge function has been called with an enemy nearby....
+		       		System.out.println("Calling dodge without a nearby enemy....");
+		       		
+		       		dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, null, nearbyBullets, strideRadius, bodyRadius); 
+				    
+		       	}
             	// If there is a location that the unit can dodge to..
             	if (dodgeLocation != null){
+            		
             		desiredMove = dodgeLocation;
             	   	// SYSTEM CHECK - Show desired move after path planning
-        	    	System.out.println("desiredMove after dodge correction: " + desiredMove.toString());
+        	    	System.out.println("desiredMove altered by dodge to: " + desiredMove.toString());
             	}  
 
-               	// SYSTEM CHECK - Show desired move after path planning
-    	    	System.out.println("desiredMove before final move....: " + desiredMove.toString());
-            	 */
+        
     	       	// If the robot can move to the location it wishes to go to.....
-		       	if(rc.canMove(desiredMove)){
+		       	if(rc.canMove(desiredMove) && desiredMove != myLocation){
 		       		
 		       		// SYSTEM CHECK - Print out that the robot successfully moved....
 		       		System.out.println("Soldier succesfully moved to desired location");
@@ -331,16 +343,22 @@ public class Senshi extends GlobalVars {
 		       		System.out.println("Soldier did not move this turn....");
 		       				       		
 		       		checkDeath(myLocation);
-		       	}  	
+		       	} 
+		       	
+		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to shooting.......
+		       	System.out.println("Bytecode used prior to shooting: " + Clock.getBytecodeNum());		       	
+		       	
+		       	// Update the position for the end of the round...
+                lastPosition =  rc.getLocation();
 
             	// ------------------------ Shooting ------------------------//
-            	/*
+            
             	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
             	// System.out.println("Moving on to shooting phase...................");
             	
             	boolean hasShot = false;
             	
-            	if (normieID >= 0){
+            	if (normieID != -1){
             		
             		// SYSTEM CHECK - Show who the robot is aiming at...
             		System.out.println("Currently shooting at a robot with ID: " + normieID);
@@ -359,19 +377,18 @@ public class Senshi extends GlobalVars {
             	
             	if(hasShot){            		
             		// SYSTEM CHECK - Inform that the robot has shot something this round....
-            		// System.out.println("The robot has fired a shot this round....");
+            		System.out.println("The robot has fired a shot this round....");
             	}
             	else{
               		// SYSTEM CHECK - Inform that the robot has not shot something this round.......
-            		// System.out.println("The robot has not fired a shot this round....");            		
+            		System.out.println("The robot has not fired a shot this round....");            		
             	}
-            	*/
+            	
             	
             	// ------------------  Round End Updates --------------------//
 
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
-                lastPosition =  rc.getLocation();
                 lastDirection = new Direction(myLocation, lastPosition);
                 
                 
@@ -539,7 +556,7 @@ public class Senshi extends GlobalVars {
 		} else{
 			
 			// Make sure that the tracking variables are reset....
-			normieEmiliaLover = null;	normieID = -1;
+			normieEmiliaLover = null;	normieID = -1;	 foundNormie = false;	
 			
     		// SYSTEM CHECK - Notify that nothing to be scouted has been found
     		System.out.println("The soldier cannot find anything to engage");    			
@@ -599,9 +616,31 @@ public class Senshi extends GlobalVars {
         	normieID = -1;	foundNormie = false;	normieEmiliaLover = null;
 
         	// SYSTEM CHECK - Notify of target loss
-        	System.out.println("Lost sight of target/Finding a new target");        	
+        	System.out.println("Lost sight of target");        	
         	
-        	return move(enemyRobots);
+        	// Simply add a stride radius away from the initial location if possible.....
+    		for (int i = 5; i >= 1; i--){
+    			
+    			// Get the distance to move away for..... and the resulting map location
+    			float testDistance = strideRadius / 5 * i;	            			
+    			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
+    			
+    			// Check if the robot can move to the location and if it can, do so.....
+    			if (rc.canMove(testLocation)){	       
+    				
+    				// SYSTEM Check - Set LIGHT GREY LINE indicating where the soldier would wish to go
+        			rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);   
+        			
+    				return testLocation;	            			
+    			}	            			
+    		}    		
+    		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
+    		
+			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
+			System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
+			
+			// Return the current location of the robot.......
+			return myLocation;	    	
     	}	                		
     }	
 	
@@ -641,8 +680,7 @@ public class Senshi extends GlobalVars {
 	    	
 	    	return desiredMove;
     	}
-    } 
-    
+    }    
     
     
 	// ----------------------------------------------------------------------------------//
@@ -681,45 +719,85 @@ public class Senshi extends GlobalVars {
            	if(newInfo == null){
            		newInfo = BroadcastChannels.readEnemyLocations();
            	}
-           	
-           	MapLocation targetLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);       
+      
            	
            	// Pseudo random number for joining the attack....
            	float willJoin = (float) Math.random();
            	
            	// If an archon has been seen before and the robot's pseudo random number falls within bounds to join an  attack, create the goal location
            	// Make sure that the goal location is sufficiently far away - i.e. don't go if it is within sensor Radius....
-           	if (willJoin <= attackProbability && newInfo != null && myLocation.distanceTo(targetLocation) >= sensorRadius){
+           	if (willJoin <= attackProbability && newInfo != null){ 
+           			
+           		// Obtain the location from the broadcast data
+           		MapLocation targetLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);    
            		
-           		// The robot now has a command to follow, so will no longer track enemies continuously.....
-           		isCommanded = true;
+           		// Make sure that the robot is somewhat far away....
+           		if(myLocation.distanceTo(targetLocation) >= sensorRadius){
            		
-           		// Set the location of the target to go to as the data from the broadcast
-           		goalLocation = targetLocation;           	
-           		
-           		// Append the location to the routing...
-           		Routing.setRouting(goalLocation);           		
-               	
-           		// Reset the lastCommanded since the unit has now received a command
-           		lastCommanded = 0;
-           		
+	           		// The robot now has a command to follow, so will no longer track enemies continuously.....
+	           		isCommanded = true;
+	           		
+	           		// Set the location of the target to go to as the data from the broadcast
+	           		goalLocation = targetLocation;           	
+	           		
+	           		// Append the location to the routing...
+	           		Routing.setRouting(goalLocation);           		
+	               	
+	           		// Reset the lastCommanded since the unit has now received a command
+	           		lastCommanded = 0;
+	           	}         		
+	           	else{
+	           		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
+	           		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+	           		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
+	           		
+	           		// IF there are no more enemies to be found....... (as far as the team knows           		
+	           		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
+	           			
+	           			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
+	           			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
+	           			
+	           			checkArchons = false;
+	           			isCommanded = false;
+	               		goalLocation = null;          		
+	           		}
+           		}
            	}
            	else{
-           		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
-           		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
-           		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
-           		
-           		// IF there are no more enemies to be found....... (as far as the team knows           		
-           		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
-           			
-           			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
-           			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
-           			
-           			checkArchons = false;
-           			isCommanded = false;
-               		goalLocation = null;          		
-               		
-           		}
+	    		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
+	       		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+	       		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
+	       		
+	       		// If it is near the beginning of the game... tell the robot to go to the location of the enemy archon.....
+	       		if (discoveredArchons == 0 && roundNumber >= initRound + 2){
+	       			
+	       			// SYSTEM CHECK - Print out that the soldier will be attempting to go to the initial archon location
+	       			System.out.println("Attempting to go to the enemy archon location......");
+	       			
+	       			// The robot now has a command to follow, so will no longer track enemies continuously.....
+	           		isCommanded = true;
+	           		
+	           		// Set the location of the target to go to as the data from the broadcast
+	           		goalLocation = archonLocation;           	
+	           		
+	           		// Append the location to the routing...
+	           		Routing.setRouting(goalLocation);           		
+	               	
+	           		// Reset the lastCommanded since the unit has now received a command
+	           		lastCommanded = 0;	       			
+	       		}
+	       		
+	       		
+	       		// IF there are no more enemies to be found....... (as far as the team knows           		
+	       		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
+	       			
+	       			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
+	       			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
+	       			
+	       			checkArchons = false;
+	       			isCommanded = false;
+	           		goalLocation = null;          		
+	       		}
            	}
     	}
 	}	
@@ -730,36 +808,36 @@ public class Senshi extends GlobalVars {
 	private static boolean decideShoot(RobotInfo[] enemyRobots, RobotInfo[] alliedRobots, TreeInfo[] alliedTrees) throws GameActionException{
 		
 		// Obtain a location to shoot at
-		MapLocation shootingLocation = Korosenai.getFiringLocation(normieEmiliaLover, previousRobotData, myLocation);
+		MapLocation shootingLocation = Korosenai.getFiringLocation(normieEmiliaLover, previousRobotData, lastPosition);
 		
 		// Return value to store whether or not the has fired this turn or no....
 		boolean hasShot;
 		
 		// If there is more than one enemy nearby, attempt to fire a pentad at the location
-		if(enemyRobots.length >= 4){
+		if(enemyRobots.length >= 3 || (roundNumber <= 500 && normieEmiliaLover.type == RobotType.SOLDIER) || normieEmiliaLover.type == RobotType.TANK){
 			
 			// If a pentad can be shot...
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, alliedTrees, sensorRadius);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 2, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			
 			// If that was not possible, try a triad and then a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees, sensorRadius);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 1, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			}			
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees, sensorRadius);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 0, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			}			
 		}
-		else if (enemyRobots.length >= 2 || normieEmiliaLover.type == battlecode.common.RobotType.ARCHON){
+		else if (enemyRobots.length >= 2){
 			// If a triad can be shot
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, alliedTrees, sensorRadius);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 1, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			
 			// If that was not possible, try a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, alliedTrees, sensorRadius);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 0, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			}		
 		}
 		else{
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation,0, alliedRobots, alliedTrees, sensorRadius);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition,0, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 		}
 		return hasShot;
 	}	

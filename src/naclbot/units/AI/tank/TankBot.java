@@ -672,14 +672,14 @@ public class TankBot extends GlobalVars {
 			System.out.println("Going to try to fire a pentad");
 			
 			// If a pentad can be shot...
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, nearbyAlliedTrees, sensorRadius);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 2, alliedRobots, nearbyAlliedTrees, sensorRadius, trackedRobot);
 			
 			// If that was not possible, try a triad and then a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees, sensorRadius);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees, sensorRadius, trackedRobot);
 			}			
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees, sensorRadius);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees, sensorRadius, trackedRobot);
 			}			
 		}
 		else{			
@@ -687,11 +687,11 @@ public class TankBot extends GlobalVars {
 			System.out.println("Going to try to fire a triad");
 			
 			// If a triad can be shot
-			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees, sensorRadius);
+			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 1, alliedRobots, nearbyAlliedTrees, sensorRadius, trackedRobot);
 			
 			// If that was not possible, try a single shot 
 			if(!hasShot){
-				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees, sensorRadius);
+				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, myLocation, 0, alliedRobots, nearbyAlliedTrees, sensorRadius, trackedRobot);
 			}		
 		}
 		return hasShot;

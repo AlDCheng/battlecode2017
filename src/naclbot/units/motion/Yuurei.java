@@ -22,6 +22,9 @@ public class Yuurei extends GlobalVars {
 	public static final int scanAngleNumber = 8;
 	public static final float scanningAngleDiff = (float)(Math.PI * 2 / scanAngleNumber);
 	
+	public static final int dodgeAngleNumber = 12;
+	public static final float dodgeAngleOffset = (float)(Math.PI * 2 / dodgeAngleNumber);
+	
 	// Value after which units decide to give up trying to dodge......
 	public static final float maxIncomingBullets = 7;
 	
@@ -30,10 +33,211 @@ public class Yuurei extends GlobalVars {
 	// Note this ASSUMES that there is nothing at the desired location the robot is currently attempting to move to....
 	// TODO Fix a few errors related to dodging bullets at sharp angles - reduce time complexity if there are many bullets nearby...
 	
+	
+	// Simple class to show a line on the map....
+	
+	public static class Line{
+		
+		public MapLocation start;
+		public MapLocation end;
+		
+		public Line(MapLocation point1, MapLocation point2){
+			this.start = point1;
+			this.end = point2;
+		}
+		
+		public void display(){
+			
+			// Displays an aquamarine line on the map from the start and end locations of the Line
+			rc.setIndicatorLine(start, end, 127, 255, 212);
+		}
+		
+		public void print(){
+			
+			// Print a message detailing the start and end points of the line
+			System.out.println("Line start: [" + start.x + ", " + start.y + "]. Line end: [" + end.x + ", " + end.y + "]");
+		}
+	
+	}
+	
+	
+	
+	
+	
+	
+	
 	// -------------------------------------------------------------------------------------------//
 	// -------------------------------- ATTACK ORIENTED FUNCTIONS  -------------------------------//
 	// -------------------------------------------------------------------------------------------//	
 
+	public static MapLocation tryDodge(
+			
+		// Input Variables
+		MapLocation desiredLocation, // Location that the robot wishes to go to...
+		MapLocation startingLocation, // Location that the robot is currently at....
+		MapLocation enemyLocation, // Location that the nearest enemy is currently at....
+		
+		BulletInfo[] nearbyBullets, // A non empty array of nearby bullets
+				
+		float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
+		float bodyRadius // Float representing how wide the robot
+		){			
+		
+		// SYSTEM CHECK - Draw a bule dot on the location that the robot wishes to go to....
+		rc.setIndicatorDot(desiredLocation, 0, 0, 255);
+	
+		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
+		float scanRadius = strideRadius + bodyRadius;	
+		
+		Direction directionAway;
+		
+		if(enemyLocation == null){
+			directionAway = Move.randomDirection();
+		}
+		else{
+			// Get the direction pointing away from the robot in question....
+			directionAway = enemyLocation.directionTo(startingLocation);
+		}
+		
+		// Get the bullet lines for the current scenario....
+		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation);
+		
+       	// SYSTEM CHECK- Print out the amount of bytecode used prior to  calculating the dodge location......
+       	System.out.println("Bytecode used prior to calculating dodge location: " + Clock.getBytecodeNum());
+		
+		if (bulletLines.size() > maxIncomingBullets){
+			// SYSTEM CHECK - If there are too many bullets nearby, the robot will just give up......
+			System.out.println("Too many bullets nearby, will not attempt to dodge");
+			
+			return null;
+		}
+		// Otherwise if there is at least one bullet nearby...
+		else if(bulletLines.size() > 0){
+			
+			// SYSTEM CHECK - Notify that this function has been called
+			System.out.println("Nearby bullets detected attempting to dodge");
+			
+			// Placeholder to determine whether or not the bullets currently considered would hit the robot.....
+			boolean willCollide = false;
+			
+			// Iterate through each bullet line - if the desired location would intersect with any of them.... attempt to find a new point to go to..
+			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius)){
+				
+				willCollide = true;
+			}
+
+			// If no bullets will collide in the desired location, simply return it...
+			if(!willCollide){
+				
+				//SYSTEM CHECK - Print out that the desired location is valid and that the robot may continue to use it
+				System.out.println("The current bullets pose no threat to the robot's move to the desired location");
+				
+				return desiredLocation;
+			}
+			
+			// If bullets will collide with the desired location
+			else{
+				// Return the result of the dodge function...					
+				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius, directionAway);				
+			}
+		}
+		// If there are no bullets nearby, just return the original desired location....
+		else{
+			
+			//SYSTEM CHECK - Print out that there are no bullets nearby....
+			System.out.println("There are no bullets nearby....");
+			
+			return desiredLocation;
+			
+		}
+	}
+	
+	public static MapLocation findDodgeLocation(
+			
+			// Input Variables
+			ArrayList<Line> bulletLines,  // List of bullets nearby lines														  
+	
+			MapLocation startingLocation, // Location that the robot is currently at
+			
+			float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
+			float bodyRadius, // Float representing how wide the robot
+			
+			Direction directionAway // Direction away from offending robot - will be prioritized in the dodge......
+			){
+
+			// Location to start search
+			MapLocation scanStartLocation = startingLocation;
+			float searchRadius = bodyRadius;
+			
+			// Iterate through all the scanning angles - does this clockwise or counterclockwise depending on the current rotation setting of the robot
+			for (int i = 0; i <= 6; i++){
+				
+				// Obtain the direction created by the offset
+				Direction testDir1 = new Direction(directionAway.radians - (i * dodgeAngleOffset));
+				Direction testDir2 = new Direction(directionAway.radians + (i * dodgeAngleOffset));
+				
+				// Iterate through a number of points determined by the granularity of the search
+				for(int j = 0; strideRadius - (scanGranularity * j) > 0; j++){
+					
+					// Obtain the possible new locations
+					MapLocation testLocation1 = scanStartLocation.add(testDir1, searchRadius - (scanGranularity * j));
+					MapLocation testLocation2 = scanStartLocation.add(testDir2, searchRadius - (scanGranularity * j));
+			
+					if(isLocationValid(testLocation1)){
+						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge				
+							
+						if(!ifBulletLinesWillIntersect(bulletLines, testLocation1, bodyRadius)){	
+							
+							// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
+							rc.setIndicatorDot(testLocation1, 0, 0, 128);
+							
+							return testLocation1;
+						}
+						// If the robot would collide with a bullet in the location 
+						else{
+							
+							// SYSTEM CHECK - Show which location the robot decides as invalid - red
+							rc.setIndicatorDot(testLocation1, 255, 0, 0);								
+						}						
+					}
+					// If the test location isn't possible for the robot to move to
+					else{
+					// SYSTEM CHECK - Show which location the robot decides as invalid - lavender
+					rc.setIndicatorDot(testLocation1, 230, 230, 250);
+					}
+					if(isLocationValid(testLocation2)){
+						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge				
+							
+						if(!ifBulletLinesWillIntersect(bulletLines, testLocation2, bodyRadius)){	
+							
+							// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
+							rc.setIndicatorDot(testLocation2, 0, 0, 128);
+							
+							return testLocation2;
+						}
+						// If the robot would collide with a bullet in the location 
+						else{
+							
+							// SYSTEM CHECK - Show which location the robot decides as invalid - red
+							rc.setIndicatorDot(testLocation2, 255, 0, 0);								
+						}						
+					}
+					// If the test location isn't possible for the robot to move to
+					else{
+					// SYSTEM CHECK - Show which location the robot decides as invalid - lavender
+					rc.setIndicatorDot(testLocation2, 230, 230, 250);
+					}			
+				}		
+			} 
+			// If no locations have been deemed as valid
+			
+			// SYSTEM CHECK - see if the robot has actually attempted to find a point and eventually didn't
+			// System.out.println("Search for a new point with given parameters unsuccesful");
+			
+			return null;
+		}
+
+	
 	
 	public static MapLocation attemptDodge(
 			
@@ -77,7 +281,7 @@ public class Yuurei extends GlobalVars {
 		
 		if (newBulletLocations.size() > maxIncomingBullets){
 			// SYSTEM CHECK - If there are too many bullets nearby, the robot will just give up......
-			// System.out.println("Too many bullets nearby, will not attempt to dodge");			
+			System.out.println("Too many bullets nearby, will not attempt to dodge");			
 			return null;
 		}
 		
@@ -85,13 +289,13 @@ public class Yuurei extends GlobalVars {
 		if (newBulletLocations.size() > 0){	
 			
 			// SYSTEM CHECK - Notify that this function has been called
-			// System.out.println("Nearby bullets detected attempting to dodge");
+			System.out.println("Nearby bullets detected attempting to dodge");
 			
 			// If there is a bullet that will collide with the robot in the current desired location
 			if (ifBulletWillCollide(newBulletLocations, desiredLocation, bodyRadius)){
 				
 				// SYSTEM CHECK - Notify that this function has been called
-				// System.out.println("Nearby bullets may collide with my desired location next turn - attempting to find solution");
+				System.out.println("Nearby bullets may collide with my desired location next turn - attempting to find solution");
 				
 				// Call the find optimal function...
 				MapLocation dodgeLocation = findOptimalLocation(newBulletLocations, true, desiredLocation, startingLocation, 
@@ -147,7 +351,7 @@ public class Yuurei extends GlobalVars {
 		boolean rotationDirection // Boolean representing the rotation direction of the robot currently, dodge will attempt to prioritize this...
 								   // True entails counterclockwise and clockwise rotation follows from false
 		){
-		
+
 		
 		// Since we will start by searching away from the current desiredLocation...
 		Direction dir = new Direction(startingLocation, desiredLocation);
@@ -277,6 +481,22 @@ public class Yuurei extends GlobalVars {
 		return false;		
 	}
 	
+	
+	// Technically not correct, just tests the start and end points of the line...
+	public static boolean ifBulletLinesWillIntersect(ArrayList<Line> bulletLines, MapLocation testLocation, float bodyRadius){
+		
+		//TODO IMplement a different intersect function -based off of distance to a line....
+		
+		for(Line bulletLine: bulletLines){
+			// If either endpoint is within one body radius of the test location, return true...
+			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius){			
+				return true;
+			}
+		}
+		// If no intersecting lines have been found...  return false - no collisions will occur...
+		return false;	
+	}
+	
 
 	// Function to obtain the locations of all the bullets visible within the next turn...
 	
@@ -303,11 +523,48 @@ public class Yuurei extends GlobalVars {
 				newBulletLocations.add(newLocation);
 				
 				// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright pink
-				//  rc.setIndicatorDot(newLocation, 255, 20, 147);
+				rc.setIndicatorDot(newLocation, 255, 20, 147);
 			}
 		}
 		return newBulletLocations;
 	}
+	
+	// Function to obtain the lines of all the bullets in this turn....
+	
+	public static ArrayList<Line> getBulletLines(BulletInfo[] nearbyBullets, float distance, MapLocation centre) {
+		
+		// Initialize a list of locations where all the bullets will be...
+		ArrayList <Line> bulletLines = new ArrayList<Line>();
+		
+		// For each of the nearby bullets in the bullet list
+		for (BulletInfo bullet: nearbyBullets) {
+			
+			// Retrieve the location of the bullets currently
+			MapLocation currentLocation = bullet.getLocation();
+			
+			// Get the velocity of the bullets
+			Direction currentDirection = bullet.getDir();
+			float currentSpeed = bullet.getSpeed();
+			
+			// Calculate the location that the bullet will be at in one turn and add to the list of Locations....
+			MapLocation newLocation = currentLocation.add(currentDirection, currentSpeed);	
+			
+			// If either endpoing of the bullet's trajectory is within the search bounds....
+			if(currentLocation.distanceTo(centre) <= distance || newLocation.distanceTo(centre) <= distance){
+				
+				// Create the line corresponding to that bullet's path during this turn.....
+				Line newLine = new Line(currentLocation, newLocation);
+				
+				// Add the line to the list of bullet lines....
+				bulletLines.add(newLine);
+				
+				// SYSTEM CHECK - Display all the bullet lines....
+				newLine.display();
+			}
+		}
+		return bulletLines;
+	}
+	
 	
 	
 	// Function to firstly correct any out of bounds errors created by a desired location.......
@@ -421,9 +678,6 @@ public class Yuurei extends GlobalVars {
 		MapLocation myLocation // Current Location of the robot....
 		
 		) throws GameActionException {
-    	
-    	// SYSTEM CHECK - Print out that the robot has been told to attempt to move in a certain direction...
-    	System.out.println("Attempting to move in the direction...." + dir.radians);    	
     	
     	// Generate distances to test - prioritize initial input direction
     	for (int i = 5; i >= 1; i--){
@@ -649,9 +903,14 @@ public class Yuurei extends GlobalVars {
     	else if(!rc.onTheMap(eastLocation) && !rc.onTheMap(southLocation)){
     		return 4;
     	}
+
     	else{
     		return 0;
-    	}   	
+    	}
+    	
+    	
+    	
+    	
     }   
     
     // Function to remove a robot from a corner...
