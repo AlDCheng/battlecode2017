@@ -124,25 +124,27 @@ public class Routing extends GlobalVars{
 //	    		System.out.println(pastLoc);
 	    		//System.out.println(pastLoc.get(0).distanceTo(curLoc));
 	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
-//	    			System.out.println("BP-0.5");
-		    		if(WallFollowing.wallFollow) {
-//		    			pastLoc.remove(0);
-		    			pastLoc = new ArrayList<MapLocation>();
-		    			resetRouting();
+	    			if(Routing.checkPrevPath(curLoc, 1)) {
+	//	    			System.out.println("BP-0.5");
+			    		if(WallFollowing.wallFollow) {
+	//		    			pastLoc.remove(0);
+			    			pastLoc = new ArrayList<MapLocation>();
+			    			resetRouting();
+			    		}
+			    		else if(togglePP) {
+	//		    			pastLoc.remove(0);
+			    			pastLoc = new ArrayList<MapLocation>();
+			    			WallFollowing.switchWallFollowing(FD);
+			    		}
+			    		else {
+	//		    			pastLoc.remove(0);
+			    			pastLoc = new ArrayList<MapLocation>();
+			    			WallFollowing.setWallFollowing(FD);
+			    		}
 		    		}
-		    		else if(togglePP) {
-//		    			pastLoc.remove(0);
-		    			pastLoc = new ArrayList<MapLocation>();
-		    			WallFollowing.switchWallFollowing(FD);
+		    		else{
+		    			pastLoc.remove(0);
 		    		}
-		    		else {
-//		    			pastLoc.remove(0);
-		    			pastLoc = new ArrayList<MapLocation>();
-		    			WallFollowing.setWallFollowing(FD);
-		    		}
-	    		}
-	    		else{
-	    			pastLoc.remove(0);
 	    		}
 	    	}
 	    	else if (timeStep > 0) {
@@ -963,9 +965,13 @@ public class Routing extends GlobalVars{
 	}
 	
 	public static boolean checkPrevPath(MapLocation intendedPoint) {
+		return checkPrevPath(intendedPoint, 0);
+	}
+	
+	public static boolean checkPrevPath(MapLocation intendedPoint, int offset) {
 		System.out.println();
 		System.out.println(intendedPoint);
-		for (int i = 0; i < prevPath.size(); i++) {
+		for (int i = 0; i < prevPath.size() - offset; i++) {
 			MapLocation prevLoc = (MapLocation)prevPath.get(i)[0];
 			System.out.println((MapLocation)prevPath.get(i)[0] + ", " + (float)prevPath.get(i)[1] + "; " + 
 						prevLoc.distanceTo(intendedPoint));
