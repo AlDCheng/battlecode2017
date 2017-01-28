@@ -328,17 +328,23 @@ public class GlobalVars {
 	}
 	
 	public static void Win() throws GameActionException{
-		/*
-		if((rc.getTeamBullets() / (GameConstants.VP_INCREASE_PER_ROUND * rc.getRoundNum() + GameConstants.VP_BASE_COST))
-    			> (GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints())) {
+		//calculate current cost of victory points
+		float VP_COST = GameConstants.VP_INCREASE_PER_ROUND * rc.getRoundNum() + GameConstants.VP_BASE_COST;
+		
+		if (rc.getTeamBullets() >= VP_COST*(GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints())) {
+			//if current number of bullets is enough to win the game then just exchange all 
     		rc.donate(rc.getTeamBullets());
     	} else if (rc.getRoundNum() >= rc.getRoundLimit()-1) {
+    		//exchange all bullets in second to last round 
     		rc.donate(rc.getTeamBullets());
+    	} else if (rc.getTeamBullets() > 3000) {
+    		//if we have excess of bullets
+    		rc.donate(rc.getTeamBullets() - 1000);
+    	} else if (rc.getTreeCount() > 50 && rc.getTeamBullets() > VP_COST*5) {
+    		//if we have a booming economy (50 trees) then slowly exchange bullets
+    		rc.donate(VP_COST*5);
     	}
-    	else if (rc.getTeamBullets() > 3000) {
-    		rc.donate(rc.getTeamBullets() - 2000);
-    	}
-    	*/
+    	
 	}
 	
 
