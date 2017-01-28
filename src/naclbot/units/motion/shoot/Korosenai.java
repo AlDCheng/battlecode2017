@@ -259,7 +259,7 @@ public class Korosenai extends GlobalVars {
     			else{
     				
     				// Make sure your team is rich enough for you to fire something at them.....    			
-        			if(rc.canFireSingleShot() && !isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius), 1)){
+        			if(rc.canFireSingleShot() && !isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius - 1), 1)){
         				
     	    			// Fire!
     	    			rc.fireSingleShot(targetedDirection);	    			
@@ -289,7 +289,7 @@ public class Korosenai extends GlobalVars {
 	    				
 	    			return false;	    			
 	    		}    
-	    		if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius), 1)){
+	    		if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius - 1), 1)){
 	    			
 	    			// SYSTEM CHECK - Print out that there was as tree in the way....
 	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack");
@@ -326,7 +326,7 @@ public class Korosenai extends GlobalVars {
 	    			
 	    			return false;
 	    		}
-				if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius), 1)){
+				if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius - 1), 1)){
 	    			
 	    			// SYSTEM CHECK - Print out that there was as tree in the way....
 	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack");

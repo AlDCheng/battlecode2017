@@ -92,6 +92,33 @@ public class Chirasou extends GlobalVars {
 		}
     }
     
+    // Secondary routine to get the nearest non-scout / non archon
+    
+    public static RobotInfo getNearestEnemyToBroadcast(RobotInfo[] currentEnemies, MapLocation myLocation){
+    	
+    	// Initialize a value to store the minimum and the index of the nearest ally
+    	float minimum = Integer.MAX_VALUE;
+		int index = -1;
+		
+		// Iterate through all nearby allies
+		for (int i = 0; i < currentEnemies.length; i++){
+			// Find minimal distance
+			float dist = myLocation.distanceTo(currentEnemies[i].location);
+
+			if (dist < minimum && (currentEnemies[i].getType() != RobotType.ARCHON) && (currentEnemies[i].getType() != RobotType.SCOUT)){
+				minimum = dist;
+				index = i;	
+			}			
+		}	
+		// If there actually was an ally in the array this should always trigger
+		if (index >= 0){
+			return currentEnemies[index];
+		}
+		else{
+			return null;
+		}
+    }
+    
     
 	
 }

@@ -106,7 +106,7 @@ public class Senshi extends GlobalVars {
 	
     // Miscellaneous variables.....
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
- 	private static boolean checkArchons = true; // Stores whether or not the robot will attempt to look for archons or not....
+ 	private static boolean checkArchons = false; // Stores whether or not the robot will attempt to look for archons or not....
  	
   
  	
@@ -400,7 +400,7 @@ public class Senshi extends GlobalVars {
                 previousRobotData = enemyRobots;
                 
                 // SYSTEM CHECK  Make sure the robot finishes its turn
-                // System.out.println("Turn completed.....");
+                System.out.println("Turn completed.....");
                 
                 // If the robot is not currently in a commanded state, increment
                 if (!isCommanded){

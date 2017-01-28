@@ -41,9 +41,7 @@ public class RemBot extends ScoutBot {
 	
 	// Variables regarding the currently investigated unit....
 	private static int investigateID = -1;
-	private static RobotInfo investigateData = null;
-	
-	
+	private static RobotInfo investigateData = null;	
 	
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- RUNTIME FUNCTIONS -------------------------------//

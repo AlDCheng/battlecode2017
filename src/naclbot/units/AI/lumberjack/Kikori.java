@@ -5,6 +5,7 @@ import battlecode.common.*;
 import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
+import naclbot.units.motion.routing.Routing;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 import naclbot.units.interact.iFeed;
@@ -78,7 +79,8 @@ public class Kikori extends GlobalVars {
 	private static RobotInfo trackedRobot; // The Robot that the lumberjack is currently tracking....
 	private static boolean isTracking; // Boolean to show whether or not the lumberjack is currently tracking something or not...
     
-    // Variables related to tree harvesting...
+	
+	// Variables related to tree harvesting...
     private static int treeID; // Stores the ID of the tree the lumberjack is currently attempting to harvest
     private static TreeInfo treeToHarvest; // Stores the information of the tree that the lumberjack is currently attempting to harvest
     private static final float maxTreeSearchRange = 4; // The maximal distance the robot will search in order to find a new tree
@@ -89,15 +91,23 @@ public class Kikori extends GlobalVars {
 	// ------------- PATH PLANNING VARIABLES -------------// UNUSED
     
 	// Variables related to routing.... 
-    private static ArrayList<MapLocation> routingPath; // Arraylist to store path for routing.... 
     private static MapLocation goalLocation;  // MapLocation to store a target location when being told to go to a location    	
+	private static boolean isCommanded; // Boolean to store whether or not the soldier current has orders to go somewhere....
+	public static int roundsRouting = 0; // FVariable to store the length of time the robot has been in path planning mode....
+    
+	// Routing constants
+    public static final int attackFrequency = 0; // Asserts how often robots will attempt to go on the attack after completing a prior attack....
+    public static final float attackProbability = (float) 1; // Gives probability of joining an attack at a particular time....
+    private static int lastCommanded = attackFrequency; // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
+    public static final int giveUpOnRouting = 250; // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
+    
     
 	// ------------- ADDITIONAL VARIABLES/CONSTANTS -------------//
     
     // Constants for movement....
     private static final int initialDispersionRounds = 2; // Number of rounds for which the lumberjack will be forced to move away from its initial location
     private static final int distanceDefend = 5; // The maximum distance at which the lumberjack will sincerely attempt to defend its allies...
-    
+ 
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
 	private static boolean nearbyAllyCheckOverride; // Stores whether or not the lumberjack will attempt to avoid hitting nearby allies.....
@@ -321,6 +331,15 @@ public class Kikori extends GlobalVars {
 		       	
 	            // SYSTEM CHECK  Make sure the robot finishes its turn
                 System.out.println("Turn completed!");
+                
+                // If the robot is not currently in a commanded state, increment
+                if (!isCommanded){
+                	lastCommanded += 1;
+                }
+                // The robot was in routing phase, so increment that counter
+                else{
+                	roundsRouting += 1;
+                }   
 		       	
                 // Yield until the next turn.......
             	Clock.yield();
@@ -585,6 +604,47 @@ public class Kikori extends GlobalVars {
 			}	
 		}
 	 
+		
+	    // Function to use when moving towards a certain location with a certain target.....
+	    
+	    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, TreeInfo[] nearbyTrees) throws GameActionException{
+	    	
+	    	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
+	    	if (myLocation.distanceTo(goalLocation) < RobotType.LUMBERJACK.strideRadius + bodyRadius || roundsRouting >= giveUpOnRouting){
+	    		
+	    		// SYSTEM CHECK - Print out that the robot has gotten close to the desired location but did not find anything of note...
+	    		System.out.println("Lumberjack has reached destination/ Failed to do so and given up.....");
+	    		
+	    		// Reset the rounds routing counter.....
+	    		roundsRouting = 0;
+	    		
+	    		// Reset the values necessary for switching into a command phase
+	    		goalLocation = null;
+	    		isCommanded = false;
+	    		
+	    		// Call the move function again...
+	    		return move(enemyRobots, nearbyTrees);
+	    	}
+	    	
+	    	else{
+	    		// SYSTEM CHECK - Inform that the robot is currently attempting to following a route to a goal destination.....    	
+		    	System.out.println("Currently attempting to move to a goal location with x: " + goalLocation.x + " and y: " + goalLocation.y);
+		    	
+		    	// Otherwise, call the routing wrapper to get a new location to go to...
+		    	Routing.routingWrapper();
+		    	
+		    	// Set the desired Move
+		    	MapLocation desiredMove = Routing.path.get(0);
+		    	
+		    	// SYSTEM CHECK - Show desired move after path planning
+		    	System.out.println("desiredMove from path planning: " + desiredMove.toString());
+		    	
+		    	return desiredMove;
+	    	}
+	    }    
+	    
+	 
+	 
 	 // ----------------------------------------------------------------------------------//
 	 // ------------------------------ TRACKING FUNCTIONS  -------------------------------//
 	 // ----------------------------------------------------------------------------------//	
@@ -630,12 +690,24 @@ public class Kikori extends GlobalVars {
 			 else{
 				 // SYSTEM CHECK - Print out that the robot is moving towards its target
 				 System.out.println("Attempting to move to within strike range of the enemy....");
-				 
-				 // If the scout is further away than stride radius, attempt to move towards it
+				 				 
+				 				 // If the scout is further away than stride radius, attempt to move towards it
 				 if(distanceToTarget > strideRadius + bodyRadius + trackedRobot.getRadius()){
 					 
 					 // Return a location in the target direction exactly one stride radius away....
-					 return myLocation.add(targetDirection, strideRadius);				 
+					 MapLocation targetLocation = myLocation.add(targetDirection, strideRadius);
+					 
+					 // Check to see if there is a tree in the way....
+					 TreeInfo treeCheck = rc.senseTreeAtLocation(targetLocation);
+					 
+					 // If the robot can simply move towards the target...
+					 if (rc.canMove(targetDirection)){
+						 return targetLocation;
+					 }
+					
+					 else{
+						 return targetLocation;
+					 }
 				 }
 				 else{
 					 // Attempt to close the gap and get right next to the robot.....
