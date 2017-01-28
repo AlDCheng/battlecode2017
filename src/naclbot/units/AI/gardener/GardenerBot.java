@@ -7,6 +7,7 @@ import naclbot.variables.GlobalVars;
 import naclbot.variables.BroadcastChannels;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
+import naclbot.units.motion.search.EnemyArchonSearch;
 
 import java.util.ArrayList;
 
@@ -87,8 +88,30 @@ public class GardenerBot extends GlobalVars {
 	public static int syncRefresh = 15;
 	public static int syncMin = 500;
 	
+	public static MapLocation myArchon = null;
+	public static MapLocation oppositeEnemyArchon;
+	
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
+		
+		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation myLocation = rc.getLocation();
+		float minDistance = 100000;
+		
+		for (MapLocation archon: archons) {
+			if (myLocation.distanceTo(archon) < minDistance) {
+				myArchon = archon;
+				minDistance = myLocation.distanceTo(archon);
+			} 
+		}
+		
+		System.out.print("My archon is: ");
+		System.out.println(myArchon);
+		oppositeEnemyArchon = EnemyArchonSearch.opposingEnemyArchon(myArchon);
+		
+		System.out.print("Opposite enemy archon is: ");
+		System.out.println(oppositeEnemyArchon);
+		rc.setIndicatorDot(oppositeEnemyArchon, 0, 0, 100);
 		
 		//value of initial role, set to planting trees first
 		role = 1;
