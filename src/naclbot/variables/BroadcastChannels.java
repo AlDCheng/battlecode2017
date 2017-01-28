@@ -33,6 +33,16 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int ARCHON_INITIAL_LOCATION_X = 1;	
 	public final static int ARCHON_INITIAL_LOCATION_Y = 2;
 	
+	// How many archons are currently under attack 
+	public final static int ARCHONS_UNDER_ATTACK = 3;
+	
+	// Stores the x and y coordinates or archons under attack and are below 50% health
+	// If ARCHONS_UNDER_ATTACK = 1: X and Y are on channels 4 and 5
+	// If ARCHONS_UNDER_ATTACK = 2: X and Y are on channels 6 and 7
+	// If ARCHONS_UNDER_ATTACK = 3: X and Y are on channels 8 and 9
+		// Bit 0 - Gives My X
+		// Bit 1 - Gives My Y
+	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
 	// Stores how many gardeners  exist

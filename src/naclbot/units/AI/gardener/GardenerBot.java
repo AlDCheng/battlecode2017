@@ -90,7 +90,7 @@ public class GardenerBot extends GlobalVars {
 	public static MapLocation myArchon = null;
 	public static MapLocation oppositeEnemyArchon;
 	
-	 // Miscellaneous variables.....
+	// Miscellaneous variables.....
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
 	
 	public static void init() throws GameActionException {
@@ -459,8 +459,8 @@ public class GardenerBot extends GlobalVars {
 			// BIT 3 - GIVES NEAREST ENEMY
 			RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, rc.getID());
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+1, (int) loc.x);
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+2, (int) loc.y);
+			rc.broadcastFloat(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+1, loc.x);
+			rc.broadcastFloat(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+2, loc.y);
 			if (nearbyEnemies.length > 0) {
 				rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+3, nearbyEnemies[0].getID());
 			} else {

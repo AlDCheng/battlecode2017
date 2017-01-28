@@ -36,11 +36,13 @@ public class ArchonBot extends GlobalVars {
 	
 	// Variables important to self and team recognition
 	public static int myID;
-	public static boolean iDied;
 	private static Team enemy;
 	private static Team allies;	
 	private static final float strideRadius = battlecode.common.RobotType.ARCHON.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.ARCHON.bodyRadius;
+	
+	// Miscellaneous variables.....
+	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
 
 	// Variable storing number of additional victory points needed to win
 	public static float victoryPointsToWin;
@@ -393,6 +395,33 @@ public class ArchonBot extends GlobalVars {
             }
         }
     }
+	
+	public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		float currentHealth = rc.getHealth();
+		float maxHealth = rc.getType().getStartingHealth();
+		if (beingAttacked && currentHealth < (0.5*maxHealth)) {
+			// BIT 0 - GIVES MY X
+			// BIT 1 - GIVES MY Y
+			int numArchonsBeingAttacked = rc.readBroadcast(BroadcastChannels.ARCHONS_UNDER_ATTACK);
+			int channelStartNum = BroadcastChannels.ARCHONS_UNDER_ATTACK + numArchonsBeingAttacked * 2;
+			
+			rc.broadcastFloat(channelStartNum + 1, loc.x);
+			rc.broadcastFloat(channelStartNum + 2, loc.y);
+			
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				believeHasDied = true;
+				
+				// Get the current number of soldiers in service
+		        int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+		        
+		        // Update soldier number for other units to see.....
+		        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners - 1);
+
+			}
+		}
+	}
         
 	private static void disperseCommand() throws GameActionException { 
 		//initialize variables
