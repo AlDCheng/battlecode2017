@@ -495,7 +495,7 @@ public class BroadcastChannels extends GlobalVars {
 		// SYSTEM CHECK - Check who last updated the channel....
 		 System.out.println("The last unit  to have updated this channel has unitNumber: " + lastUpdatedUnitNumber);
 		 
-		if (lastUpdatedUnitNumber >= unitNumber && currentRound % BROADCAST_CLEARING_PERIOD == BROADCAST_CLEARING_PERIOD + 1){ 
+		if (lastUpdatedUnitNumber >= unitNumber && currentRound % BROADCAST_CLEARING_PERIOD == 1){ 
 			
 			// Clear the number of signals sent this turn
 			rc.broadcast(BroadcastChannels.ENEMY_LOCATIONS_SENT_THIS_TURN_CHANNEL, 0);

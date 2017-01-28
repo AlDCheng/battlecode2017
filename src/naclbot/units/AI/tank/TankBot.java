@@ -490,7 +490,7 @@ public class TankBot extends GlobalVars {
     	// If the robot is currently not tracking anything
     	if(trackID == -1){    		
     		// See if a robot to be tracked can be found, allow tank to track any and all units that are not scouts...
-    		trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true);
+    		trackedRobot = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true, false);
     		
     		
     		

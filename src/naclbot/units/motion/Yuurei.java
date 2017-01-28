@@ -30,6 +30,11 @@ public class Yuurei extends GlobalVars {
 	// Note this ASSUMES that there is nothing at the desired location the robot is currently attempting to move to....
 	// TODO Fix a few errors related to dodging bullets at sharp angles - reduce time complexity if there are many bullets nearby...
 	
+	// -------------------------------------------------------------------------------------------//
+	// -------------------------------- ATTACK ORIENTED FUNCTIONS  -------------------------------//
+	// -------------------------------------------------------------------------------------------//	
+
+	
 	public static MapLocation attemptDodge(
 			
 		// Input Variables`			
@@ -421,7 +426,7 @@ public class Yuurei extends GlobalVars {
     	System.out.println("Attempting to move in the direction...." + dir.radians);    	
     	
     	// Generate distances to test - prioritize initial input direction
-    	for (int i = 1; i <= 5; i++){
+    	for (int i = 5; i >= 1; i--){
     		
     		float testDistance = (float)(i * distance / 5);    		
 	        // Try going the test distance in the targeted direction
@@ -430,7 +435,7 @@ public class Yuurei extends GlobalVars {
 	        }
         }
     	// Generate distances to test on all of the offsets
-		for (int i = 1; i <= 5; i++){
+		for (int i = 5; i >= 1; i--){
 		    		
 		    float testDistance = (float)(i * distance / 5);    
 		    // Current number of degree offsets off of original being checked
@@ -459,54 +464,14 @@ public class Yuurei extends GlobalVars {
     public static MapLocation attemptRandomMove(MapLocation myLocation, MapLocation desiredLocation, float strideDistance) throws GameActionException{
     	
     	// SYSTEM CHECK - Show that this function has been called.....................
-    	System.out.println("The robot cannot move to the intended location... attempting a random move....");
+    	System.out.println("The robot will attempt a random move in the given direction......");
     	
     	// Obtain the desired direction wanted to travel
-    	Direction directionTo = new Direction(myLocation, desiredLocation);
+    	Direction directionTo = new Direction(myLocation, desiredLocation);    	
     	
-    	// Random number to alternate which side the robot checks first.....
-    	float randomize = (float) Math.random();
-    	
-    	// Place holders for the centers of the directions that the robot decides to check....
-    	Direction firstCheck;
-    	Direction secondCheck;
-    	
-    	// Obtain the direction checks - are perpendicular to desired direction....
-    	if (randomize > 0.5){
-    		firstCheck = new Direction(directionTo.radians + (float)(2 * Math.PI / 3));
-    		secondCheck = new Direction(directionTo.radians - (float)(2 * Math.PI / 3));
-    	}
-    	else{
-    		firstCheck = new Direction(directionTo.radians - (float)(2 * Math.PI / 3));
-    		secondCheck = new Direction(directionTo.radians + (float)(2 * Math.PI / 3));    		
-    	}
-    	
-    	// Variable to hold the return of the checks for movement
-    	MapLocation attemptedMove = null;
-    	for(int i = -1; i <= 1; i++){    		
-    		
-    		attemptedMove = tryMoveInDirection(firstCheck, 20, 4, strideDistance, myLocation);
-    		
-    		if(attemptedMove != null){    			
-    			
-    			// SYSTEM CHECK - Since recalculation was successful notify...
-    			System.out.println("New direction recalculated.....");
-    			
-    			return attemptedMove;
-    		}
+    	// Test a various number of places to move towards in the general direction of the robot's desired movement....
+    	return tryMoveInDirection(directionTo, 20, 9, strideDistance, myLocation);
 
-    		attemptedMove = tryMoveInDirection(secondCheck, -20, 4, strideDistance, myLocation);
-    		
-    		if(attemptedMove != null){
-    			
-    			// SYSTEM CHECK - Since recalculation was successful notify...
-    			System.out.println("New direction recalculated.....");
-    			
-    			return attemptedMove;
-    		}
-    	}
-    	// If none of the direction checks were successful return null - the robot will not be able to move this turn.................   	
-    	return null;
     }
     
     public static MapLocation correctAllMove(
@@ -624,7 +589,7 @@ public class Yuurei extends GlobalVars {
 						}
 					}
 				}
-				// The robot just deteceted its own self so just treat like tree.....
+				// The robot just detected its own self so just treat like tree.....
 				else{
 					// Get the distance to the previous desired point - use for calculating new place to move to....
 					float reCalc = myLocation.distanceTo(desiredMove);

@@ -113,7 +113,8 @@ public class Todoruno extends GlobalVars {
 	// Function to return a new entry to follow (prioritizes combat units...
 	// Various booleans controlling priority
 	
-	public static RobotInfo getNewEnemyToTrack(RobotInfo[] enemyRobots, MapLocation myLocation, boolean targetCombat,  boolean targetScout, boolean targetCivilian){
+	public static RobotInfo getNewEnemyToTrack(RobotInfo[] enemyRobots, MapLocation myLocation, 
+			boolean targetCombat,  boolean targetScout, boolean targetGardener, boolean targetArchon){
 
 		// Parameter to store the smallest distance to another robot
 		float minimumPriorityUnitDistance = Integer.MAX_VALUE;
@@ -147,14 +148,14 @@ public class Todoruno extends GlobalVars {
 					anyEnemyRobot = enemyRobot;
 					
 				}
-				else if(enemyRobot.type == battlecode.common.RobotType.GARDENER){
+				else if(enemyRobot.type == battlecode.common.RobotType.GARDENER && targetGardener){
 					minimumPriorityUnitDistance = distanceTo;
 					minimumTotalDistance = distanceTo;
 					anyEnemyRobot = enemyRobot;
 					prioirityRobot = enemyRobot;
 				}
 				// Finally if the robot is either a gardener or archon and the robot can target civilians....
-				else if (enemyRobot.type == battlecode.common.RobotType.ARCHON){
+				else if (enemyRobot.type == battlecode.common.RobotType.ARCHON && targetArchon){
 					// Update all placeholder parameters
 					minimumTotalDistance = distanceTo;
 					anyEnemyRobot = enemyRobot;
@@ -210,4 +211,80 @@ public class Todoruno extends GlobalVars {
 		return returnRobot;
 	}
 	
+	public static MapLocation engageEnemy(
+		
+		// Input variables....
+		MapLocation startingLocation, // The current location of the robot....
+		
+		RobotInfo enemyRobot, // The enemyRobot to be engaged
+		
+		float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
+		
+		float engageDistance // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
+
+		) throws GameActionException{
+	
+		
+		// Pseudo random number to determine which side the soldier will check first.......
+		float randomNumber = (float) Math.random();
+		
+		// Retrieve the location of the enemy robot and the robot's current distance away from it and the direction from the engaged enemy..
+		MapLocation enemyLocation = enemyRobot.location;
+		Direction directionFrom = enemyLocation.directionTo(startingLocation);	
+		
+		// Variable to determine the number of radians that a soldier's move would intercept along the circle of size engageDistance
+		float interceptRadians = strideRadius / engageDistance;
+
+		// Change the order of rotations to check by negating the offset angle given by interceptRadians.....
+		if (randomNumber >= 0.5){		
+			interceptRadians *= -1;
+		}
+	
+		// Calculate the direction from the engaged robot that is equivalent to a rotation about the target robot of interceptRadians
+		Direction targetDirection1 = new Direction(directionFrom.radians + interceptRadians);
+		MapLocation desiredLocation1 = enemyLocation.add(targetDirection1, engageDistance);
+		
+		// Calculate the direction from the current location to the considered location
+		Direction attemptedDirection1 = startingLocation.directionTo(desiredLocation1);
+	
+		// Attempt to move in that general direction.....
+		MapLocation moveAttempt1 = Yuurei.tryMoveInDirection(attemptedDirection1, 20, 2, strideRadius, startingLocation);
+		
+		// If a move to that location was possible, return it.....
+		if (moveAttempt1 != null){
+			
+			// SYSTEM CHECK - Print out that a move was found and draw a PINK LINE
+			System.out.println("First attempt to find an engage location successful");
+			
+			rc.setIndicatorLine(startingLocation, moveAttempt1, 255, 20, 147);
+			
+			return moveAttempt1;
+		}
+		
+		// If the function still has yet to return.......
+			
+		// Calculate the direction from the engaged robot that is equivalent to a rotation about the target robot of interceptRadians
+		Direction targetDirection2 = new Direction(directionFrom.radians - interceptRadians);
+		MapLocation desiredLocation2 = enemyLocation.add(targetDirection2, engageDistance);
+		
+		// Calculate the direction from the current location to the considered location
+		Direction attemptedDirection2 = startingLocation.directionTo(desiredLocation2);
+	
+		// Attempt to move in that general direction.....
+		MapLocation moveAttempt2 = Yuurei.tryMoveInDirection(attemptedDirection2, 20, 2, strideRadius, startingLocation);
+		
+		// If a move to that location was possible, return it.....
+		if (moveAttempt2 != null){			
+			
+			// SYSTEM CHECK - Print out that a move was found and draw a PINK LINE
+			System.out.println("Second attempt to find an engage location successful");
+			
+			rc.setIndicatorLine(startingLocation, moveAttempt2, 255, 20, 147);
+			
+			return moveAttempt2;
+		}	
+		
+		// If the function still cannot return, simply return nothing... the robot will prioritize staying in the same location......
+		return null;
+	}
 }

@@ -94,10 +94,7 @@ public class RemBot extends ScoutBot {
 		    	
 		    	// Update positional and directional variables
 		        myLocation = rc.getLocation();
-		        
-		        // Update behavioral variables...
-		        mustDefend = false;
-				
+
 		    	// See if there is a gardener and update the location of the nearest civilian if there is one....
 		    	RobotInfo nearestGardener = Todoruno.getNearestGardener(alliedRobots, myLocation);
 		    	// Set the nearest civilian location accordingly...
