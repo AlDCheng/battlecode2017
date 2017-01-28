@@ -96,8 +96,14 @@ public class ArchonBot extends GlobalVars {
     
     public static MapLocation lastBuilt;
     
+    public static RobotInfo[] alliedRobots;
+    public static RobotInfo[] enemyRobots;
+	public static BulletInfo[] nearbyBullets;
+	
+	public static MapLocation desiredMove;
+    
     // TO BE CHANGED
-    // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CIRCLE
+    // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CYCLE
     public static int getGardenerLimit(int roundNumber) throws GameActionException{
     	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
     	int maxGardeners = gardenerCount - gardenerNumber;
@@ -166,13 +172,12 @@ public class ArchonBot extends GlobalVars {
 		
 		// Loop to terminate the starting phase of the robot
 		boolean checkStatus = true;		
+		
 		// Variable to store the number of gardeners hired in this phase....
 		int hiredGardeners = 0;
 		
         // Starting phase loop
         while ((hiredGardeners < maxGardeners)) {
-        	
-//        	System.out.println("Hired: " + hiredGardeners);
 
             // Try/catch blocks stop unhandled exceptions, - print stacktrace upon exception error....
             try {
@@ -202,18 +207,17 @@ public class ArchonBot extends GlobalVars {
             	myLocation = rc.getLocation();
             	
             	// STore the location that archon wants to go to....
-            	MapLocation desiredMove = myLocation;
+            	desiredMove = myLocation;
             	
             	// Initialize information about world......
-               	RobotInfo[] enemyRobots = NearbyUnits(enemy, -1);
-            	RobotInfo[] alliedRobots = NearbyUnits(allies, -1);
-            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+               	enemyRobots = NearbyUnits(enemy, -1);
+            	alliedRobots = NearbyUnits(allies, -1);
+            	nearbyBullets = rc.senseNearbyBullets();
             	
             	// Update the current round number.....
             	remIsBestGirl = rc.getRoundNum();
             	
             	Direction testDirection = null;
-//            	Direction testDirection = new Direction(0);
             	Direction gardenerDirection = null;
             	
             	// Build if not crowded
@@ -234,45 +238,22 @@ public class ArchonBot extends GlobalVars {
             		if (rc.canHireGardener(gardenerDirection)){
 	            		rc.hireGardener(gardenerDirection);
 	            		
-	            		
 	            		// Increment counters.....
 	            		hiredGardener = true;
 	            		hiredGardeners += 1;
 	            		totalGardenersHired += 1;
-	            		System.out.println("You're HIRED!: " + hiredGardeners);
+	            		
+	            		// Update broadcasted counter
 	            		rc.broadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS, numberofGardenersConstructed+1);
 	            		
+	            		//update last built location
 	            		lastBuilt = rc.getLocation();
 	            	}
             	}
-            	MapLocation disperseLocation;
-            	if (remIsBestGirl > initMove) {
-//            		disperseLocation = moveAwayfromGardeners(alliedRobots);
-            		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
-            		if (disperseLocation != null){            		
-                		desiredMove = disperseLocation;
-                	}
-            		
-//            		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
-            		rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
-            	}
-            	else {
-            		System.out.println("Moving in general direction");
-            		if (initialGoal != null) {
-            			Direction dir = new Direction (rc.getLocation(), initialGoal);
-            			
-            			desiredMove = myLocation.add(dir, strideRadius);
-//            			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
-            			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
-            			
-            			/*
-            			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
-            				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
-            					break;
-            				}
-            			}*/
-            		}
-            	}
+            	
+            	//gets archons to move away from gardeners
+            	disperseCommand();
+            	
             	// Call the function to correct a move and actually move......
       
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
@@ -280,7 +261,6 @@ public class ArchonBot extends GlobalVars {
 	            lastDirection = new Direction(myLocation, lastPosition);
 //	        	lastDirection = new Direction(lastPosition, myLocation);
 	            System.out.println("Hired num: " + hiredGardeners);
-	            remIsBestGirl += 1;
 	            roundsNotConstructed += 1;
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -305,38 +285,33 @@ public class ArchonBot extends GlobalVars {
         	
             // catch 
             try {
+            	//update round number 
+            	remIsBestGirl = rc.getRoundNum();
+
+            	//check if we can cash in bullets for victory points 
             	Win();
             	
               	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
 //            	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
             	
-            	// Get the total number of gardeners constructed thus far.....
+            	// Get the total number of units constructed thus far.....
 //            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
             	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
-
+            	int soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
+                int lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
+                
         		// Check surroundings
         		boolean crowded = (checkBuildRadius((float)30, (float)3, (float)0.5) >= crowdThresh);
         		
-        		float soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);
-                float lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL);
         		
-//                System.out.println("Cur # Gardeners: " + gardenerCount);
                 System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + gardenerCount 
                 		+ ", Crowded: " + crowded);
                 
-                if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
+                if ((gardenerCount <= 0)) {
                 	constructGardeners(1);
-                }
-                if (!crowded) {
-                	if ((gardenerCount < getGardenerLimit(remIsBestGirl)) &&
-                			((soldierCount + lumberjackCount) > 2*gardenerCount)) {
-                		constructGardeners(1);                		
-                	}
-                }
-            	/*if (((numberofGardenersConstructed < getGardenerLimit(remIsBestGirl)) && 
-            			(!crowded) && ((soldierCount + lumberjackCount) > 2*gardenerNumber)) || (gardenerCount <= 0)) {
-            		constructGardeners(1);
-            	}*/
+                } else if (!crowded && (gardenerCount < getGardenerLimit(remIsBestGirl))) {
+                	constructGardeners(1);                		
+                } 
             	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Currently not doing anything..............." );
@@ -345,18 +320,15 @@ public class ArchonBot extends GlobalVars {
             	myLocation = rc.getLocation();
             	
             	// STore the location that archon wants to go to.... it doesnt want to move by default
-            	MapLocation desiredMove = myLocation;
-            	
+            	MapLocation desiredMove = myLocation;	
             	
             	// Initialize information about world......
                	RobotInfo[] enemyRobots = NearbyUnits(enemy, -1);
             	RobotInfo[] alliedRobots = NearbyUnits(allies, -1);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
-            	
-            	// Update the current round number.....
-            	remIsBestGirl = rc.getRoundNum();
   
             	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            	
             	
             	MapLocation disperseLocation;
             	if (remIsBestGirl > initMove) {
@@ -402,15 +374,16 @@ public class ArchonBot extends GlobalVars {
             		desiredMove = disperseLocation;
             	}
             	
+            	
             	// Call the function to correct a move and actually move......
             	moveCorrect(desiredMove, rotationDirection, nearbyBullets);*/       	
       
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
 	        	lastPosition =  rc.getLocation();
 	            lastDirection = new Direction(myLocation, lastPosition);
-                  
-	            remIsBestGirl += 1;           	
+	            System.out.println("current round number: " + remIsBestGirl);
 	            roundsNotConstructed += 1;
+	            
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
@@ -421,6 +394,41 @@ public class ArchonBot extends GlobalVars {
         }
     }
         
+	private static void disperseCommand() throws GameActionException { 
+		//initialize variables
+    	MapLocation disperseLocation;
+    	
+    	if (remIsBestGirl > initMove) {
+    		disperseLocation = moveAwayfromGardeners(alliedRobots);
+    		//disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
+    		if (disperseLocation != null){            		
+        		desiredMove = disperseLocation;
+        	}
+    		
+//    		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+    		rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
+    	} else {
+    		System.out.println("Moving in general direction");
+    		if (initialGoal != null) {
+    			Direction dir = new Direction (rc.getLocation(), initialGoal);
+    			
+    			desiredMove = myLocation.add(dir, strideRadius);
+//    			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+    			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
+    			
+    			/*
+    			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
+    				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
+    					break;
+    				}
+    			}*/
+    		}
+    	}
+		
+		
+	}
+	
+	
 	// Function to get the archon to move away from gardeners to give them more space....
 	
 	private static MapLocation moveAwayfromGardeners(RobotInfo alliedRobots[]){
