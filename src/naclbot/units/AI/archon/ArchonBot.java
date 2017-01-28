@@ -158,7 +158,7 @@ public class ArchonBot extends GlobalVars {
 	    // Initialize path list and goal location
 //       	routingPath = new ArrayList<MapLocation>();    	
 //       	Routing.setRouting(routingPath);
-        System.out.println("tree density: " + calculateTreeDensity());
+        rc.broadcast(SPARCITY_CHANNEL, rc.calculateTreeDensity());
 		constructGardeners(treeNum);	
 	}
 	
@@ -746,7 +746,7 @@ public class ArchonBot extends GlobalVars {
 		return finalLoc;
 	}
 	
-	public static int calculateTreeDensity() throws GameActionException {
+	public static float calculateTreeDensity() throws GameActionException {
 		//initialize some variables 
 		ArrayList<TreeInfo> neutralTrees = new ArrayList<TreeInfo>();
 		
@@ -768,8 +768,12 @@ public class ArchonBot extends GlobalVars {
 		
 		// percentage of space in archon sight range that is taken up by trees
 		float areaRatio = treeArea/sightArea;
+		
+		// produces a scaled ratio taking into account area taken up by trees and number of trees
+		float scaledValue = (float) ((treeArea*100/sightArea)*0.6 + surroundingTrees.length*0.4);
+				
 		//returns this ratio as an integer by multiplying by 100
-		return (int) (treeArea*100/sightArea);
+		return scaledValue;
 		
 	}
 }
