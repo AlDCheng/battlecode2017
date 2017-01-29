@@ -246,6 +246,9 @@ public class Aqua extends GlobalVars {
 		// Unit weighting (for enemy Team)
 		minOpenness += 3*rc.senseNearbyRobots(radius, them).length;
 		
+		int empty = 0;
+		int totalchecks = 0;
+		
 //		System.out.println("Max Length: " + maxLength);
 		float length = lengthInterval;
 		// Declare angle/length modifiers
@@ -255,6 +258,9 @@ public class Aqua extends GlobalVars {
 			float totalAngle = 0;
 			
 			while(totalAngle < 360) {
+				
+				totalchecks++;
+				
 				// Get potential location
 				potLoc = curLoc.add((float)Math.toRadians(angle), length);
 				rc.setIndicatorDot(potLoc, 178, 102, 255);
@@ -286,6 +292,11 @@ public class Aqua extends GlobalVars {
 						// Unit weighting (for enemy Team)
 						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
 						openness += 5*rc.senseNearbyBullets(potLoc, radius).length;
+						
+						// Check if every space is open
+						if(openness == 0) {
+							empty++;
+						}
 					}
 					
 //					System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);
@@ -304,6 +315,9 @@ public class Aqua extends GlobalVars {
 		
 //		System.out.println("Final: " + finalLoc[0] + ", " + finalLoc[1]);
 		
+		if(empty == totalchecks) {
+			return curLoc;
+		}
 		return finalLoc;
 	}
 	

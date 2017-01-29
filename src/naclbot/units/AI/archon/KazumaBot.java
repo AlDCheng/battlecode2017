@@ -90,12 +90,13 @@ public class KazumaBot extends GlobalVars {
             	
             	// Get the total number of units constructed thus far.....
 //            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
-            	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+            	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
             	int soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
                 int lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL);
                 
         		// Check surroundings
         		boolean crowded = (Aqua.checkBuildRadius((float)30, (float)3, (float)0.5) >= crowdThresh);
+        		System.out.println("Gardener Count: " + gardenerCount);
         		
         		
 //                System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + gardenerCount);
@@ -134,8 +135,12 @@ public class KazumaBot extends GlobalVars {
             	//-------------------------------------------------------------------------------------------
       
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
-	        	lastPosition =  rc.getLocation();
-	            lastDirection = new Direction(myLocation, lastPosition);
+            	if (lastPosition != null) {
+            		if (lastPosition.distanceTo(rc.getLocation()) > 0.1) {
+                		lastPosition =  rc.getLocation();
+        	            lastDirection = new Direction(myLocation, lastPosition);
+                	}
+            	}
 	            System.out.println("current round number: " + remIsBestGirl);
 	            
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -252,8 +257,12 @@ public class KazumaBot extends GlobalVars {
             	//-------------------------------------------------------------------------------------------
             	
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
-	        	lastPosition =  rc.getLocation();
-	            lastDirection = new Direction(myLocation, lastPosition);
+            	if (lastPosition != null) {
+            		if (lastPosition.distanceTo(rc.getLocation()) > 0.1) {
+                		lastPosition =  rc.getLocation();
+        	            lastDirection = new Direction(myLocation, lastPosition);
+                	}
+            	}
 	            
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
