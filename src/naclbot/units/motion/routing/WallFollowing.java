@@ -227,6 +227,10 @@ public class WallFollowing extends GlobalVars{
 		// Set first distance length to check to be max	    
 		float totalAngle = 0;
 		MapLocation nextLoc = curLoc;
+		
+		Direction dirBU = dir;
+		int modifiedAngle = 0;
+		
 		System.out.println("Trying to wall-follow");
 		// Toggle based off starting angle state:
 		// Blocked:
@@ -240,18 +244,20 @@ public class WallFollowing extends GlobalVars{
 				
 				// While distance length is above a certain threshold, continue searching
 				while(distanceCheck > 0.0001) {
-					//System.out.println(dir + ", " + distanceCheck);
+					System.out.println(dir + ", " + distanceCheck);
 					
 					//rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 					
 					//if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+bodyRadius), bodyRadius)) {
-					if((!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist), bodyRadius))
-							&& (rc.onTheMap(curLoc.add(dir,(float)maxDist), bodyRadius))) {
+					if((!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)distanceCheck), bodyRadius))
+							&& (rc.onTheMap(curLoc.add(dir,(float)distanceCheck), bodyRadius))) {
 						//if(rc.canMove(dir,distanceCheck)) {
 						
 	//					Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
 //						Direction dirMove = dir.rotateLeftDegrees(rotL * 5);
 						Direction dirMove = dir;
+						
+						System.out.println("Checking if can move...");
 						
 						if(rc.canMove(dirMove,distanceCheck)) {
 							// Check if previously visited
@@ -281,14 +287,39 @@ public class WallFollowing extends GlobalVars{
 					distanceCheck -= distanceInterval; 
 				}
 				
+				// Check if we are at HV components, and add extra check
 				dir = dir.rotateLeftDegrees(rotL * degreeOffset);
-				totalAngle += degreeOffset;
+				dirBU = dir;
+				if((Math.abs(dir.degreesBetween(Direction.EAST)) <= degreeOffset) && (modifiedAngle <= 0)) {
+					modifiedAngle = 2;
+					dir = Direction.EAST;
+				}
+				else if((Math.abs(dir.degreesBetween(Direction.SOUTH)) <= degreeOffset) && (modifiedAngle <= 0)) {
+					modifiedAngle = 2;
+					dir = Direction.SOUTH;
+				}
+				else if((Math.abs(dir.degreesBetween(Direction.WEST)) <= degreeOffset) && (modifiedAngle <= 0)) {
+					modifiedAngle = 2;
+					dir = Direction.WEST;
+				}
+				else if((Math.abs(dir.degreesBetween(Direction.NORTH)) <= degreeOffset) && (modifiedAngle <= 0)) {
+					modifiedAngle = 2;
+					dir = Direction.NORTH;
+				}
+				else {
+					totalAngle += degreeOffset;
+					modifiedAngle--;
+					
+					if(modifiedAngle > 0) {
+						dir = dirBU;
+					}
+				}
 			}
 		}
 		// Free:
 		else {
 			System.out.println("Starting: empty");
-			while (totalAngle < 359) {
+			while (totalAngle <= 360) {
 				
 				float distanceCheck = distance;
 				
@@ -299,7 +330,7 @@ public class WallFollowing extends GlobalVars{
 					//rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 					
 					//if(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+bodyRadius), bodyRadius)) {
-					if((rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist), bodyRadius))
+					if((rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)distanceCheck), bodyRadius))
 							|| (!rc.onTheMap(curLoc.add(dir,(float)maxDist), bodyRadius))) {
 						//if(rc.canMove(dir,distanceCheck)) {
 						
@@ -343,7 +374,5 @@ public class WallFollowing extends GlobalVars{
 		
 		// A move never happened, so return false.
 		return nextLoc;
-	}
-	
-	
+	}	
 }

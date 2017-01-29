@@ -123,8 +123,8 @@ public class Routing extends GlobalVars{
 	    	if ((pastLoc.size() >= timeOut) && (timeStep == 0)) {
 //	    		System.out.println(pastLoc);
 	    		//System.out.println(pastLoc.get(0).distanceTo(curLoc));
-	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
-	    			if(Routing.checkPrevPath(curLoc, 1)) {
+//	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
+	    			if(Routing.checkPrevPath(curLoc, 3)) {
 	//	    			System.out.println("BP-0.5");
 			    		if(WallFollowing.wallFollow) {
 	//		    			pastLoc.remove(0);
@@ -145,7 +145,7 @@ public class Routing extends GlobalVars{
 		    		else{
 		    			pastLoc.remove(0);
 		    		}
-	    		}
+//	    		}
 	    	}
 	    	else if (timeStep > 0) {
 	    		timeStep--;
