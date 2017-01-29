@@ -112,11 +112,14 @@ public class ReLife extends GlobalVars {
 		
 		MapLocation curLoc = rc.getLocation();
 		
+		int selectiveSample = 1;
+		float sampleInterval = 4;
+		
 		// Make sure only one revolution is checked
 		float totalAngle = 0;
 		
 		// Scan for 1 revolution
-		while (totalAngle < 180) {
+		while (totalAngle <= 180) {
 			
 			// Scan both sides around
 			for (int rotSwitch = -1; rotSwitch < 2; rotSwitch+=2) {
@@ -128,7 +131,7 @@ public class ReLife extends GlobalVars {
 				else {
 					dirCheck = dir.rotateRightDegrees(rotSwitch * totalAngle);
 				}
-				
+//				dirCheck = new Direction((float)Math.round(dirCheck.radians * 100.0)/(float)100.0);
 //				System.out.println("Dir Check: " + dirCheck);
 				
 				// Get location to search
@@ -139,19 +142,18 @@ public class ReLife extends GlobalVars {
 					rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
 					
 					// Keep one space for unit building, fill other if possible
-					if (finalDir[1] != null) {
+					if ((finalDir[1] != null) && (finalDir[0] == null)) {
 						if (Math.abs(finalDir[1].degreesBetween(dirCheck)) > 60-angleInterval/2) {
 							finalDir[0] = treePosDir;
 						}
 					}
 					else {
-						treePosDir = dirCheck;
+						if (treePosDir == null) {
+							treePosDir = dirCheck;
+						}
 //						finalDir[1] = dirCheck;
 						
-						if (rc.senseTreeAtLocation(newLoc) != null) {
-							congestion += angleInterval/(float)360.0;
-						}
-						if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist+extend),(float)0.5))) {
+						if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist),(float)0.5))) {
 							if (rc.onTheMap(newLoc.add(dirCheck, extend), (float)1)) {
 								finalDir[1] = dirCheck;
 							}
@@ -159,10 +161,22 @@ public class ReLife extends GlobalVars {
 					}
 				}
 				else {
-					rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
-				}				
+//					if (rc.senseTreeAtLocation(newLoc) != null) {
+					if (selectiveSample >= 3) {
+						if (rc.senseNearbyTrees(newLoc,(float)0.5,Team.NEUTRAL).length > 0) {
+							congestion += (sampleInterval+1)*(float)angleInterval/(float)360.0;
+							rc.setIndicatorLine(curLoc, newLoc, 173, 255, 47);
+						}
+					}
+					else {
+//						rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
+					}
+				}
 			}
-			
+			selectiveSample++;
+			if (selectiveSample > 3) {
+				selectiveSample = 0;
+			}
 			totalAngle += angleInterval;
 			
 //			System.out.println("Angle: " + dir + ", Total Angle: " + totalAngle);

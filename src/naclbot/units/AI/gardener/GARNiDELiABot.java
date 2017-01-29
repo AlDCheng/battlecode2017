@@ -57,6 +57,8 @@ public class GARNiDELiABot extends GlobalVars {
 	private static float senseOffset = 4;
 	private static float searchRad = 3;
 	
+	private static float congThresh = (float)0.5;
+	
 	// Unit entry point
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
@@ -106,9 +108,15 @@ public class GARNiDELiABot extends GlobalVars {
 		initOrder[0] = new String("SOLDIER");
 		initOrder[1] = new Integer(2);
     	buildOrder.add(initOrder);
+    	
+    	initOrder = new Object[2];
+		initOrder[0] = new String("SCOUT");
+		initOrder[1] = new Integer(1);
+		buildOrder.add(initOrder);
 		
 		while (true) {
 			try {
+				boolean hold = false;
 				// Get build timers
 				propagateBuild();
 				
@@ -151,7 +159,7 @@ public class GARNiDELiABot extends GlobalVars {
             	
             	RobotInfo[] ourBots = rc.senseNearbyRobots(sensorRadius, ourTeam);
             	System.out.println("BuildDir: " + buildDir);
-                buildDir = dirAway(myLocation, ourBots, buildDir, sensorRadius);
+                buildDir = dirAway(myLocation, ourBots, initDir, sensorRadius);
                 
                 // Attempt movement     
                 MapLocation destPoint = movement(canMove, myLocation, ourTeam, sensorRadius, prevMoveDir);
@@ -189,6 +197,45 @@ public class GARNiDELiABot extends GlobalVars {
                 	
                 	System.out.println("Congestion: " + ReLife.congestion);
                 	
+                	//----------------------------------------------------------------------------
+                	// Congestion override
+                	if(ReLife.congestion > congThresh) {
+                		if(buildOrder.size() > 0) {
+                			System.out.println("Need lumberjack");
+                			
+                			// Replace soldier with lumberjack
+                			if (((String)buildOrder.get(0)[0]).equals("SOLDIER")) {
+                				System.out.println("Replace soldier order");
+                				int qty = (Integer)buildOrder.get(0)[1];
+                				if(qty > 1) {
+                					Object order[] = new Object[2];
+                                	order[0] = new String("SOLDIER");
+                                	order[1] = qty-1;
+                                	buildOrder.set(0, order);
+                                	
+                                	Object newOrder[] = new Object[2];
+                                	newOrder[0] = new String("LUMBERJACK");
+                                	newOrder[1] = 1;
+                                	buildOrder.add(0, newOrder);
+                            	}
+                				else if (!((String)buildOrder.get(0)[0]).equals("LUMBERJACK")){
+                					Object newOrder[] = new Object[2];
+                                	newOrder[0] = new String("LUMBERJACK");
+                                	newOrder[1] = 1;
+                                	buildOrder.set(0, newOrder);
+                				}                            	
+                			}
+                		}
+                		// Else add lumberjack order
+                		else {
+                			Object newOrder[] = new Object[2];
+                        	newOrder[0] = new String("LUMBERJACK");
+                        	newOrder[1] = 1;
+                        	buildOrder.add(0, newOrder);
+                		}
+                	}
+                	//----------------------------------------------------------------------------
+                	
                 	// Override trumps
                 	if (buildOrder.size() > 0) {
                 		
@@ -224,16 +271,38 @@ public class GARNiDELiABot extends GlobalVars {
                     		}
                     		else {
                     			RobotType nextType = parseString(nextBuild);
-                    			System.out.println("Try building Unit: " + nextType);
-                				if (nextType != null) { 
-                					buildOverride(nextType, bulletNum, initDir.opposite());
-                				}
-                				buildOrder.remove(0);
+                    			if (((nextType != RobotType.SCOUT) && bulletNum < 100) || ((nextType == RobotType.SCOUT) && bulletNum < 80)) {
+                    				hold = true;
+                    				break;
+                    			}
+                    			else {
+	                    			System.out.println("Try building Unit: " + nextType);
+	                				if (nextType != null) {
+	                					if (buildDirs[1] != null) {
+	                						buildOverride(nextType, bulletNum, initDir.opposite(), buildDirs[1]);
+	                					}
+	                					else {
+	                						break;
+	                					}
+	                				}
+	                				
+	                				// Check quantity
+	                				nextQty -= 1;
+	                				if (nextQty <= 0) {
+	                					buildOrder.remove(0);
+	                				}
+	                				else {
+	                        			Object order[] = new Object[2];
+	                        			order[0] = nextBuild;
+	                                	order[1] = nextQty;
+	                        			buildOrder.set(0, order);
+	                        		}
+                    			}
                     		}
             			}
                 		
                 		// Reset build order if override
-                		if (override) {
+                		if (override && !hold) {
                 			buildOrder = new ArrayList<Object[]>();
                 			
                 			// Turn it off
@@ -242,13 +311,15 @@ public class GARNiDELiABot extends GlobalVars {
                 	}
                 	
                 	// No override/order/it failed
-                	if ((buildDirs[0] != null) && (unitStart > spaceTime)) {
-                		rc.plantTree(buildDirs[0]);
-                		buildingTree += 20;
-                		canMove = false;
-                	}
-                	else if (buildDirs[1] != null) {
-                		buildNextUnit(buildDirs[1], bulletNum, ReLife.congestion);
+                	if(!hold && rc.isBuildReady()) {
+	                	if ((buildDirs[0] != null) && (unitStart > spaceTime)) {
+	                		rc.plantTree(buildDirs[0]);
+	                		buildingTree += 20;
+	                		canMove = false;
+	                	}
+	                	else if (buildDirs[1] != null) {
+	                		buildNextUnit(buildDirs[1], bulletNum, ReLife.congestion);
+	                	}
                 	}
                 }
                 
@@ -369,6 +440,7 @@ public class GARNiDELiABot extends GlobalVars {
 				return prevDir;
 			}
 			
+			System.out.println("Gardener pull: " + dx + ", " + dy);
 			dx -= prevDir.getDeltaX(1);
 			dy -= prevDir.getDeltaY(1);
 			opDir = new Direction(dx, dy);
@@ -504,7 +576,14 @@ public class GARNiDELiABot extends GlobalVars {
 				System.out.println("Try Infantry");
 				
 				// Pseudo-Random for lumberjacks or soldiers
-				if (((0.7*lumberRatio <= Math.random()) || (5*lumberjackCount > soldierCount)) 
+				if ((5*(lumberjackCount+1) <= (soldierCount+1)) && (lumberjackCount < 2)) {
+					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
+						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
+						buildingLumberjack += 20;
+						return;
+					}
+				}
+				else if (((lumberRatio <= Math.random()) || (5*lumberjackCount > soldierCount)) 
 														&& (lumberRatio <= 1.0)) {
 					// Check for spacing
 					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
@@ -530,7 +609,7 @@ public class GARNiDELiABot extends GlobalVars {
 				// Have scout in commission
 				if (scoutCount <= 0) {
 //				if (soldierCount > 5*scoutCount) {
-					if ((scoutCount < Math.ceil(rc.getRoundNum()/200)) && (scoutCount < SCOUT_LIMIT)) {
+					if ((scoutCount < Math.ceil(rc.getRoundNum()/500)) && (scoutCount < 2/*SCOUT_LIMIT*/)) {
 						if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild)) {
 					        rc.buildRobot(RobotType.SCOUT, dirToBuild);
 					        buildingScout += 20;
@@ -542,29 +621,26 @@ public class GARNiDELiABot extends GlobalVars {
 		}
 	}
 	
-	public static void buildOverride(RobotType Unit, float bullets, Direction dirDeg) throws GameActionException {
+	public static void buildOverride(RobotType Unit, float bullets, Direction dirDeg, Direction buildDir) throws GameActionException {
 		if (bullets >= Unit.bulletCost) {
 			if (rc.isBuildReady()) {
-				Direction plantDirs[] = ReLife.scanBuildRadius(scanInt, dirDeg.getAngleDegrees(), 2, 1);
-				if (plantDirs[1] != null) {
-					rc.buildRobot(Unit, plantDirs[1]);
-					
-					// Set counters
-					if (Unit == RobotType.LUMBERJACK) {
-						buildingLumberjack += 20;
-					}
-					else if (Unit == RobotType.SCOUT) {
-						buildingScout += 20;
-					}
-					else if (Unit == RobotType.SOLDIER) {
-						buildingSoldier += 20;
-					}
-					else if (Unit == RobotType.TANK) {
-						buildingTank += 20;
-					}
+				rc.buildRobot(Unit, buildDir);
+				
+				// Set counters
+				if (Unit == RobotType.LUMBERJACK) {
+					buildingLumberjack += 20;
+				}
+				else if (Unit == RobotType.SCOUT) {
+					buildingScout += 20;
+				}
+				else if (Unit == RobotType.SOLDIER) {
+					buildingSoldier += 20;
+				}
+				else if (Unit == RobotType.TANK) {
+					buildingTank += 20;
 				}
 			}
-		}		
+		}
 	}
 	
 	public static RobotType parseString(String order) {
