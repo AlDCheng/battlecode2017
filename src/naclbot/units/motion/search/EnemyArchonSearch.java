@@ -1,11 +1,54 @@
 package naclbot.units.motion.search;
 import battlecode.common.*;
+import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 
 import java.util.ArrayList;
 import java.util.Random;
 
 public class EnemyArchonSearch extends GlobalVars {
+	
+	public static MapLocation myArchon;
+	public static MapLocation oppositeEnemyArchon;
+	
+	public static void manageCorrespondingArchon() throws GameActionException {
+		
+		// Declare variables
+		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation myLocation = rc.getLocation();
+		float minDistance = 100000;
+		
+		// Determine archon that hired this particular gardener 
+		for (MapLocation archon: archons) {
+			if (myLocation.distanceTo(archon) < minDistance) {
+				myArchon = archon;
+				minDistance = myLocation.distanceTo(archon);
+			} 
+		}
+		
+		System.out.print("My archon is: ");
+		System.out.println(myArchon);
+		oppositeEnemyArchon = opposingEnemyArchon(myArchon);
+		
+		System.out.print("Opposite enemy archon is: ");
+		System.out.println(oppositeEnemyArchon);
+		rc.setIndicatorDot(oppositeEnemyArchon, 0, 0, 100);
+		
+		// Broadcast to channel
+		if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_1) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_1, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 2, oppositeEnemyArchon.y);
+		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_2) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_2, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 2, oppositeEnemyArchon.y);
+		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_3) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_3, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 2, oppositeEnemyArchon.y);
+		}
+	}
 	
 	public static MapLocation opposingEnemyArchon(MapLocation myArchon) {
 		
