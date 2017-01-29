@@ -92,6 +92,7 @@ public class GardenerBot extends GlobalVars {
 	
 	// Miscellaneous variables.....
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
+ 	public static boolean beingAttacked;
 	
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
@@ -451,7 +452,7 @@ public class GardenerBot extends GlobalVars {
 	}
 	
 	public static void manageBeingAttacked(MapLocation loc) throws GameActionException{
-		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		beingAttacked = iFeed.willBeAttacked(loc);
 		if (beingAttacked) {
 			// BIT 0 - GIVES MY ID
 			// BIT 1 - GIVES MY X
