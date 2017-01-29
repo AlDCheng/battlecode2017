@@ -44,7 +44,7 @@ public class Senshi extends GlobalVars {
 	// ------------- GAME VARIABLES -------------//
 	
 	// Variable to store the round number
-	private static int roundNumber;
+	private static int myWaifuIsOnodera;
 	
 	// Variables to store the teams currently in the game
 	public static Team enemies;
@@ -88,7 +88,7 @@ public class Senshi extends GlobalVars {
     public static final int attackFrequency = 0; // Asserts how often robots will attempt to go on the attack after completing a prior attack....
     public static final float attackProbability = (float) 1; // Gives probability of joining an attack at a particular time....
     private static int lastCommanded = attackFrequency; // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
-    public static final int giveUpOnRouting = 250; // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
+    public static final int giveUpOnRouting = 50; // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
     
     // Enemy data variables....
 	private static RobotInfo[] previousRobotData; // Array to store the data of enemy robots from the previous turn.....
@@ -124,16 +124,16 @@ public class Senshi extends GlobalVars {
         allies = rc.getTeam();
         myID = rc.getID();      
         
-        roundNumber = rc.getRoundNum();
-        initRound = roundNumber;
+        myWaifuIsOnodera = rc.getRoundNum();
+        initRound = myWaifuIsOnodera;
 
         // Get own scoutNumber  and unitNumber- important for broadcasting 
         soldierNumber = rc.readBroadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL);        
         unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);      
           
         // Get the current round number......
-        roundNumber = rc.getRoundNum();
-        initRound = roundNumber;
+        myWaifuIsOnodera = rc.getRoundNum();
+        initRound = myWaifuIsOnodera;
  
         // Initialize variables important to self
         myLocation = rc.getLocation();
@@ -167,9 +167,9 @@ public class Senshi extends GlobalVars {
         defendLocation = null;
         defendAgainstID = -1;     
         
-       	// Retrieve the number of active lumberjacks and increment......
-       	int numberOfActiveScouts = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
-       	rc.broadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL, numberOfActiveScouts + 1);    
+       	// Retrieve the number of active soldiers and increment......
+       	int numberOfActiveSoldiers = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
+       	rc.broadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL, numberOfActiveSoldiers + 1);    
         
         // Update the number of soldiers so other soldiers can know....
         rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, soldierNumber + 1);
@@ -200,7 +200,7 @@ public class Senshi extends GlobalVars {
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
     			
             	// Update global variables.....
-            	roundNumber = rc.getRoundNum();
+            	myWaifuIsOnodera = rc.getRoundNum();
 		    	
 		    	// Update positional and directional variables
 		        myLocation = rc.getLocation();
@@ -234,7 +234,7 @@ public class Senshi extends GlobalVars {
                	
             	// Update the nearest enemy and archon locations
                	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);     
-            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilianLocation, roundNumber);
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilianLocation, myWaifuIsOnodera);
                	
               	// Update the distress info and retreat to a scout if necessary            	
             	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 20);
@@ -318,12 +318,30 @@ public class Senshi extends GlobalVars {
             	// If there is a location that the unit can dodge to..
             	if (dodgeLocation != null){
             		
-            		desiredMove = dodgeLocation;
-            	   	// SYSTEM CHECK - Show desired move after path planning
-        	    	System.out.println("desiredMove altered by dodge to: " + desiredMove.toString());
-            	}  
+            		if(!dodgeLocation.equals(desiredMove)){
+            			
+	            		desiredMove = dodgeLocation;
+	            	   	// SYSTEM CHECK - Show desired move after path planning
+	        	    	System.out.println("desiredMove altered by dodge to: " + desiredMove.toString());
+            		}            		
+            		else{
+            			// And there is an enemy being shot at.....
+                		if(normieID != -1 && normieEmiliaLover != null){
+                			
+                			// SYSTEM CHECK - Print out that the robot will attempt to find a different firing location..
+                			System.out.println("Attempting to find another firing location");
+                			
+                			MapLocation newFiringLocation = Korosenai.findLocationToFireFrom(myLocation, normieEmiliaLover.location, desiredMove, strideRadius);
+                			
+                			if(newFiringLocation != null){
+    	            			// SYSTEM CHECK - Print out that another firing location had been found...
+    	            			System.out.println("New firing Location found.....");
+    	            			desiredMove = newFiringLocation;
+                			}            		
+                		} 
+            		}            		
+            	}
 
-        
     	       	// If the robot can move to the location it wishes to go to.....
 		       	if(rc.canMove(desiredMove) && desiredMove != myLocation){
 		       		
@@ -488,8 +506,7 @@ public class Senshi extends GlobalVars {
 			foundNormie = true;
 			
 			// SYSTEM CHECK Display a yellow dot on the enemy to kill now...
-			// rc.setIndicatorDot(normieEmiliaLover.location, 255, 255, 0);
-			
+			// rc.setIndicatorDot(normieEmiliaLover.location, 255, 255, 0);			
 			
 			// SYSTEM CHECK IF the robot has need to defend, it will do so...
 			System.out.println("Found the offending enemy....");
@@ -577,13 +594,18 @@ public class Senshi extends GlobalVars {
     				return testLocation;	            			
     			}	            			
     		}    		
-    		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
+    		// If a move in the last direction was not possible, simply order the robot to remain still...	
+    		setCommandLocation();
     		
-			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
-			System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
-			
-			// Return the current location of the robot.......
-			return myLocation;	    	
+    		// If there was a valid point to go to...
+    		if(isCommanded){    			
+
+    			// Tell the robot to go towards the commanded location....		            			
+    			return moveTowardsGoalLocation(enemyRobots);
+    		}
+    		else{
+    			return myLocation;	            		
+    		} 	
 		}
     }
     
@@ -705,7 +727,7 @@ public class Senshi extends GlobalVars {
 		// 3. Make sure that the robot has not been commanded for the last attackFrequency number of turns
 		// 4. Make sure that the robot is not yet tracking anything.......
 		
-    	if (roundNumber % BroadcastChannels.BROADCAST_CLEARING_PERIOD != 1  && lastCommanded >= attackFrequency){
+    	if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD != 1  && lastCommanded >= attackFrequency){
 
        		// Attempt to read enemy archon data
            	BroadcastChannels.BroadcastInfo newInfo = null;
@@ -732,7 +754,7 @@ public class Senshi extends GlobalVars {
            		MapLocation targetLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);    
            		
            		// Make sure that the robot is somewhat far away....
-           		if(myLocation.distanceTo(targetLocation) >= sensorRadius){
+           		if(myLocation.distanceTo(targetLocation) >= 3 * strideRadius){
            		
 	           		// The robot now has a command to follow, so will no longer track enemies continuously.....
 	           		isCommanded = true;
@@ -769,7 +791,7 @@ public class Senshi extends GlobalVars {
 	       		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
 	       		
 	       		// If it is near the beginning of the game... tell the robot to go to the location of the enemy archon.....
-	       		if (discoveredArchons == 0 && roundNumber >= initRound + 2){
+	       		if (discoveredArchons == 0 && myWaifuIsOnodera >= initRound + 2){
 	       			
 	       			// SYSTEM CHECK - Print out that the soldier will be attempting to go to the initial archon location
 	       			System.out.println("Attempting to go to the enemy archon location......");
@@ -814,7 +836,7 @@ public class Senshi extends GlobalVars {
 		boolean hasShot;
 		
 		// If there is more than one enemy nearby, attempt to fire a pentad at the location
-		if(enemyRobots.length >= 3 || (roundNumber <= 500 && normieEmiliaLover.type == RobotType.SOLDIER) || normieEmiliaLover.type == RobotType.TANK){
+		if(enemyRobots.length >= 3 || (normieEmiliaLover.type == RobotType.SOLDIER && myLocation.distanceTo(normieEmiliaLover.location) <= 4)  || normieEmiliaLover.type == RobotType.TANK){
 			
 			// If a pentad can be shot...
 			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 2, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
@@ -876,7 +898,7 @@ public class Senshi extends GlobalVars {
 	}
     
     
-    // Function to correct an accidental death update
+    // Function to correct an accidental death update*
     
     public static void fixAccidentalDeathNotification() throws GameActionException{
     	

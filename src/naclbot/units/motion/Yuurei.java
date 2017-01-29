@@ -26,7 +26,7 @@ public class Yuurei extends GlobalVars {
 	public static final float dodgeAngleOffset = (float)(Math.PI * 2 / dodgeAngleNumber);
 	
 	// Value after which units decide to give up trying to dodge......
-	public static final float maxIncomingBullets = 7;
+	public static final float maxIncomingBullets = 5;
 	
 	// Do all wrapper for the functions.....
 	// ONLY Use if there are bullets nearby.. Otherwise there is no point in calling this function
@@ -40,10 +40,12 @@ public class Yuurei extends GlobalVars {
 		
 		public MapLocation start;
 		public MapLocation end;
+		public MapLocation middle;
 		
 		public Line(MapLocation point1, MapLocation point2){
 			this.start = point1;
 			this.end = point2;
+			this.middle = new MapLocation((point1.x + point2.x)/2, (point1.y + point2.y)/2);
 		}
 		
 		public void display(){
@@ -87,7 +89,7 @@ public class Yuurei extends GlobalVars {
 		rc.setIndicatorDot(desiredLocation, 0, 0, 255);
 	
 		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
-		float scanRadius = strideRadius + bodyRadius;	
+		float scanRadius = strideRadius + bodyRadius + (float) (0.5);	
 		
 		Direction directionAway;
 		
@@ -121,7 +123,7 @@ public class Yuurei extends GlobalVars {
 			boolean willCollide = false;
 			
 			// Iterate through each bullet line - if the desired location would intersect with any of them.... attempt to find a new point to go to..
-			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius)){
+			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius + (float) 0.1)){
 				
 				willCollide = true;
 			}
@@ -138,7 +140,7 @@ public class Yuurei extends GlobalVars {
 			// If bullets will collide with the desired location
 			else{
 				// Return the result of the dodge function...					
-				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius, directionAway);				
+				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius  + (float) 0.05, directionAway);				
 			}
 		}
 		// If there are no bullets nearby, just return the original desired location....
@@ -170,7 +172,7 @@ public class Yuurei extends GlobalVars {
 			float searchRadius = bodyRadius;
 			
 			// Iterate through all the scanning angles - does this clockwise or counterclockwise depending on the current rotation setting of the robot
-			for (int i = 0; i <= 6; i++){
+			for (int i = 0; i <= 8; i++){
 				
 				// Obtain the direction created by the offset
 				Direction testDir1 = new Direction(directionAway.radians - (i * dodgeAngleOffset));
@@ -489,7 +491,7 @@ public class Yuurei extends GlobalVars {
 		
 		for(Line bulletLine: bulletLines){
 			// If either endpoint is within one body radius of the test location, return true...
-			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius){			
+			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius || bulletLine.middle.distanceTo(testLocation) <= bodyRadius){			
 				return true;
 			}
 		}

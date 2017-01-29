@@ -56,6 +56,8 @@ public class Kikori extends GlobalVars {
 	private static float strideRadius = battlecode.common.RobotType.LUMBERJACK.strideRadius;
 	private static float bodyRadius = battlecode.common.RobotType.LUMBERJACK.bodyRadius;
 	private static float sensorRadius = battlecode.common.RobotType.LUMBERJACK.sensorRadius;
+	private static float strikeRadius = battlecode.common.RobotType.LUMBERJACK.strideRadius;
+	private static float interactRadius = 1;
 	
 	// ------------- PERSONAL VARIABLES -------------//
 	
@@ -83,8 +85,8 @@ public class Kikori extends GlobalVars {
 	// Variables related to tree harvesting...
     private static int treeID; // Stores the ID of the tree the lumberjack is currently attempting to harvest
     private static TreeInfo treeToHarvest; // Stores the information of the tree that the lumberjack is currently attempting to harvest
-    private static final float maxTreeSearchRange = 4; // The maximal distance the robot will search in order to find a new tree
-    private static final int treeSearchAngleNumber = 20; // The number of angles that the lumberjack will search in order to find a new tree
+    private static final float maxTreeSearchRange = (float) 4.5; // The maximal distance the robot will search in order to find a new tree
+    private static final int treeSearchAngleNumber = 24; // The number of angles that the lumberjack will search in order to find a new tree
     private static final float interactDistance = (float) 0.2; // How close the robot will attempt to get to a tree before attempting to interact with it.....
     
     
@@ -314,9 +316,16 @@ public class Kikori extends GlobalVars {
 		       	}
 		       	
 		       	// If the robot was attempting to go to a tree....
-		       	if(treeID != -1 && treeToHarvest!= null){
+		       	if(treeID != -1 && treeToHarvest!= null && rc.canSenseTree(treeID)){
+		       		
 		       		// Check to see if can interact with the tree
-		       		interactWithTree(treeToHarvest, treeID);
+		       		 boolean hasInteracted = interactWithTree(treeToHarvest, treeID);
+		       		 
+		       		 // If the tree was not interacted with this turn....
+		       		 if(!hasInteracted){
+		       			 treeID = -1;
+		       			 treeToHarvest = null;
+		       		 }
 		       	}
 		       	// Otherwise make sure both variables are correctly reset.......
 		       	else{
@@ -328,6 +337,9 @@ public class Kikori extends GlobalVars {
 		       	// Update the last location of the lumberjack and point the last direction it moved....
 		       	lastLocation = rc.getLocation();
 		       	lastDirection = myLocation.directionTo(lastLocation);
+		       	
+				// Assert that the variables are correctly set to their non tracking state
+				trackID = -1;	trackedRobot = null;	isTracking = false;			
 		       	
 	            // SYSTEM CHECK  Make sure the robot finishes its turn
                 System.out.println("Turn completed!");
@@ -386,6 +398,9 @@ public class Kikori extends GlobalVars {
 			// If the above check found a robot for the lumberjack to track
 			if (trackedRobot != null){
 				
+				// Annul any previous command for the robot...
+        		isCommanded = false;	goalLocation = null;
+				
 				// Update the relevant information, force the trees to be gone to to be nullified so that the robot no longer remembers the tree if it returns to harvesting
 				trackID = trackedRobot.ID;	isTracking = true;	treeID = -1;	treeToHarvest = null;			
 				
@@ -394,6 +409,7 @@ public class Kikori extends GlobalVars {
 			
 				// Since the lumberjack has called a new robot to track, call the move function with the updated track ID so that the robot moves past first clause
 				hasCalledMove = true;
+				
 				return move(enemyRobots, nearbyTrees);    	
 			
 			// Otherwise, either attempt to find a tree to track or continue moving in the previous direction that the robot was on....
@@ -402,84 +418,68 @@ public class Kikori extends GlobalVars {
 				// SYSTEM CHECK - Print out that no robot to track was found....
 				System.out.println("No target enemy found, attempting to harvest");
 				
-				// If there was already a tree that the robot was cutting....
-				if (treeID != -1){
+									
+            	// Attempt to move away from the initial ally directly after spawn.... # TODO Update the initial direction.....
+            	if (roundNumber <= initRound + initialDispersionRounds){
+            		
+            		// System Check - Print out that the lumberjack is attempting to move away from its starting location
+            		System.out.println("Attempting to move away from the start location");
+            		
+              		// If the point to move to is out of bounds utilize correctional tools...
+            		if(!rc.onTheMap(myLocation.add(lastDirection, bodyRadius + strideRadius))){
+
+	            		// SYSTEM CHECK - Print out that the lumberjack is trying to move to is out of bounds....
+	            		System.out.println("Previous direction is out of bounds");	
+	            		
+            			return myLocation.add(lastDirection, strideRadius / 5);		            			
+            		}
+            		
+            		// Simply add a stride radius away from the initial location if possible.....
+            		for (int i = 5; i >= 1; i--){
+            			
+            			// Get the distance to move away for..... and the resulting map location
+            			float testDistance = strideRadius / 5 * i;	            			
+            			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
+            			
+            			// Check if the robot can move to the location and if it can, do so.....
+            			if (rc.canMove(testLocation)){	            				
+            				return testLocation;	            			
+            			}	            			
+            		}
+            		
+            		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
+            		
+        			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
+        			System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
+        			
+        			// Return the current location of the robot.......
+        			return myLocation;		    
+            		
+            	}
+            	// Since the lumberjack should have successfully separated from the robot that made it... attempt to find a new tree to find...
+            	else{	            		
+            
+	        		// SYSTEM CHECK - Print out that the tree will attempt to find a tree to go harvest
+					System.out.println("Currently have no target tree... Will attempt to search for a tree to target");						
+				
 					
-					// Assert that the robot can sense the current tree
-					if (rc.canSenseTree(treeID)){
+					if(rc.canSenseTree(treeID)){
 						
-						// Update the information regarding the tree.....
 						treeToHarvest = rc.senseTree(treeID);
 						
-						// System Check - Print out that a tree exists and that the lumberjack will attempt to harvest it....
-						System.out.println("Can see the tree, will ateempt to harvest");
+						// If the lumberjack can still harvest that tree... do so...
+						return harvest(treeToHarvest, nearbyTrees);
 						
-						// Call the function harvest something and return its value
-						return harvest(treeToHarvest, nearbyTrees);	
 					}
-					// If for some reason the lumberjack is currently tracking a tree and it disappeared, reset harvesting variables and call move again
 					else{
-						// Reset harvesting variables
-						treeID = -1;
-						treeToHarvest = null;
-						
-						// Call move again so that the robot runs through to the correct vein of logic
-						hasCalledMove = true;
-						return move(enemyRobots, nearbyTrees);	
-					}
-				}
-				
-				// Otherwise there is no tree to be harvested currently or the robot has just spawned and there is nothing to attack....
-				else{
-					
-	            	// Attempt to move away from the initial ally directly after spawn.... # TODO Update the initial direction.....
-	            	if (roundNumber <= initRound + initialDispersionRounds){
-	            		
-	            		// System Check - Print out that the lumberjack is attempting to move away from its starting location
-	            		System.out.println("Attempting to move away from the start location");
-	            		
-	              		// If the point to move to is out of bounds utilize correctional tools...
-	            		if(!rc.onTheMap(myLocation.add(lastDirection, bodyRadius + strideRadius))){
-
-		            		// SYSTEM CHECK - Print out that the lumberjack is trying to move to is out of bounds....
-		            		System.out.println("Previous direction is out of bounds");	
-		            		
-	            			return myLocation.add(lastDirection, strideRadius / 5);		            			
-	            		}
-	            		
-	            		// Simply add a stride radius away from the initial location if possible.....
-	            		for (int i = 5; i >= 1; i--){
-	            			
-	            			// Get the distance to move away for..... and the resulting map location
-	            			float testDistance = strideRadius / 5 * i;	            			
-	            			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
-	            			
-	            			// Check if the robot can move to the location and if it can, do so.....
-	            			if (rc.canMove(testLocation)){	            				
-	            				return testLocation;	            			
-	            			}	            			
-	            		}
-	            		
-	            		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
-	            		
-            			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
-            			System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
-            			
-            			// Return the current location of the robot.......
-            			return myLocation;		    
-	            		
-	            	}
-	            	// Since the lumberjack should have successfully separated from the robot that made it... attempt to find a new tree to find...
-	            	else{	            		
-	            
-		        		// SYSTEM CHECK - Print out that the tree will attempt to find a tree to go harvest
-						System.out.println("Currently have no target tree... Will attempt to search for a tree to target");						
-					
 						// Search for a tree to harvest
 		            	TreeInfo nearestNeutralTree = getNextTreeToHarvest(nearbyTrees, myLocation); 
 		 
 		            	// If a viable tree was found
 		            	if (nearestNeutralTree != null){
+		            		
+		            		// Annul any previous command for the robot...
+		            		isCommanded = false;	goalLocation = null;
 		            		
 		            		// SYSTEM CHECK - Print out that the lumberjack has found a tree to cut.....
 		            		System.out.println("Found a new tree to harvest with ID: " + nearestNeutralTree.ID);
@@ -490,6 +490,13 @@ public class Kikori extends GlobalVars {
 		            		
 		            		// Call the harvest function.....
 		            		return harvest(nearestNeutralTree, nearbyTrees);
+		            	}
+		            	
+		            	// If the robot was previously attempting to move to a location.....
+		            	else if(isCommanded){		            		
+
+	            			// Tell the robot to go towards the commanded location....		            			
+	            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
 		            	}
 		            	else{
 		            		
@@ -516,20 +523,25 @@ public class Kikori extends GlobalVars {
 		            			if (rc.canMove(testLocation)){	 
 		            				
 		            				// SYSTEM CHECK - Show a LIGHT GRAY LINE to the location that the lumberjack now wishes to go to....
-		            				rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
+		            				// rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
 		            				return testLocation;	            	
 		            			}		            			
 		            			// SYSTEM CHECK Place a dot on all rejected points...
-		            			rc.setIndicatorDot(testLocation, 255, 211, 25);
+		            			// rc.setIndicatorDot(testLocation, 255, 211, 25);
 		            		}
-		            		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
-	            		
-	            			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
-	            			System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
-	            			
-	            			// Return the current location of the robot.......
-	            			return myLocation;		            			
-		            	}	
+		            		// If a move in the last direction was not possible, simply order the robot to remain still...	
+		            		setCommandLocation(null);
+		            		
+		            		// If there was a valid point to go to...
+		            		if(isCommanded){    			
+
+		            			// Tell the robot to go towards the commanded location....		            			
+		            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
+		            		}
+		            		else{
+		            			return myLocation;	            		
+		            		}
+		            	}           				
 		            }
 	            }	        		
 			}         
@@ -574,7 +586,7 @@ public class Kikori extends GlobalVars {
             			if (rc.canMove(testLocation)){	 
             				
             				// SYSTEM CHECK - Show a LIGHT GRAY LINE to the location that the lumberjack now wishes to go to....
-            				rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
+            				// rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
             				return testLocation;	            	
             			}		            			
             			// SYSTEM CHECK Place a dot on all rejected points...
@@ -583,7 +595,7 @@ public class Kikori extends GlobalVars {
             		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
         		
         			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
-        			System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
+        			// System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
         			
         			// Return the current location of the robot.......
         			return myLocation;		      
@@ -610,7 +622,7 @@ public class Kikori extends GlobalVars {
 	    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, TreeInfo[] nearbyTrees) throws GameActionException{
 	    	
 	    	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
-	    	if (myLocation.distanceTo(goalLocation) < RobotType.LUMBERJACK.strideRadius + bodyRadius || roundsRouting >= giveUpOnRouting){
+	    	if (myLocation.distanceTo(goalLocation) <= RobotType.LUMBERJACK.strideRadius + bodyRadius || roundsRouting >= giveUpOnRouting){
 	    		
 	    		// SYSTEM CHECK - Print out that the robot has gotten close to the desired location but did not find anything of note...
 	    		System.out.println("Lumberjack has reached destination/ Failed to do so and given up.....");
@@ -642,7 +654,6 @@ public class Kikori extends GlobalVars {
 		    	return desiredMove;
 	    	}
 	    }    
-	    
 	 
 	 
 	 // ----------------------------------------------------------------------------------//
@@ -673,11 +684,14 @@ public class Kikori extends GlobalVars {
 		 }
 		 
 		 // Specifics on dealing with scouts		 
-		 if(trackedRobot.type == battlecode.common.RobotType.SCOUT){
+		 if(trackedRobot.type == battlecode.common.RobotType.SCOUT){			 
 			 
-			 // If there is a scout in the given location.....
-			 TreeInfo checkTree = rc.senseTreeAtLocation(trackedRobot.location);
+			 TreeInfo checkTree = null;
 			 
+			 if(rc.canSenseLocation(trackedRobot.location)){
+				 // If there is a scout in the given location.....
+				 checkTree = rc.senseTreeAtLocation(trackedRobot.location);
+			 }
 			 // If the robot is in a tree......
 			 if(checkTree != null){
 				 
@@ -689,25 +703,24 @@ public class Kikori extends GlobalVars {
 			 }
 			 else{
 				 // SYSTEM CHECK - Print out that the robot is moving towards its target
-				 System.out.println("Attempting to move to within strike range of the enemy....");
+				 System.out.println("Attempting to move to within strike range of the enemy scout ....");
 				 				 
 				 				 // If the scout is further away than stride radius, attempt to move towards it
 				 if(distanceToTarget > strideRadius + bodyRadius + trackedRobot.getRadius()){
 					 
 					 // Return a location in the target direction exactly one stride radius away....
-					 MapLocation targetLocation = myLocation.add(targetDirection, strideRadius);
-					 
-					 // Check to see if there is a tree in the way....
-					 TreeInfo treeCheck = rc.senseTreeAtLocation(targetLocation);
+					 MapLocation targetLocation = myLocation.add(targetDirection, strideRadius);				
 					 
 					 // If the robot can simply move towards the target...
-					 if (rc.canMove(targetDirection)){
+					 if (rc.canMove(targetLocation)){
 						 return targetLocation;
 					 }
-					
 					 else{
-						 return targetLocation;
-					 }
+						 // SYSTEM CHECK - Print out that the robot will attempt to move in the general direction of the scout....
+						 System.out.println("Could not move directly towards scout");
+						 
+						 return Yuurei.attemptRandomMove(myLocation, targetLocation, strideRadius);
+					 }					 
 				 }
 				 else{
 					 // Attempt to close the gap and get right next to the robot.....
@@ -724,7 +737,33 @@ public class Kikori extends GlobalVars {
 			 if(distanceToTarget > strideRadius + bodyRadius + trackedRobot.getRadius()){
 				 
 				 // Return a location in the target direction exactly one stride radius away....
-				 return myLocation.add(targetDirection, strideRadius);				 
+				 MapLocation targetLocation = myLocation.add(targetDirection, strideRadius);
+				 
+				 float distanceToCheck = (float) (bodyRadius + (0.5));
+				 
+				 // If there is a tree directly in front of the robot.....
+				 TreeInfo checkTree = rc.senseTreeAtLocation(myLocation.add(targetDirection, distanceToCheck));
+				 
+				 // If there is a tree in the way...
+				 if(checkTree != null){
+					 
+					 // If the tree isn't allied
+					 if(checkTree.team != allies){
+						 
+						 // Set the lumberjack to harvest the offending tree
+						 treeToHarvest = checkTree;
+						 treeID = checkTree.ID;
+						 
+						 // SYSTEM CHECK - Print out that there is a tree in the way...
+						 System.out.println("Tree in the way.... Will attempt to remove....");
+						 
+						 return moveTowardsTree(checkTree);					 
+					 }
+					 else{
+						return targetLocation;						 
+					 }
+				 }
+				 return targetLocation;
 			 }
 			 else{
 				 // Attempt to close the gap and get right next to the robot.....
@@ -791,33 +830,43 @@ public class Kikori extends GlobalVars {
     		}
     		
     	// If the lumberjack is currently within one stride of the tree
-    	} else{
+    	} else if (distanceTo > tree.getRadius() + bodyRadius){
     		
     		// Search for points on the tree that the unit can interact with....
 			Direction directionFrom = tree.location.directionTo(myLocation);
 			
 			// Iterate through small angles around the tree from the desired location, and attempt to move to the locations....
-			for(int i = 0; i <= 9; i++){				
+			for(int i = 0; i <= 12; i++){				
 				// Generate the target direction
-				Direction testDirection1 = new Direction(directionFrom.radians - (float)(i * Math.PI/9));
+				Direction testDirection1 = new Direction(directionFrom.radians - (float)(i * Math.PI/12));
 				// Generate the target location
-				MapLocation testLocation1 = tree.location.add(testDirection1, tree.getRadius() + interactDistance);
+				MapLocation testLocation1 = tree.location.add(testDirection1, tree.getRadius() + bodyRadius);
 				// Check if the robot can move to it and return if it can....
 				if (rc.canMove(testLocation1)){
 					return testLocation1;
 				}
 				// Do the same for the other side
-				Direction testDirection2 = new Direction(directionFrom.radians - (float)(i * Math.PI/9));
+				Direction testDirection2 = new Direction(directionFrom.radians - (float)(i * Math.PI/12));
 				
-				MapLocation testLocation2 = tree.location.add(testDirection2, tree.getRadius() + interactDistance);
+				MapLocation testLocation2 = tree.location.add(testDirection2, tree.getRadius() + bodyRadius);
 				
 				if (rc.canMove(testLocation2)){
 					return testLocation2;
-				}		
-			}    		
-    	}    	
+				}	
+			}
+			
+			// SYSTEM CHECK - Print out that the robot is already close to the tree...
+	    	System.out.println("Close to tree and cannot find a new location to move to.... will not move..."); 
+			
+			return myLocation;
+    	} 
+    	else{    	
+    	// SYSTEM CHECK - Print out that the robot is already close to the tree...
+    	System.out.println("Already next to tree.. will not move...");    		
+    		
     	// If no valid location has been found return nothing....
-    	return null;    	
+    	return myLocation;  
+    	}
     }	
 	 
 	 // Function to obtain the next tree for the lumberjack to harvest... 
@@ -850,10 +899,10 @@ public class Kikori extends GlobalVars {
     		}    
     		
     		// Iterate through each of the distances, incrementing by one unit each time
-    		for (float j = bodyRadius; j <= maxTreeSearchRange; j += 1){   
+    		for (float j = (float) (bodyRadius + 0.5); j <= maxTreeSearchRange; j += 1){   
     			
     			// Placeholder for the location to check
-    			MapLocation locationToCheck =myLocation.add(directionToSearch, j);
+    			MapLocation locationToCheck = myLocation.add(directionToSearch, j);
     			
     			// If the currently considered location has a tree and the curernt angle has not yet seen a tree
     			if(distancesToTrees[i] < 0 && rc.isLocationOccupiedByTree(locationToCheck)){
@@ -872,8 +921,20 @@ public class Kikori extends GlobalVars {
     				else{
     					// Makes sure that the sweep doesn't update this index, as it is no longer valid
     					distancesToTrees[i] = 0;
+    					
     					// SYSTEM CHECK - Place a MAGENTA on any nearby allied trees sensed
     					rc.setIndicatorDot(locationToCheck, 255, 0, 255);
+    				}
+    			}
+    			// Otherwise if there is an ally in the way....
+    			else if(rc.isLocationOccupiedByRobot(locationToCheck) && distancesToTrees[i] < 0){
+    				
+    				if(rc.senseRobotAtLocation(locationToCheck).getID() != rc.getID()){
+	    				// Makes sure that the sweep doesn't update this index, as it is no longer valid
+						distancesToTrees[i] = 0;
+						
+						// SYSTEM CHECK - Place a GREEN on any nearby allied trees sensed
+						rc.setIndicatorDot(locationToCheck, 0, 255, 0);
     				}
     			}
     			// Otherwise no trees were discovered at that location/the angle had already been invalidated
@@ -923,7 +984,7 @@ public class Kikori extends GlobalVars {
 	
 	// Function to determine how the robot interacts with the tree....
 	
-	private static void interactWithTree(TreeInfo targetTree, int targetTreeID) throws GameActionException{
+	private static boolean interactWithTree(TreeInfo targetTree, int targetTreeID) throws GameActionException{
 		
 		// SYSTEM CHECK - Print out that the lumberjack was attempting to interact with a tree....
 		System.out.println("Attempting to interact with a tree with ID: " + targetTreeID);
@@ -947,8 +1008,14 @@ public class Kikori extends GlobalVars {
 			// Otherwise chop it!
 			else{
 				rc.chop(targetTreeID);						
-			}			
-		}		
+			}
+			return true;
+		}
+		// If the unit did not interact with a tree.. return false..
+		else{
+			return false;
+		}
+
 	}
 	
 	// ----------------------------------------------------------------------------------//
@@ -965,7 +1032,7 @@ public class Kikori extends GlobalVars {
 			if(myLocation.distanceTo(enemyRobot.location) <= bodyRadius + 1 + enemyRobot.getRadius()){
 				
 				// If the robot doesn't have to check for ally proximity
-				if(!nearbyAllyCheckOverride){
+				if(nearbyAllyCheckOverride){
 					
 					// SYSTEM CHECK - Print out that the lumberjack will strike the enemy 
 					System.out.println("Striking the enemy with ID: " + enemyRobotID);
@@ -1120,4 +1187,74 @@ public class Kikori extends GlobalVars {
         rc.broadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL, currentLumberjackNumber + 1);
     	
     }   
+    
+	// Function to set a command location to the location of the nearest enemy......
+	
+	private static void setCommandLocation(MapLocation location) throws GameActionException{	
+	
+		// Parameters for a successful command initiation............
+		// 1. Make sure that the turn number isn't equivalent to the clearing time of the broadcast....
+		// 2. Make sure that the robot is not currently being commanded......
+		// 3. Make sure that the robot has not been commanded for the last attackFrequency number of turns
+		// 4. Make sure that the robot is not yet tracking anything.......
+		
+    	if(location == null){
+		
+			if (roundNumber % BroadcastChannels.BROADCAST_CLEARING_PERIOD != 1  && lastCommanded >= attackFrequency){   		
+	
+	       		// Attempt to read enemy archon data
+	           	BroadcastChannels.BroadcastInfo newInfo = null;
+	
+	           	newInfo = BroadcastChannels.readEnemyLocations();       
+	           	
+	           	// Pseudo random number for joining the attack....
+	           	float willJoin = (float) Math.random();
+	           	
+	           	// If an archon has been seen before and the robot's pseudo random number falls within bounds to join an  attack, create the goal location
+	           	// Make sure that the goal location is sufficiently far away - i.e. don't go if it is within sensor Radius....
+	           	if (willJoin <= attackProbability && newInfo != null){ 
+	           			
+	           		// Obtain the location from the broadcast data
+	           		MapLocation targetLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);    
+	           		
+	           		// Make sure that the robot is somewhat far away....
+	           		if(myLocation.distanceTo(targetLocation) >= strikeRadius + interactRadius){
+	           			
+	            		// SYSTEM CHECKC - Print out that a command has been succesfully given...
+	            		System.out.println("Command succesfully ordered to attack the location: " + targetLocation.toString());
+	           		
+		           		// The robot now has a command to follow, so will no longer track enemies continuously.....
+		           		isCommanded = true;
+		           		
+		           		// Set the location of the target to go to as the data from the broadcast
+		           		goalLocation = targetLocation;           	
+		           		
+		           		// Append the location to the routing...
+		           		Routing.setRouting(goalLocation);           		
+		               	
+		           		// Reset the lastCommanded since the unit has now received a command
+		           		lastCommanded = 0;
+		           	}
+	           	}
+	    	}
+    	}
+    	else{
+    		
+    		// SYSTEM CHECKC - Print out that a command has been succesfully given...
+    		System.out.println("Command succesfully ordered to attack the location: " + location.toString());
+    		
+      		// The robot now has a command to follow, so will no longer track enemies continuously.....
+       		isCommanded = true;
+       		
+       		// Set the location of the target to go to as the data from the broadcast
+       		goalLocation = location;           	
+       		
+       		// Append the location to the routing...
+       		Routing.setRouting(goalLocation);           		
+           	
+       		// Reset the lastCommanded since the unit has now received a command
+       		lastCommanded = 0;
+   		
+    	}
+	}
 }

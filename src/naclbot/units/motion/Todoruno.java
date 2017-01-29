@@ -1,6 +1,7 @@
 //
 package naclbot.units.motion;
 import battlecode.common.*;
+import naclbot.units.motion.shoot.Korosenai;
 import naclbot.variables.GlobalVars;
 
 /* ------------------   Overview ----------------------
@@ -114,7 +115,7 @@ public class Todoruno extends GlobalVars {
 	// Various booleans controlling priority
 	
 	public static RobotInfo getNewEnemyToTrack(RobotInfo[] enemyRobots, MapLocation myLocation, 
-			boolean targetCombat,  boolean targetScout, boolean targetGardener, boolean targetArchon){
+			boolean targetCombat,  boolean targetScout, boolean targetGardener, boolean targetArchon) throws GameActionException{
 
 		// Parameter to store the smallest distance to another robot
 		float minimumPriorityUnitDistance = Integer.MAX_VALUE;
@@ -135,11 +136,22 @@ public class Todoruno extends GlobalVars {
 				
 				// If the enemy is a combat type, and killing of combat units is allowable, track them
 				if (targetCombat && enemyRobot.type == battlecode.common.RobotType.SOLDIER || enemyRobot.type == battlecode.common.RobotType.LUMBERJACK || enemyRobot.type == battlecode.common.RobotType.TANK){
-					// Update all placeholder parameters
-					minimumPriorityUnitDistance = distanceTo;
-					minimumTotalDistance = distanceTo;
-					anyEnemyRobot = enemyRobot;
-					prioirityRobot = enemyRobot;
+					
+					Direction directionToEnemy = myLocation.directionTo(enemyRobot.location);
+					
+					if(Korosenai.isLineBLockedByTree(myLocation, myLocation.add(directionToEnemy, 3), 1)){
+						// SYSTEM CHECK - Print out that the current considered target cannot be targeted due to a tree directly in the way
+						System.out.println("Discovered an enemy with ID: " + enemyRobot.ID + "But there is a tree in the way....");
+						rc.setIndicatorLine(myLocation, enemyRobot.getLocation(), 33, 0, 0);
+						
+					}
+					else{
+						// Update all placeholder parameters
+						minimumPriorityUnitDistance = distanceTo;
+						minimumTotalDistance = distanceTo;
+						anyEnemyRobot = enemyRobot;
+						prioirityRobot = enemyRobot;
+					}
 				}
 				// If the enemy is a scout and it is given that the robot may track scouts
 				else if (enemyRobot.type == battlecode.common.RobotType.SCOUT && targetScout){
@@ -287,6 +299,77 @@ public class Todoruno extends GlobalVars {
 		// If the function still cannot return, simply return nothing... the robot will prioritize staying in the same location......
 		return null;
 	}
+	
+	
+	// This function should be called whenever the unit is close to pass by distance of the robot.....
+	
+	public static MapLocation passByEnemy(	
+			
+		// Input variables....
+		MapLocation startingLocation, // The current location of the robot....			
+		MapLocation targetLocation, // The location that the robot intends to go to....
+		
+		RobotInfo enemyRobot, // The enemyRobot to be ignored
+		
+		float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
+		
+		float passByDistance // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
+		
+		) throws GameActionException{
+		
+		// Get the direction to the target location
+		Direction directionToTarget = startingLocation.directionTo(targetLocation);
+		
+		// Get the directions to and from the enemy
+		Direction directionToEnemy = startingLocation.directionTo(enemyRobot.location);		
+		Direction directionFromEnemy = enemyRobot.location.directionTo(startingLocation);
+		
+		// Get the direction to the enemy....
+		float distanceToEnemy = startingLocation.distanceTo(enemyRobot.location);
+		
+		// Placeholder variable for the distance at which the robot is to pass by the enemy....
+		float passDistance;
+		
+		// If the robot is further than the desired distance from the enemy, use its slightly larger distance.....
+		if(distanceToEnemy > passByDistance){
+			passDistance = distanceToEnemy;
+		}
+		// Otherwise default to the pass by distance inputted into the function...
+		else{
+			passDistance = passByDistance;
+		}
+		
+		// Angle to rotate about the target.....
+		float angleToRotate = strideRadius/passDistance;
+		
+		// Rotate clockwise if....
+		if((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI)){
+			
+			
+			
+			if ((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) + Math.PI / 2){
+				
+				// SYSTEM CHECK - The unit should simply attempt to continue to the target location....
+				
+				return null;
+			}
+			
+		}
+		
+		
+		
+		
+		
+		return null;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	// TODO - for scouts.......

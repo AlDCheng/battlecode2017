@@ -553,7 +553,7 @@ public class BroadcastChannels extends GlobalVars {
 			rc.setIndicatorLine(myLocation, nearestEnemy.location, 255, 0, 0);
 			rc.setIndicatorLine(myLocation, currentStored, 0, 0, 255);
 				
-			if(nearestAllyLocation.distanceTo(currentStored) >= distanceTo || x == 0 && distanceTo > 20){
+			if((nearestAllyLocation.distanceTo(currentStored) >= distanceTo || x == 0 )&& distanceTo > 25){
 				
 				// SYSTEM CHECK.. - Since there was an enemy nearby... Notify that something may be sent
 				System.out.println("Enemy nearby - will attempt to broadcast location");

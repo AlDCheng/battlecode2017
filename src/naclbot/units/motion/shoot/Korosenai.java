@@ -29,8 +29,12 @@ public class Korosenai extends GlobalVars {
 	public static final float triadOffset = 20;
 	public static final float pentadOffset = 15;
 	
+	// Firing location finder constants;
+	public static final int firingLocationChecksPerSide = 3;
+	public static final float firingAngleOffset = (float) (Math.PI/20);
+	
 	// Probability that if a robot has previous enemy data, it will shoot at the next location the enemy might travel at.....
-	public static final float probabilityPredict = (float) 0.8;
+	public static final float probabilityPredict = (float) 0.2;
 
     // Function to determine if there is any tree in the line between one location and the other
     
@@ -50,15 +54,18 @@ public class Korosenai extends GlobalVars {
     	// Iterate up through the length of the gap between the two selected points
     	for(int i = 0; i * spacing < start.distanceTo(end); i++){
     		
-    		// If there is a tree in the way, say so..,
-    		if (rc.isLocationOccupiedByTree(start.add(search, (float)  (i * spacing)))){
-    			
-    			TreeInfo blockingTree = rc.senseTreeAtLocation(start.add(search, (float) (i * spacing)));
-    			
-    		   	// SYSTEM CHECK print light pink dot at where the blocking tree is located...
-    	    	rc.setIndicatorDot(blockingTree.location, 255, 180, 190);
-    			
-    			return true;
+    		if(rc.canSenseLocation(start.add(search, (float)  (i * spacing)))){
+	    		
+	    		// If there is a tree in the way, say so..,
+	    		if (rc.isLocationOccupiedByTree(start.add(search, (float)  (i * spacing)))){
+	    			
+	    			TreeInfo blockingTree = rc.senseTreeAtLocation(start.add(search, (float) (i * spacing)));
+	    			
+	    		   	// SYSTEM CHECK print light pink dot at where the blocking tree is located...
+	    	    	rc.setIndicatorDot(blockingTree.location, 255, 180, 190);
+	    			
+	    			return true;
+	    		}
     		}
     	// If by the end of the for loop nothing is there, then we return false, meaning that the line isn't blocked
     	}
@@ -452,7 +459,8 @@ public class Korosenai extends GlobalVars {
         		float interceptRadians = enemy.getRadius() / distanceTo;
         		
         		// Obtain a random offset from the current direction to be shooting in that does not exceed half the number of radians intercepted by the robot
-        		float randomOffset = (float) ((Math.random() * interceptRadians/2) - (interceptRadians / 4));
+        		// float randomOffset = (float) ((Math.random() * interceptRadians/2) - (interceptRadians / 4));
+        		float randomOffset = 0;
         		
         		// Obtain a direction to fire in...
         		Direction firingDirection = new Direction(directionTo.radians + randomOffset);
@@ -489,5 +497,78 @@ public class Korosenai extends GlobalVars {
     		
     		return firingLocation;    		
     	}		
-    }    
+    } 
+    
+    
+    // Find a better location to fire from..............
+    
+    public static MapLocation findLocationToFireFrom(MapLocation myLocation, MapLocation targetLocation, MapLocation desiredLocation, float strideRadius) throws GameActionException{
+    	
+    	Direction firingDirectionFrom = targetLocation.directionTo(desiredLocation);
+    	float distanceFrom = targetLocation.distanceTo(desiredLocation);
+    	
+    	
+    	for (int i = 0; i <= firingLocationChecksPerSide; i++){
+    		
+    		Direction firingDirection1 = new Direction(firingDirectionFrom.radians + i * firingAngleOffset);
+    		Direction firingDirection2 = new Direction(firingDirectionFrom.radians - i * firingAngleOffset);
+    		
+    		MapLocation testLocation1 = targetLocation.add(firingDirection1, distanceFrom);    		
+    		MapLocation testLocation2 = targetLocation.add(firingDirection2, distanceFrom);   
+    		
+    		if(!isLineBLockedByTree(targetLocation, testLocation1, 1)){
+    			
+    			// SYSTEM CHECK - Draw the firing line checks that work....
+    			rc.setIndicatorLine(targetLocation, testLocation1, 0, 205, 155);
+    			
+    			if(rc.canMove(testLocation1) && testLocation1.distanceTo(myLocation) <= strideRadius){
+    				
+    				// SYSTEM CHECK - Draw a dot at the selected location
+    				rc.setIndicatorDot(testLocation1, 0, 0, 0);
+    				return testLocation1;
+    			}
+    			testLocation1 = targetLocation.add(firingDirection1, distanceFrom - (strideRadius / 3));   
+    			if(rc.canMove(testLocation1) && testLocation1.distanceTo(myLocation) <= strideRadius){
+    				
+    				// SYSTEM CHECK - Draw a dot at the selected location
+    				rc.setIndicatorDot(testLocation1, 0, 0, 0);
+    				return testLocation1;
+    			}
+    			testLocation1 = targetLocation.add(firingDirection1, distanceFrom + (strideRadius / 3));   
+    			if(rc.canMove(testLocation1) && testLocation1.distanceTo(myLocation) <= strideRadius){
+    				
+    				// SYSTEM CHECK - Draw a dot at the selected location
+    				rc.setIndicatorDot(testLocation1, 0, 0, 0);
+    				return testLocation1;
+    			}
+    		}
+    		if(!isLineBLockedByTree(targetLocation, testLocation2, 1)){
+    			
+    			// SYSTEM CHECK - Draw the firing line checks that work....
+    			rc.setIndicatorLine(targetLocation, testLocation2, 0, 205, 155);
+    			
+    			if(rc.canMove(testLocation2) && testLocation2.distanceTo(myLocation) <= strideRadius){
+    				
+    				// SYSTEM CHECK - Draw a dot at the selected location
+    				rc.setIndicatorDot(testLocation2, 0, 0, 0);
+    				return testLocation2;
+    			}
+    			testLocation2 = targetLocation.add(firingDirection1, distanceFrom - (strideRadius / 3));   
+    			if(rc.canMove(testLocation2) && testLocation2.distanceTo(myLocation) <= strideRadius){
+    				
+    				// SYSTEM CHECK - Draw a dot at the selected location
+    				rc.setIndicatorDot(testLocation2, 0, 0, 0);
+    				return testLocation2;
+    			}
+    			testLocation2 = targetLocation.add(firingDirection1, distanceFrom + (strideRadius / 3));   
+    			if(rc.canMove(testLocation2) && testLocation2.distanceTo(myLocation) <= strideRadius){
+    				
+    				// SYSTEM CHECK - Draw a dot at the selected location
+    				rc.setIndicatorDot(testLocation2, 0, 0, 0);
+    				return testLocation2;
+    			}
+    		}    		
+    	}
+    	return null;
+    } 
 }
