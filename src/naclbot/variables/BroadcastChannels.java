@@ -43,6 +43,9 @@ public class BroadcastChannels extends GlobalVars {
 		// Bit 0 - Gives My X
 		// Bit 1 - Gives My Y
 	
+	// How many archons are currently alive 
+	public final static int ARCHONS_ALIVE_CHANNEL = 10;
+	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
 	// Stores how many gardeners  exist
