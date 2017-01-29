@@ -320,12 +320,11 @@ public class ArchonBot extends GlobalVars {
         		boolean crowded = (checkBuildRadius((float)30, (float)3, (float)0.5) >= crowdThresh);
         		
         		
-                System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + gardenerCount 
-                		+ ", Crowded: " + crowded);
+                System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + gardenerCount);
                 
                 if ((gardenerCount <= 0)) {
                 	constructGardeners(1);
-                } else if (!crowded && (gardenerCount < getGardenerLimit(remIsBestGirl) || remIsBestGirl < 30)) {
+                } else if (!crowded && (gardenerCount < getGardenerLimit(remIsBestGirl))) {
                 	constructGardeners(1);                		
                 } 
             	
@@ -432,7 +431,7 @@ public class ArchonBot extends GlobalVars {
     	MapLocation correctedLocation;
     	int idleCount = 0; 	
     	
-    	while (checkNearbyGardeners(7) || idleCount >= 20) { 
+    	while (checkNearbyGardeners(7) && idleCount <= 20) { 
     		alliedRobots = rc.senseNearbyRobots(7);
     		myLocation = rc.getLocation(); 
     		
@@ -443,7 +442,7 @@ public class ArchonBot extends GlobalVars {
         	}
     		
 //    		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
-    		rc.setIndicatorDot(desiredMove, 0, 0, 255);
+    		
     		correctedLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove);
     		if (rc.canMove(correctedLocation)) {
     			System.out.println("moving away rn");
