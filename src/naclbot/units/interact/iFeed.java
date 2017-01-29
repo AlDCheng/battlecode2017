@@ -49,7 +49,8 @@ public class iFeed extends GlobalVars {
     	if (bulletsThatWillHit.size() > 0) {
     		remainingHealth = healthLeftBullets(bulletsThatWillHit,currentHealth);
     		
-    		if (remainingHealth < 10) {
+    		if (remainingHealth < 15) {
+    			System.out.println("will die plz");
     			return true;
     		}
     	}
@@ -61,7 +62,8 @@ public class iFeed extends GlobalVars {
     	if (nearbyRobots.length > 0) {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
     		
-    		if (remainingHealth < 10) {
+    		if (remainingHealth < 15) {
+    			System.out.println("will die plz");
     			return true;
     		} else {
     			return false;
