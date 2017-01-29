@@ -110,7 +110,7 @@ public class GardenerBot extends GlobalVars {
         unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
-     // Retrieve the number of active gardeners and increment......
+        // Retrieve the number of active gardeners and increment......
        	int numberOfActiveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
        	rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfActiveGardeners + 1);    
         
