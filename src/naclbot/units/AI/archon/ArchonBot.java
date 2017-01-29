@@ -70,7 +70,7 @@ public class ArchonBot extends GlobalVars {
     public static int totalGardenersHired;
      
     // Radius at which archon attempts to disperse
-    public static final int disperseRadius = 8;
+    public static final int disperseRadius = 7;
     
     // Stores the total number of gardeners contained
     public static int numberofGardenersConstructed;
@@ -183,9 +183,24 @@ public class ArchonBot extends GlobalVars {
 
             // Try/catch blocks stop unhandled exceptions, - print stacktrace upon exception error....
             try {
+            	//--INITIALIZATION--
+            	// Update own location
+            	myLocation = rc.getLocation();
+            	
+            	// Store the location that archon wants to go to....
+            	desiredMove = myLocation;
+            	
+            	// Initialize information about world......
+               	enemyRobots = NearbyUnits(enemy, -1);
+            	alliedRobots = NearbyUnits(allies, -1);
+            	nearbyBullets = rc.senseNearbyBullets();
+            	
+            	// Update the current round number.....
+            	remIsBestGirl = rc.getRoundNum();
+            	
+            	
             	// Scan surrounding first:
             	boolean crowded = (checkBuildRadius((float)30, (float)2.5, (float)0.5) >= crowdThresh);
-            	System.out.println("Crowded?: " + crowded);
             	
             	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
             	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
@@ -204,20 +219,7 @@ public class ArchonBot extends GlobalVars {
             	
             	// Boolean to determine whether or not the archon attempted to hire a gardener this turn or not......
             	boolean hiredGardener = false;  
-            	
-            	// Update own location
-            	myLocation = rc.getLocation();
-            	
-            	// STore the location that archon wants to go to....
-            	desiredMove = myLocation;
-            	
-            	// Initialize information about world......
-               	enemyRobots = NearbyUnits(enemy, -1);
-            	alliedRobots = NearbyUnits(allies, -1);
-            	nearbyBullets = rc.senseNearbyBullets();
-            	
-            	// Update the current round number.....
-            	remIsBestGirl = rc.getRoundNum();
+            	 	
             	
             	Direction testDirection = null;
             	Direction gardenerDirection = null;
@@ -235,7 +237,7 @@ public class ArchonBot extends GlobalVars {
             	}
   
             	// If the archon can hire a gardener in a certain direction...
-            	if (gardenerDirection != null && (roundsNotConstructed >= gardenerConstructionBreak || remIsBestGirl <= 20)){
+            	if (gardenerDirection != null/* && (roundsNotConstructed >= gardenerConstructionBreak || remIsBestGirl <= 20)*/){
             		// Assert that the archon can actually hire it (i.e. not limited by previous hiring
             		if (rc.canHireGardener(gardenerDirection)){
 	            		rc.hireGardener(gardenerDirection);
@@ -250,13 +252,13 @@ public class ArchonBot extends GlobalVars {
 	            		
 	            		//update last built location
 	            		lastBuilt = rc.getLocation();
+	            		
+	            		//gets archons to move away from gardeners
+	            		System.out.println("dispersing archons");
+	                	disperseFromGardeners();
 	            	}
             	}
             	
-            	//gets archons to move away from gardeners
-            	disperseCommand();
-            	
-            	// Call the function to correct a move and actually move......
       
             	// Update the last position of the robot to get the heading of the archon in the previous turn....
 	        	lastPosition =  rc.getLocation();
@@ -290,6 +292,18 @@ public class ArchonBot extends GlobalVars {
             	//update round number 
             	remIsBestGirl = rc.getRoundNum();
 
+            	// Update own location
+            	myLocation = rc.getLocation();
+            	
+            	// STore the location that archon wants to go to.... it doesnt want to move by default
+            	MapLocation desiredMove = myLocation;	
+            	
+            	// Initialize information about world......
+               	enemyRobots = NearbyUnits(enemy, -1);
+            	alliedRobots = NearbyUnits(allies, -1);
+            	nearbyBullets = rc.senseNearbyBullets();
+  
+            	
             	//check if we can cash in bullets for victory points 
             	Win();
             	
@@ -317,18 +331,7 @@ public class ArchonBot extends GlobalVars {
             	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Currently not doing anything..............." );
-            	
-            	// Update own location
-            	myLocation = rc.getLocation();
-            	
-            	// STore the location that archon wants to go to.... it doesnt want to move by default
-            	MapLocation desiredMove = myLocation;	
-            	
-            	// Initialize information about world......
-               	RobotInfo[] enemyRobots = NearbyUnits(enemy, -1);
-            	RobotInfo[] alliedRobots = NearbyUnits(allies, -1);
-            	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
-  
+            	     	
             	Direction testDirection = new Direction(lastDirection.radians + (float) Math.PI);
             	
             	
@@ -423,11 +426,16 @@ public class ArchonBot extends GlobalVars {
 		}
 	}
         
-	private static void disperseCommand() throws GameActionException { 
+	private static void disperseFromGardeners() throws GameActionException { 
 		//initialize variables
     	MapLocation disperseLocation;
+    	MapLocation correctedLocation;
+    	int idleCount = 0; 	
     	
-    	if (remIsBestGirl > initMove) {
+    	while (checkNearbyGardeners(7) || idleCount >= 20) { 
+    		alliedRobots = rc.senseNearbyRobots(7);
+    		myLocation = rc.getLocation(); 
+    		
     		disperseLocation = moveAwayfromGardeners(alliedRobots);
     		//disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, testDirection.getAngleDegrees());
     		if (disperseLocation != null){            		
@@ -435,25 +443,37 @@ public class ArchonBot extends GlobalVars {
         	}
     		
 //    		moveCorrect(desiredMove, rotationDirection, nearbyBullets);
-    		rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
-    	} else {
-    		System.out.println("Moving in general direction");
-    		if (initialGoal != null) {
-    			Direction dir = new Direction (rc.getLocation(), initialGoal);
-    			
-    			desiredMove = myLocation.add(dir, strideRadius);
-//    			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
-    			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove));
-    			
-    			/*
-    			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
-    				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
-    					break;
-    				}
-    			}*/
+    		rc.setIndicatorDot(desiredMove, 0, 0, 255);
+    		correctedLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove);
+    		if (rc.canMove(correctedLocation)) {
+    			System.out.println("moving away rn");
+    				rc.move(correctedLocation);
     		}
+    		
+    		idleCount++;
+    		/*
+	    		System.out.println("Moving in general direction while dispersing");
+	    		if (initialGoal != null) {
+	    			System.out.println("hi I'm moving");
+	    			Direction dir = new Direction (rc.getLocation(), initialGoal);
+	    			
+	    			desiredMove = myLocation.add(dir, strideRadius);
+	//    			moveCorrect(desiredMove, rotationDirection, nearbyBullets);
+	    			
+	    			rc.setIndicatorDot(desiredMove, 0, 255, 0);
+	    			
+	    			correctedLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove);
+	    			rc.move(correctedLocation);
+	    			
+	    			/*
+	    			for(int i = 0; i < strideRadius; i+=strideRadius/4) {
+	    				if(Move.tryMoveWithDist(dir, 1, 10, i)) {
+	    					break;
+	    				}
+	    			}*/
+	    	
+	    	Clock.yield();
     	}
-		
 		
 	}
 	
@@ -477,18 +497,19 @@ public class ArchonBot extends GlobalVars {
 				
 			}
 		}
+		
 		// If there is a gardener nearby, attempt to move away from it
 		if (nearestRobot != null){
 			// Get the distance away that the robot is
 			float distanceTo = myLocation.distanceTo(nearestRobot.location);
-			
+			System.out.println("distance away from nearest robot: " + distanceTo);
 			// The direction that the robot needs to travel to get away from said robot
 			Direction moveAway = new Direction(nearestRobot.location, myLocation);
 			
 			// Attempt to move directly away from it to a point that is exactly one disperseRadius from the robot
 		
 			MapLocation newLocation = myLocation.add(moveAway, strideRadius);
-			rc.setIndicatorLine(myLocation, myLocation.add(moveAway, 25), 125, 125, 0);
+			
 			return newLocation;
 			
 		}
@@ -516,7 +537,20 @@ public class ArchonBot extends GlobalVars {
 		}
 		return null;
 	}
-					
+	
+	public static boolean checkNearbyGardeners(float radius) {
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
+		
+		for (RobotInfo robot: nearbyRobots) {
+			if (robot.getType() == RobotType.GARDENER) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	
 	private static RobotInfo[] NearbyUnits(Team team, float distance){
 		
 		return rc.senseNearbyRobots(myLocation, distance, team);
@@ -601,7 +635,7 @@ public class ArchonBot extends GlobalVars {
 				if(!rc.isLocationOccupiedByTree(locationToCheck) && rc.onTheMap(locationToCheck)){
 					
 					// SYSTEM CHECK If the location is free print a BLUE DOT
-					rc.setIndicatorDot(locationToCheck, 0, 0, 128);
+					//rc.setIndicatorDot(locationToCheck, 0, 0, 128);
 					
 					if (wallDistances[j] >= 0){
 						wallDistances[j] = i * initialWallCheckGrain;
@@ -610,7 +644,7 @@ public class ArchonBot extends GlobalVars {
 				else{
 					
 					// SYSTEM CHECK - If the location isn't free print a RED DOT
-					rc.setIndicatorDot(locationToCheck, 128, 0, 0);
+					//rc.setIndicatorDot(locationToCheck, 128, 0, 0);
 					
 					if (wallDistances[j] >= 0){
 						wallDistances[j] *= -1;
