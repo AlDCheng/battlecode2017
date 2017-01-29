@@ -61,12 +61,7 @@ public class Yuurei extends GlobalVars {
 		}
 	
 	}
-	
-	
-	
-	
-	
-	
+
 	
 	// -------------------------------------------------------------------------------------------//
 	// -------------------------------- ATTACK ORIENTED FUNCTIONS  -------------------------------//
@@ -908,11 +903,7 @@ public class Yuurei extends GlobalVars {
 
     	else{
     		return 0;
-    	}
-    	
-    	
-    	
-    	
+    	}    	
     }   
     
     // Function to remove a robot from a corner...

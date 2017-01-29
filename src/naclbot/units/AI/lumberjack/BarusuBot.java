@@ -37,7 +37,7 @@ import java.util.Arrays;
  * 
  ------------------------------------------------------------------- */
 
-public class Kikori extends GlobalVars {	
+public class BarusuBot extends GlobalVars {	
 	
 	// ----------------------------------------------------------------------------------//
 	// ------------------------- VARIABLES FOR USE BY THE ROBOT -------------------------//

@@ -33,7 +33,7 @@ import naclbot.variables.BroadcastChannels;
  * 
  ------------------------------------------------------------------- */
 
-public class ScoutBot extends GlobalVars {	
+public class BestGirlBot extends GlobalVars {	
 	
 	// ----------------------------------------------------------------------------------//
 	// ------------------------- VARIABLES FOR USE BY THE ROBOT -------------------------//
@@ -199,12 +199,12 @@ public class ScoutBot extends GlobalVars {
         rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, scoutNumber + 1);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
 
-        /*
+        
         // If the scout is the first to be made and was made early enough, call Rembot..........
         if(scoutNumber == 0 && initRound <= 200){
-        	RemBot.main();
+        	//RemBot.init();
         }
-        */
+        
         // By default pass on to the main function
         main();    
 

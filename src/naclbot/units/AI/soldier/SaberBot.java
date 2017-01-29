@@ -5,14 +5,11 @@ import battlecode.common.*;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 import naclbot.units.interact.iFeed;
-import naclbot.units.motion.Chirasou;
-import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
 import naclbot.units.motion.routing.Routing;
 
-import java.util.ArrayList;
 
 
 /* --------------------------   Overview  --------------------------
@@ -35,7 +32,7 @@ import java.util.ArrayList;
  ------------------------------------------------------------------- */
 
 
-public class Senshi extends GlobalVars {
+public class SaberBot extends GlobalVars {
 	
 	// ----------------------------------------------------------------------------------//
 	// ------------------------- VARIABLES FOR USE BY THE ROBOT -------------------------//
@@ -480,7 +477,7 @@ public class Senshi extends GlobalVars {
     		
     		// If the robot currently has orders call the setCommandLocation to see if a new order could be made
     		if(!isCommanded){    			
-    			setCommandLocation();
+    			setCommandLocation(null);
     		}
     		
     		// Call the move function to determine where the robot will actually end up going.....
@@ -557,8 +554,7 @@ public class Senshi extends GlobalVars {
 		else if (normieEmiliaLover != null){
 			
 			// Reset the values necessary for switching into a command phase
-    		goalLocation = null;	isCommanded = false;
-    		
+    		goalLocation = null;	isCommanded = false;    		
 			
 			// Update the normieID
 			normieID = normieEmiliaLover.ID;	foundNormie = true;
@@ -586,7 +582,10 @@ public class Senshi extends GlobalVars {
     			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
     			
     			// Check if the robot can move to the location and if it can, do so.....
-    			if (rc.canMove(testLocation)){	       
+    			if (rc.canMove(testLocation)){	      
+    				
+    				isCommanded = false;
+    				goalLocation = null;
     				
     				// SYSTEM Check - Set LIGHT GREY LINE indicating where the soldier would wish to go
         			rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);   
@@ -594,11 +593,16 @@ public class Senshi extends GlobalVars {
     				return testLocation;	            			
     			}	            			
     		}    		
-    		// If a move in the last direction was not possible, simply order the robot to remain still...	
-    		setCommandLocation();
+    		// If a move in the last direction was not possible, order the robot to go to original archon location
     		
+    		if (archonLocation.distanceTo(myLocation) > 2){
+    			setCommandLocation(archonLocation);
+    		}
     		// If there was a valid point to go to...
-    		if(isCommanded){    			
+    		if(isCommanded){    	
+    			
+    			// SYSTEM CHECK - Print out that the robot will now attempt to go to a goal location...
+    			System.out.println("Attempting to move to last known location of the archon.....");
 
     			// Tell the robot to go towards the commanded location....		            			
     			return moveTowardsGoalLocation(enemyRobots);
@@ -719,7 +723,7 @@ public class Senshi extends GlobalVars {
 	
 	// Function to set a command location to the location of the nearest archon......
 	
-	private static void setCommandLocation() throws GameActionException{	
+	private static void setCommandLocation(MapLocation location) throws GameActionException{	
 	
 		// Parameters for a successful command initiation............
 		// 1. Make sure that the turn number isn't equivalent to the clearing time of the broadcast....
@@ -727,101 +731,126 @@ public class Senshi extends GlobalVars {
 		// 3. Make sure that the robot has not been commanded for the last attackFrequency number of turns
 		// 4. Make sure that the robot is not yet tracking anything.......
 		
-    	if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD != 1  && lastCommanded >= attackFrequency){
-
-       		// Attempt to read enemy archon data
-           	BroadcastChannels.BroadcastInfo newInfo = null;
-           	
-           	// If the robot is allowed to check for archon locations.....
-           	if (checkArchons){
-           		newInfo = BroadcastChannels.readEnemyArchonLocations();
-           	}
-           	
-           	// If no archons are left or none have been found, read an enemy location instead...                   	
-           	if(newInfo == null){
-           		newInfo = BroadcastChannels.readEnemyLocations();
-           	}
-      
-           	
-           	// Pseudo random number for joining the attack....
-           	float willJoin = (float) Math.random();
-           	
-           	// If an archon has been seen before and the robot's pseudo random number falls within bounds to join an  attack, create the goal location
-           	// Make sure that the goal location is sufficiently far away - i.e. don't go if it is within sensor Radius....
-           	if (willJoin <= attackProbability && newInfo != null){ 
-           			
-           		// Obtain the location from the broadcast data
-           		MapLocation targetLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);    
-           		
-           		// Make sure that the robot is somewhat far away....
-           		if(myLocation.distanceTo(targetLocation) >= 3 * strideRadius){
-           		
-	           		// The robot now has a command to follow, so will no longer track enemies continuously.....
-	           		isCommanded = true;
-	           		
-	           		// Set the location of the target to go to as the data from the broadcast
-	           		goalLocation = targetLocation;           	
-	           		
-	           		// Append the location to the routing...
-	           		Routing.setRouting(goalLocation);           		
-	               	
-	           		// Reset the lastCommanded since the unit has now received a command
-	           		lastCommanded = 0;
-	           	}         		
-	           	else{
-	           		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
-	           		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
-	           		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
-	           		
-	           		// IF there are no more enemies to be found....... (as far as the team knows           		
-	           		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
+    	
+		if(location == null){
+			if (myWaifuIsOnodera % BroadcastChannels.BROADCAST_CLEARING_PERIOD != 1  && lastCommanded >= attackFrequency){
+	
+	       		// Attempt to read enemy archon data
+	           	BroadcastChannels.BroadcastInfo newInfo = null;
+	           	
+	           	// If the robot is allowed to check for archon locations.....	           
+	        	BroadcastChannels.BroadcastInfo archonInfo = BroadcastChannels.readEnemyArchonLocations();
+	           	
+	        	// Update archon information....
+	           	if (archonInfo!= null){
+	           		archonLocation = new MapLocation(archonInfo.xPosition, archonInfo.yPosition);
+	           	}
+	        	
+	           	//If the soldier is allowed to check for archon information...
+	        	if (checkArchons){
+	        		newInfo = archonInfo;
+	           	}
+	           	
+	           	// If no archons are left or none have been found, read an enemy location instead...                   	
+	           	if(newInfo == null){
+	           		newInfo = BroadcastChannels.readEnemyLocations();
+	           	}
+	      
+	           	
+	           	// Pseudo random number for joining the attack....
+	           	float willJoin = (float) Math.random();
+	           	
+	           	// If an archon has been seen before and the robot's pseudo random number falls within bounds to join an  attack, create the goal location
+	           	// Make sure that the goal location is sufficiently far away - i.e. don't go if it is within sensor Radius....
+	           	if (willJoin <= attackProbability && newInfo != null){ 
 	           			
-	           			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
-	           			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
-	           			
-	           			checkArchons = false;
-	           			isCommanded = false;
-	               		goalLocation = null;          		
+	           		// Obtain the location from the broadcast data
+	           		MapLocation targetLocation = new MapLocation(newInfo.xPosition, newInfo.yPosition);    
+	           		
+	           		// Make sure that the robot is somewhat far away....
+	           		if(myLocation.distanceTo(targetLocation) >= 3 * strideRadius){
+	           		
+		           		// The robot now has a command to follow, so will no longer track enemies continuously.....
+		           		isCommanded = true;
+		           		
+		           		// Set the location of the target to go to as the data from the broadcast
+		           		goalLocation = targetLocation;           	
+		           		
+		           		// Append the location to the routing...
+		           		Routing.setRouting(goalLocation);           		
+		               	
+		           		// Reset the lastCommanded since the unit has now received a command
+		           		lastCommanded = 0;
+		           	}         		
+		           	else{
+		           		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
+		           		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+		           		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
+		           		
+		           		// IF there are no more enemies to be found....... (as far as the team knows           		
+		           		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
+		           			
+		           			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
+		           			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
+		           			
+		           			checkArchons = false;
+		           			isCommanded = false;
+		               		goalLocation = null;          		
+		           		}
 	           		}
-           		}
-           	}
-           	else{
-	    		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
-	       		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
-	       		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
-	       		
-	       		// If it is near the beginning of the game... tell the robot to go to the location of the enemy archon.....
-	       		if (discoveredArchons == 0 && myWaifuIsOnodera >= initRound + 2){
-	       			
-	       			// SYSTEM CHECK - Print out that the soldier will be attempting to go to the initial archon location
-	       			System.out.println("Attempting to go to the enemy archon location......");
-	       			
-	       			// The robot now has a command to follow, so will no longer track enemies continuously.....
-	           		isCommanded = true;
-	           		
-	           		// Set the location of the target to go to as the data from the broadcast
-	           		goalLocation = archonLocation;           	
-	           		
-	           		// Append the location to the routing...
-	           		Routing.setRouting(goalLocation);           		
-	               	
-	           		// Reset the lastCommanded since the unit has now received a command
-	           		lastCommanded = 0;	       			
-	       		}
-	       		
-	       		
-	       		// IF there are no more enemies to be found....... (as far as the team knows           		
-	       		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
-	       			
-	       			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
-	       			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
-	       			
-	       			checkArchons = false;
-	       			isCommanded = false;
-	           		goalLocation = null;          		
-	       		}
-           	}
-    	}
+	           	}
+	           	else{
+		    		// Calculate the number of archons remaining on the enemy team (that the team has seen)                 
+		       		int finishedArchons = rc.readBroadcast(BroadcastChannels.FINISHED_ARCHON_COUNT);
+		       		int discoveredArchons = rc.readBroadcast(BroadcastChannels.DISCOVERED_ARCHON_COUNT);                   		
+		       		
+		       		// If it is near the beginning of the game... tell the robot to go to the location of the enemy archon.....
+		       		if (discoveredArchons == 0 && myWaifuIsOnodera >= initRound + 2){
+		       			
+		       			// SYSTEM CHECK - Print out that the soldier will be attempting to go to the initial archon location
+		       			System.out.println("Attempting to go to the enemy archon location......");
+		       			
+		       			// The robot now has a command to follow, so will no longer track enemies continuously.....
+		           		isCommanded = true;
+		           		
+		           		// Set the location of the target to go to as the data from the broadcast
+		           		goalLocation = archonLocation;           	
+		           		
+		           		// Append the location to the routing...
+		           		Routing.setRouting(goalLocation);           		
+		               	
+		           		// Reset the lastCommanded since the unit has now received a command
+		           		lastCommanded = 0;	       			
+		       		}
+		       		
+		       		
+		       		// IF there are no more enemies to be found....... (as far as the team knows           		
+		       		if(finishedArchons == discoveredArchons && rc.getInitialArchonLocations(enemies).length == finishedArchons){
+		       			
+		       			// SYSTEM CHECK - Print out that the robot will no longer seek archon locations...
+		       			System.out.println("Number of archons killed is equivalent to the number seen, the robot will now simply check for nearby enemies....");
+		       			
+		       			checkArchons = false;
+		       			isCommanded = false;
+		           		goalLocation = null;          		
+		       		}
+	           	}
+	    	}
+		}
+		// If no target location was inputted, default to the location of the archon initially...
+		else{
+ 			// The robot now has a command to follow, so will no longer track enemies continuously.....
+       		isCommanded = true;
+       		
+       		// Set the location of the target to go to as the data from the broadcast
+       		goalLocation = location;     	
+       		
+       		// Append the location to the routing...
+       		Routing.setRouting(goalLocation);           		
+           	
+       		// Reset the lastCommanded since the unit has now received a command
+       		lastCommanded = 0;	       	
+		}
 	}	
 	
 	

@@ -98,7 +98,7 @@ public class GardenerBot extends GlobalVars {
 		System.out.println("I'm a gardener!");
 		
 		manageCorrespondingArchon();
-		
+
 		//value of initial role, set to planting trees first
 		role = 1;
 		
@@ -145,6 +145,10 @@ public class GardenerBot extends GlobalVars {
             	
             	System.out.println("Previous health: " + previousHealth);
             	BroadcastChannels.broadcastDistress(previousHealth, enemyRobots, myLocation, unitNumber);
+        		int roundNumber = rc.getRoundNum();
+        		
+            	// Update the nearest enemy and archon locations - If it sees any.......
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation, roundNumber); 
             	
             	
             	// If the robot thought it died previously but didn't.... update information...

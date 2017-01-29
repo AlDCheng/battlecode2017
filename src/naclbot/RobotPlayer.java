@@ -1,10 +1,11 @@
 package naclbot;
 import battlecode.common.*;
 import naclbot.units.AI.archon.ArchonBot;
+import naclbot.units.AI.gardener.EmiliaBot;
 import naclbot.units.AI.gardener.GardenerBot;
-import naclbot.units.AI.lumberjack.Kikori;
-import naclbot.units.AI.scout.ScoutBot;
-import naclbot.units.AI.soldier.Senshi;
+import naclbot.units.AI.lumberjack.BarusuBot;
+import naclbot.units.AI.scout.BestGirlBot;
+import naclbot.units.AI.soldier.SaberBot;
 import naclbot.units.AI.tank.TankBot;
 import naclbot.variables.GlobalVars;
 
@@ -35,16 +36,16 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    GardenerBot.init();
 			    break;
 			case SOLDIER:
-			    Senshi.init();
+				SaberBot.init();
 			    break;
 			case TANK:
-			    TankBot.init();
+				TankBot.init();
 			    break;
 			case LUMBERJACK:
-			    Kikori.init();
+				BarusuBot.init();
 			    break;
 			case SCOUT:
-			    ScoutBot.init();
+			    BestGirlBot.init();
 			    break;
 	    
         }

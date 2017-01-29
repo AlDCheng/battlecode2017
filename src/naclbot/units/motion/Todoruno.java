@@ -18,7 +18,38 @@ import naclbot.variables.GlobalVars;
 
 public class Todoruno extends GlobalVars {
 	
-
+	public static final int rotationAnglesCheck = 5; // Number of angles the rotate functions will check to see if they can move...
+	public static final float rotationMarginOfError = (float) 1;
+	
+	// Class for scouts - rotation orientation class helper.....
+	public static class Rotation{
+		
+		// Value to store rotation preference indicated by this object
+		public boolean orientation;
+		
+		// Constructor
+		public Rotation(boolean direction){
+			this.orientation = direction;
+		}
+		
+		// Function to flip the orientation of this object
+		public void switchOrientation(){
+			this.orientation = !this.orientation;
+		}	
+		
+		// Function to print in words the orientation of the rotation object
+		public String printOrientation(){
+			
+			// If the orientation is true, this is clockwise....
+			if(orientation){
+				return "counterclockwise";
+			}
+			else{
+				return "clockwise";
+			}			
+		}
+	}	
+	
 	// Function to move towards a given robot
 
 	// When the robot is 6* multiplier away or greater from the current robot being tracked, it will move directly towards the currently tracked
@@ -301,7 +332,7 @@ public class Todoruno extends GlobalVars {
 	}
 	
 	
-	// This function should be called whenever the unit is close to pass by distance of the robot.....
+	// This function should be called whenever the unit is close to pass by distance of the robot..... TODO
 	
 	public static MapLocation passByEnemy(	
 			
@@ -313,7 +344,9 @@ public class Todoruno extends GlobalVars {
 		
 		float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
 		
-		float passByDistance // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
+		float passByDistance, // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
+		
+		Rotation rotationOrientation // Represents if the unit currently forced into 
 		
 		) throws GameActionException{
 		
@@ -331,7 +364,7 @@ public class Todoruno extends GlobalVars {
 		float passDistance;
 		
 		// If the robot is further than the desired distance from the enemy, use its slightly larger distance.....
-		if(distanceToEnemy > passByDistance){
+		if(distanceToEnemy >= passByDistance && distanceToEnemy<= passByDistance + rotationMarginOfError){
 			passDistance = distanceToEnemy;
 		}
 		// Otherwise default to the pass by distance inputted into the function...
@@ -345,22 +378,50 @@ public class Todoruno extends GlobalVars {
 		// Rotate clockwise if....
 		if((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI)){
 			
+			// SYSTEM CHECK - Print out that the robot will attempt to go clockwise
+			System.out.println("Attempting to go clockwise about the target.....");
 			
+			rotationOrientation.orientation = false;
 			
 			if ((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) + Math.PI / 2){
 				
-				// SYSTEM CHECK - The unit should simply attempt to continue to the target location....
+				// SYSTEM CHECK - The unit should simply attempt to continue to the target location....	 - Print out that
+				System.out.println("Sufficiently rotated about enemy, will now proceed to target location");
 				
-				return null;
+				return startingLocation.add(directionToTarget, strideRadius);				
 			}
+			else{
+				// SYSTEM CHECK - Print out that the scout will attempt to rotate about enemy...
+				System.out.println("Attempting to rotate about enemy now....");
+				
+				// Otherwise simply rotate about the enemy in the correct direction
+				return rotateAboutEnemy(startingLocation, enemyRobot, strideRadius, passDistance, rotationOrientation);				
+			}			
+		}
+		else{
+			// SYSTEM CHECK - Print out that the robot will attempt to go counterclockwise
+			System.out.println("Attempting to go counterclockwise about the target.....");
 			
+			rotationOrientation.orientation = true;
+			
+			if ((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) + Math.PI / 2){
+				
+				// SYSTEM CHECK - The unit should simply attempt to continue to the target location....	 - Print out that
+				System.out.println("Sufficiently rotated about enemy, will now proceed to target location");
+				
+				return startingLocation.add(directionToTarget, strideRadius);				
+			}
+			else{
+				// SYSTEM CHECK - Print out that the scout will attempt to rotate about enemy...
+				System.out.println("Attempting to rotate about enemy now....");
+				
+				// Otherwise simply rotate about the enemy in the correct direction
+				return rotateAboutEnemy(startingLocation, enemyRobot, strideRadius, passDistance, rotationOrientation);				
+			}			
 		}
 		
 		
-		
-		
-		
-		return null;
+
 	}
 	
 	
@@ -373,6 +434,8 @@ public class Todoruno extends GlobalVars {
 	
 	
 	// TODO - for scouts.......
+	
+	
 	public static MapLocation rotateAboutEnemy(
 			
 			// Input variables....
@@ -384,71 +447,107 @@ public class Todoruno extends GlobalVars {
 			
 			float engageDistance, // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
 			
-			boolean rotationDirection // Boolean determining in which direction the robot will attempt to rotate about the robot.....
+			Rotation rotationOrientation // Represents if the unit currently forced into 
 
 			) throws GameActionException{
 		
-			
-			// Pseudo random number to determine which side the soldier will check first.......
-			float randomNumber = (float) Math.random();
-			
-			// Retrieve the location of the enemy robot and the robot's current distance away from it and the direction from the engaged enemy..
-			MapLocation enemyLocation = enemyRobot.location;
-			Direction directionFrom = enemyLocation.directionTo(startingLocation);	
-			
-			// Variable to determine the number of radians that a soldier's move would intercept along the circle of size engageDistance
-			float interceptRadians = strideRadius / engageDistance;
-
-			// Change the order of rotations to check by negating the offset angle given by interceptRadians.....
-			if (randomNumber >= 0.5){		
-				interceptRadians *= -1;
-			}
 		
-			// Calculate the direction from the engaged robot that is equivalent to a rotation about the target robot of interceptRadians
-			Direction targetDirection1 = new Direction(directionFrom.radians + interceptRadians);
-			MapLocation desiredLocation1 = enemyLocation.add(targetDirection1, engageDistance);
-			
-			// Calculate the direction from the current location to the considered location
-			Direction attemptedDirection1 = startingLocation.directionTo(desiredLocation1);
+		// SYSTEM CHECK - Draw a pink line to the enemy that the robot is attempting to rotate about...
+		rc.setIndicatorLine(startingLocation, enemyRobot.location, 255, 20, 147);
 		
-			// Attempt to move in that general direction.....
-			MapLocation moveAttempt1 = Yuurei.tryMoveInDirection(attemptedDirection1, 20, 2, strideRadius, startingLocation);
-			
-			// If a move to that location was possible, return it.....
-			if (moveAttempt1 != null){
-				
-				// SYSTEM CHECK - Print out that a move was found and draw a PINK LINE
-				System.out.println("First attempt to find an engage location successful");
-				
-				rc.setIndicatorLine(startingLocation, moveAttempt1, 255, 20, 147);
-				
-				return moveAttempt1;
-			}
-			
-			// If the function still has yet to return.......
-				
-			// Calculate the direction from the engaged robot that is equivalent to a rotation about the target robot of interceptRadians
-			Direction targetDirection2 = new Direction(directionFrom.radians - interceptRadians);
-			MapLocation desiredLocation2 = enemyLocation.add(targetDirection2, engageDistance);
-			
-			// Calculate the direction from the current location to the considered location
-			Direction attemptedDirection2 = startingLocation.directionTo(desiredLocation2);
+		// Get the location of the enemy, the distance from it
+		MapLocation enemyLocation = enemyRobot.location;		
+		float distanceFromEnemy = startingLocation.distanceTo(enemyLocation);
 		
-			// Attempt to move in that general direction.....
-			MapLocation moveAttempt2 = Yuurei.tryMoveInDirection(attemptedDirection2, 20, 2, strideRadius, startingLocation);
-			
-			// If a move to that location was possible, return it.....
-			if (moveAttempt2 != null){			
-				
-				// SYSTEM CHECK - Print out that a move was found and draw a PINK LINE
-				System.out.println("Second attempt to find an engage location successful");
-				
-				rc.setIndicatorLine(startingLocation, moveAttempt2, 255, 20, 147);
-				
-				return moveAttempt2;
-			}	
-			
-			// If the function still cannot return, simply return nothing... the robot will prioritize staying in the same location......
-			return null;
+		// Place holder to store the distance at which the robot will attempt to rotate about the enemy....
+		float distanceSpacing;
+		
+		// If the current spacing is larger, use it
+		if(distanceFromEnemy >= engageDistance && distanceFromEnemy <= rotationMarginOfError + engageDistance){
+			distanceSpacing = distanceFromEnemy;
 		}
+		
+		// If the current distance is even larger than the margin of error use the upper bound...
+		else if(distanceFromEnemy >= engageDistance + rotationMarginOfError){
+			distanceSpacing = engageDistance + rotationMarginOfError;			
+		}
+		
+		// Otherwise utilize the inputed distance
+		else{
+			distanceSpacing = engageDistance;
+		}
+		
+		// Get the direction from the enemy and the maximum number of radians to rotate about it....
+		Direction directionFromEnemy = enemyLocation.directionTo(startingLocation);		
+		float radiansToRotate = strideRadius / distanceFromEnemy;
+		
+		// If the rotation distance wasn't yet given...... randomly select one..
+		if(rotationOrientation == null){
+			
+			// Randomizing variable
+			float randomize = (float) Math.random();
+			
+			if (randomize >= 0.5){
+				rotationOrientation = new Rotation(true);
+			}			
+			else{
+				rotationOrientation = new Rotation(false);				
+			}		
+		}
+		
+		// Positive orientation means counterclockwise rotation.....
+		if(rotationOrientation.orientation){
+			
+			Direction finalDirection = new Direction(directionFromEnemy.radians + radiansToRotate);
+			
+			// Check five different angles for possible movement...
+			for(int j = rotationAnglesCheck; j >= 1; j--){
+				
+				float radianCheck = radiansToRotate * j / rotationAnglesCheck;				
+				
+				Direction targetDirection = new Direction(directionFromEnemy.radians + radianCheck);
+				
+				MapLocation targetLocation = enemyLocation.add(targetDirection, distanceSpacing);
+				
+				if(rc.canMove(targetLocation)){
+					
+					// SYSTEM CHECK - Print out the specifics of the location it chose.....
+					System.out.println("Will attempt to move counterclockwise with: " + radianCheck + " radians about the enemy with a distance of: " + distanceSpacing);
+					return targetLocation;
+				}
+			}
+			// SYSTEM CHECK - Print out the specifics of the location it chose.....
+			System.out.println("Cannot seem to move in desired direction, will simply return full value and corect....");
+			
+			// If none of the rotation options were viable... return the full one so that a correction can be made.....
+			return enemyLocation.add(finalDirection, distanceSpacing);
+		}
+		// Otherwise attempt clockwise rotation.......
+		else{
+			
+			Direction finalDirection = new Direction(directionFromEnemy.radians - radiansToRotate);
+			
+			// Check five different angles for possible movement...
+			for(int j = rotationAnglesCheck; j >= 1; j--){
+				
+				float radianCheck = radiansToRotate * j / rotationAnglesCheck;				
+				
+				Direction targetDirection = new Direction(directionFromEnemy.radians - radianCheck);
+				
+				MapLocation targetLocation = enemyLocation.add(targetDirection, distanceSpacing);
+				
+				if(rc.canMove(targetLocation)){
+					
+					// SYSTEM CHECK - Print out the specifics of the location it chose.....
+					System.out.println("Will attempt to move clockwise with: " + radianCheck + " radians about the enemy with a distance of: " + distanceSpacing);
+					return targetLocation;
+				}				
+			}
+			// SYSTEM CHECK - Print out the specifics of the location it chose.....
+			System.out.println("Cannot seem to move in desired direction, will simply return full value and corect....");
+			
+			// If none of the rotation options were viable... return the full one so that a correction can be made.....
+			return enemyLocation.add(finalDirection, distanceSpacing);
+		}
+	}
 }

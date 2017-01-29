@@ -706,7 +706,8 @@ public class TankBot extends GlobalVars {
 			
 			//If it will die, broadcast to all relevant channesl.....
 			
-			if (willDie) {	
+			if (willDie) {
+				
 				believeHasDied = true;
 				
 				// Get the current number of soldiers in service

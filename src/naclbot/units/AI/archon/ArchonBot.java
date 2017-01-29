@@ -163,7 +163,7 @@ public class ArchonBot extends GlobalVars {
 	    // Initialize path list and goal location
 //       	routingPath = new ArrayList<MapLocation>();    	
 //       	Routing.setRouting(routingPath);
-        rc.broadcastFloat(SPARCITY_CHANNEL, calculateTreeDensity());
+        rc.broadcastFloat(SPARCITY_CHANNEL, updateTreeDensity());
 		constructGardeners(treeNum);
 	}
 	

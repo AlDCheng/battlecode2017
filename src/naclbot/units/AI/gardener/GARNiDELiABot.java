@@ -359,6 +359,8 @@ public class GARNiDELiABot extends GlobalVars {
 	//-----------------------------------------------------------------------------
 	//-----------------------------------------------------------------------------
 	//---------------------------------[Watering]----------------------------------
+	
+	
 	public static void waterSurroundingTrees(ArrayList<MapLocation> lowHealthTrees) throws GameActionException {
 		//first checks if there are trees it can water, then waters
 		if (lowHealthTrees.size() > 0) {
