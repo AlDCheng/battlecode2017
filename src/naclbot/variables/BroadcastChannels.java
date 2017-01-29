@@ -46,6 +46,8 @@ public class BroadcastChannels extends GlobalVars {
 	// How many archons are currently alive 
 	public final static int ARCHONS_ALIVE_CHANNEL = 10;
 	
+	public final static int ARCHONS_TREE_DENSITY_CHANNEL = 11;
+	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
 	// Stores how many gardeners  exist

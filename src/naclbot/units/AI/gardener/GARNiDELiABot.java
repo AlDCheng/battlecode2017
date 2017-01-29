@@ -67,7 +67,7 @@ public class GARNiDELiABot extends GlobalVars {
 		manageCorrespondingArchon();
 		
 		// Get own soldierNumber - important for broadcasting 
-        int gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+        int gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
         int currentNumberofGardeners = gardenerNumber + 1;
         
         // Don't know if neccessary?
@@ -79,7 +79,7 @@ public class GARNiDELiABot extends GlobalVars {
        	rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfActiveGardeners + 1);    
         
         // Update soldier number for other soldiers to see.....
-        rc.broadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL, currentNumberofGardeners);
+        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, currentNumberofGardeners);
         
 		main();
 	}
@@ -116,6 +116,8 @@ public class GARNiDELiABot extends GlobalVars {
 		
 		while (true) {
 			try {
+				Win();
+				
 				int rem = rc.getRoundNum();
 				
 				boolean hold = false;
@@ -146,8 +148,8 @@ public class GARNiDELiABot extends GlobalVars {
                 scoutCount = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);                
                 soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
                 lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL);
-                tankCount = rc.readBroadcast(BroadcastChannels.TANK_NUMBER_CHANNEL);
-                gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
+                tankCount = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
+                gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
                 
                 System.out.println("Scouts: " + scoutCount + ", Soldiers: " + soldierCount + 
                 					", Lumberjacks: " + lumberjackCount + ", Tanks: " + tankCount);

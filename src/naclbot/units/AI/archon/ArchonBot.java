@@ -163,7 +163,12 @@ public class ArchonBot extends GlobalVars {
 	    // Initialize path list and goal location
 //       	routingPath = new ArrayList<MapLocation>();    	
 //       	Routing.setRouting(routingPath);
-        rc.broadcastFloat(SPARCITY_CHANNEL, updateTreeDensity());
+
+        rc.broadcastFloat(SPARCITY_CHANNEL, calculateTreeDensity());
+
+        System.out.println(calculateTreeDensity());
+        rc.broadcastFloat(BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL, calculateTreeDensity());
+        System.out.println(rc.readBroadcastFloat(BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL));
 		constructGardeners(treeNum);
 	}
 	
@@ -815,7 +820,7 @@ public class ArchonBot extends GlobalVars {
 		return finalLoc;
 	}
 	
-	public static float updateTreeDensity() throws GameActionException {
+	public static float calculateTreeDensity() throws GameActionException {
 		
 		//initialize some variables 
 		ArrayList<TreeInfo> neutralTrees = new ArrayList<TreeInfo>();

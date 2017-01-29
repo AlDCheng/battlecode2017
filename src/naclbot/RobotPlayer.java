@@ -2,6 +2,7 @@ package naclbot;
 import battlecode.common.*;
 import naclbot.units.AI.archon.ArchonBot;
 import naclbot.units.AI.gardener.EmiliaBot;
+import naclbot.units.AI.gardener.GARNiDELiABot;
 import naclbot.units.AI.gardener.GardenerBot;
 import naclbot.units.AI.lumberjack.BarusuBot;
 import naclbot.units.AI.scout.BestGirlBot;
@@ -33,7 +34,7 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    ArchonBot.init();			
 			    break; 
 			case GARDENER:
-			    GardenerBot.init();
+			    GARNiDELiABot.init();
 			    break;
 			case SOLDIER:
 				SaberBot.init();
