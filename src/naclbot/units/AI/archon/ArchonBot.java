@@ -104,25 +104,22 @@ public class ArchonBot extends GlobalVars {
 	
 	public static MapLocation desiredMove;
     
-    // TO BE CHANGED
     // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CYCLE
     public static int getGardenerLimit(int roundNumber) throws GameActionException{
+    	//initialize tree and gardener counts 
+    	float treeCount = rc.getTreeCount(); //directly proportional to bullet income
     	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_CHANNEL);
-    	int maxGardeners = gardenerCount - gardenerNumber;
-    	if (gardenerCount > maxGardeners) {
-    		maxGardeners = gardenerCount;
-    	}
     	
-    	// Slight tweeks
+    	// Offset for mid game 
     	if (roundNumber <= 200){
     		return 0;
     	}
+    	
     	// Make exponential
-    	else if(roundNumber <= 500){
-    		return (2 + roundNumber / 100);
-    	}
-    	else{
-    		return (3 + roundNumber / 125);    	
+    	else if(roundNumber <= 1000){
+    		return (int) (2 + roundNumber / 100 + treeCount / 10);
+    	} else {
+    		return (int) (3 + roundNumber / 125 + treeCount / 10);    	
     	}
     }    
     	
@@ -432,6 +429,8 @@ public class ArchonBot extends GlobalVars {
     	int idleCount = 0; 	
     	
     	while (checkNearbyGardeners(7) && idleCount <= 20) { 
+    		//keeps trying to move away from gardener until there is none in 7 unit radius or it's been trying to move for 20 turns
+    		
     		alliedRobots = rc.senseNearbyRobots(7);
     		myLocation = rc.getLocation(); 
     		
@@ -816,7 +815,8 @@ public class ArchonBot extends GlobalVars {
 		return finalLoc;
 	}
 	
-	public static float calculateTreeDensity() throws GameActionException {
+	public static float updateTreeDensity() throws GameActionException {
+		
 		//initialize some variables 
 		ArrayList<TreeInfo> neutralTrees = new ArrayList<TreeInfo>();
 		
@@ -840,7 +840,7 @@ public class ArchonBot extends GlobalVars {
 		float areaRatio = treeArea/sightArea;
 		
 		// produces a scaled ratio taking into account area taken up by trees and number of trees
-		float scaledValue = (float) ((treeArea*100/sightArea)*0.6 + surroundingTrees.length*0.4);
+		float scaledValue = (float) ((treeArea*100/sightArea)*0.4 + surroundingTrees.length*0.6);
 				
 		//returns this ratio as an integer by multiplying by 100
 		return scaledValue;
