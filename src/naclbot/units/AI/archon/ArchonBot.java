@@ -325,7 +325,7 @@ public class ArchonBot extends GlobalVars {
                 
                 if ((gardenerCount <= 0)) {
                 	constructGardeners(1);
-                } else if (!crowded && (gardenerCount < getGardenerLimit(remIsBestGirl))) {
+                } else if (!crowded && (gardenerCount < getGardenerLimit(remIsBestGirl) || remIsBestGirl < 30)) {
                 	constructGardeners(1);                		
                 } 
             	
