@@ -116,6 +116,8 @@ public class GARNiDELiABot extends GlobalVars {
 		
 		while (true) {
 			try {
+				int rem = rc.getRoundNum();
+				
 				boolean hold = false;
 				// Get build timers
 				propagateBuild();
@@ -179,6 +181,16 @@ public class GARNiDELiABot extends GlobalVars {
                 	// If present override next build order with soldier
                 	Object order[] = new Object[2];
                 	order[0] = new String("SOLDIER");
+                	order[1] = new Integer(1);
+                	buildOrder.add(0, order);
+                	override = true;
+                }
+                
+                if ((scoutCount <= 0) && (rem > 200)) {
+                	
+                	// If present override next build order with scout
+                	Object order[] = new Object[2];
+                	order[0] = new String("SCOUT");
                 	order[1] = new Integer(1);
                 	buildOrder.add(0, order);
                 	override = true;
@@ -576,7 +588,7 @@ public class GARNiDELiABot extends GlobalVars {
 				System.out.println("Try Infantry");
 				
 				// Pseudo-Random for lumberjacks or soldiers
-				if ((5*(lumberjackCount+1) <= (soldierCount+1)) && (lumberjackCount < 2)) {
+				if ((4*(lumberjackCount+1) <= (soldierCount+1)) && (lumberjackCount < 2)) {
 					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
 						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
 						buildingLumberjack += 20;
