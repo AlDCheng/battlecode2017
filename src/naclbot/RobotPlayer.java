@@ -1,6 +1,7 @@
 package naclbot;
 import battlecode.common.*;
 import naclbot.units.AI.archon.ArchonBot;
+import naclbot.units.AI.archon.KazumaBot;
 import naclbot.units.AI.gardener.EmiliaBot;
 import naclbot.units.AI.gardener.GARNiDELiABot;
 import naclbot.units.AI.gardener.GardenerBot;
@@ -31,7 +32,7 @@ public strictfp class RobotPlayer extends GlobalVars{
         // You can add the missing ones or rewrite this into your own control structure.
         switch (rc.getType()) {
 			case ARCHON:
-			    ArchonBot.init();			
+			    KazumaBot.init();			
 			    break; 
 			case GARDENER:
 			    GARNiDELiABot.init();
