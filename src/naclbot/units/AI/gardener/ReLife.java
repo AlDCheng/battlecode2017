@@ -119,11 +119,10 @@ public class ReLife extends GlobalVars {
 		float totalAngle = 0;
 		
 		// Scan for 1 revolution
-		while (totalAngle <= 180) {
+		while (totalAngle <= 181) {
 			
 			// Scan both sides around
 			for (int rotSwitch = -1; rotSwitch < 2; rotSwitch+=2) {
-				
 				// Increment values
 				if (start <= 0) {
 					dirCheck = dir.rotateLeftDegrees(rotSwitch * totalAngle);
@@ -131,6 +130,7 @@ public class ReLife extends GlobalVars {
 				else {
 					dirCheck = dir.rotateRightDegrees(rotSwitch * totalAngle);
 				}
+//				System.out.println("Dir Check: " + dir.getAngleDegrees() + ", Mod: " + dirCheck.getAngleDegrees() + ", Dir: " + rotSwitch);
 //				dirCheck = new Direction((float)Math.round(dirCheck.radians * 100.0)/(float)100.0);
 //				System.out.println("Dir Check: " + dirCheck);
 				
@@ -139,11 +139,12 @@ public class ReLife extends GlobalVars {
 				
 				// Check if tree can be planted
 				if(rc.canPlantTree(dirCheck)) {
+//					System.out.println("Can be planted");
 					rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
 					
 					// Keep one space for unit building, fill other if possible
 					if ((finalDir[1] != null) && (finalDir[0] == null)) {
-						if (Math.abs(finalDir[1].degreesBetween(dirCheck)) > 60-angleInterval/2) {
+						if (Math.abs(finalDir[1].degreesBetween(dirCheck)) > 60-(angleInterval/2)) {
 							finalDir[0] = treePosDir;
 						}
 					}
@@ -151,10 +152,9 @@ public class ReLife extends GlobalVars {
 						if (treePosDir == null) {
 							treePosDir = dirCheck;
 						}
-//						finalDir[1] = dirCheck;
 						
 						if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist),(float)0.5))) {
-							if (rc.onTheMap(newLoc.add(dirCheck, extend), (float)1)) {
+							if (rc.onTheMap(newLoc.add(dirCheck, extend), (float)0.5)) {
 								finalDir[1] = dirCheck;
 							}
 						}
@@ -200,7 +200,7 @@ public class ReLife extends GlobalVars {
 		float totalAngle = 0;
 		
 		// Scan for 1 revolution
-		while (totalAngle < 180) {
+		while (totalAngle <= 180) {
 			
 			// Scan both sides around
 			for (int rotSwitch = -1; rotSwitch < 1; rotSwitch+=2) {

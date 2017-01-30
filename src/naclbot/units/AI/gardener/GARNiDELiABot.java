@@ -50,7 +50,7 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	// Build
 	public static ArrayList<Object[]> buildOrder = new ArrayList<Object[]>();
-	private static int scanInt = 2;
+	private static int scanInt = 5;
 	private static int buildRadius = 1;
 	private static float scanRad = (float)1;
 	
@@ -58,6 +58,10 @@ public class GARNiDELiABot extends GlobalVars {
 	private static float searchRad = 3;
 	
 	private static float congThresh = (float)0.5;
+	
+	private static final float emptyDensityThresh = (float)0.5;
+	private static final float initDistThresh = (float)20;
+	private static final float farDistThresh = (float)60;
 	
 	// Unit entry point
 	public static void init() throws GameActionException {
@@ -78,8 +82,17 @@ public class GARNiDELiABot extends GlobalVars {
        	int numberOfActiveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
        	rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfActiveGardeners + 1);    
         
-        // Update soldier number for other soldiers to see.....
-        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, currentNumberofGardeners);
+        scoutCount = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);                
+        soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
+        lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL);
+        tankCount = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
+        
+        // Determine build order
+        int archonNum = determineParent();
+        System.out.println("Archon Num: " + archonNum);
+        if(archonNum >= 0) {
+        	buildOrder = determineBuildOrder(archonNum);
+        }
         
 		main();
 	}
@@ -103,16 +116,7 @@ public class GARNiDELiABot extends GlobalVars {
 		
 		prevMoveVec = initDir.opposite();
 		
-		// Determine initial build orders here
-		Object initOrder[] = new Object[2];
-		initOrder[0] = new String("SOLDIER");
-		initOrder[1] = new Integer(2);
-    	buildOrder.add(initOrder);
-    	
-    	initOrder = new Object[2];
-		initOrder[0] = new String("SCOUT");
-		initOrder[1] = new Integer(1);
-		buildOrder.add(initOrder);
+		boolean saturated = false;
 		
 		while (true) {
 			try {
@@ -155,7 +159,6 @@ public class GARNiDELiABot extends GlobalVars {
                 					", Lumberjacks: " + lumberjackCount + ", Tanks: " + tankCount);
                 System.out.println("Gardener: " + gardenerCount);
                 
-                
                 System.out.println("Unit Start: " + unitStart);
                 
             	//--------------------------------------------------------------------------------
@@ -163,7 +166,9 @@ public class GARNiDELiABot extends GlobalVars {
             	
             	RobotInfo[] ourBots = rc.senseNearbyRobots(sensorRadius, ourTeam);
             	System.out.println("BuildDir: " + buildDir);
-                buildDir = dirAway(myLocation, ourBots, initDir, sensorRadius);
+            	if(canMove) {
+            		buildDir = dirAway(myLocation, ourBots, initDir, sensorRadius);
+            	}
                 
                 // Attempt movement     
                 MapLocation destPoint = movement(canMove, myLocation, ourTeam, sensorRadius, prevMoveDir);
@@ -208,6 +213,13 @@ public class GARNiDELiABot extends GlobalVars {
                 	
                 	// Finds availible spots to build units/plant trees
                 	Direction buildDirs[] = ReLife.scanBuildRadius(scanInt, buildDir.opposite().getAngleDegrees(), buildRadius, scanRad);
+                	
+                	if(buildDirs[0] == null) {
+                		saturated = true;
+                	}
+                	else {
+                		saturated = false;
+                	}
                 	
                 	System.out.println("Congestion: " + ReLife.congestion);
                 	
@@ -293,7 +305,7 @@ public class GARNiDELiABot extends GlobalVars {
 	                    			System.out.println("Try building Unit: " + nextType);
 	                				if (nextType != null) {
 	                					if (buildDirs[1] != null) {
-	                						buildOverride(nextType, bulletNum, initDir.opposite(), buildDirs[1]);
+	                						buildOverride(nextType, bulletNum, buildDirs[1]);
 	                					}
 	                					else {
 	                						break;
@@ -326,7 +338,9 @@ public class GARNiDELiABot extends GlobalVars {
                 	
                 	// No override/order/it failed
                 	if(!hold && rc.isBuildReady()) {
+                		System.out.println("Tree Dir: " + buildDirs[0]);
 	                	if ((buildDirs[0] != null) && (unitStart > spaceTime)) {
+	                		System.out.println("Try planting tree");
 	                		rc.plantTree(buildDirs[0]);
 	                		buildingTree += 20;
 	                		canMove = false;
@@ -346,6 +360,24 @@ public class GARNiDELiABot extends GlobalVars {
             	previousHealth = rc.getHealth();
             	
             	rc.setIndicatorLine(myLocation, myLocation.add(buildDir,1), 255, 0, 0);
+            	
+            	// If poll, report state
+            	int pollState = rc.readBroadcast(BroadcastChannels.GARDENER_POLL);
+            	System.out.println("Poll State: " + pollState);
+            	
+            	if (pollState == 1) {
+            		
+            		System.out.println("Saturated State: " + saturated);
+            		
+            		if (saturated) {
+            			int fillState = rc.readBroadcast(BroadcastChannels.GARDENER_BUILD_FILL);
+            			rc.broadcast(BroadcastChannels.GARDENER_BUILD_FILL, fillState += 1);
+            		}
+            		else {
+            			int fillState = rc.readBroadcast(BroadcastChannels.GARDENER_BUILD_FILL);
+            			rc.broadcast(BroadcastChannels.GARDENER_BUILD_FILL, fillState -= 1000);
+            		}
+            	}
 				
             	// End turn
 				Clock.yield();
@@ -637,7 +669,7 @@ public class GARNiDELiABot extends GlobalVars {
 		}
 	}
 	
-	public static void buildOverride(RobotType Unit, float bullets, Direction dirDeg, Direction buildDir) throws GameActionException {
+	public static void buildOverride(RobotType Unit, float bullets, Direction buildDir) throws GameActionException {
 		if (bullets >= Unit.bulletCost) {
 			if (rc.isBuildReady()) {
 				rc.buildRobot(Unit, buildDir);
@@ -675,5 +707,84 @@ public class GARNiDELiABot extends GlobalVars {
 		else {
 			return null;
 		}
+	}
+	
+	//----------------------------[Init Unit Building]-----------------------------
+	public static int determineParent() throws GameActionException {
+		RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+		for (int i = 0; i < nearbyBots.length; i++) {
+			if(nearbyBots[i].type == RobotType.ARCHON) {
+				for (int j = 0; j < 2; j++) {
+					int broadcastStart = BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL + 2*j;
+					int ID = rc.readBroadcast(broadcastStart);
+					if (ID == nearbyBots[i].ID) {
+						return j;
+					}
+				}
+			}
+		}	
+		return -1;
+	}
+	
+	public static ArrayList<Object[]> determineBuildOrder(int archonNum) throws GameActionException {
+		ArrayList<Object[]> buildOrder = new ArrayList<Object[]>();
+		
+		float density = rc.readBroadcastFloat(BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL + 2*archonNum + 1);
+		System.out.println("Empty Density: " + density);
+		
+		// Close
+		if (initDist < initDistThresh) {
+			if (density < emptyDensityThresh) {
+				buildOrder = getOrder(buildOrder, "SOLDIER", 1, soldierCount);
+				buildOrder = getOrder(buildOrder, "LUMBERJACK", 1, lumberjackCount);
+				buildOrder = getOrder(buildOrder, "SOLDIER", 1, soldierCount);
+			}
+			else {
+				buildOrder = getOrder(buildOrder, "SOLDIER", 2, soldierCount);
+				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount);
+			}
+		}
+		
+		// Far
+		else if (initDist > farDistThresh) {
+			if (density < emptyDensityThresh) {
+				buildOrder = getOrder(buildOrder, "LUMBERJACK", 1, lumberjackCount);
+				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount);
+			}
+			else {
+				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount);
+			}
+		}
+		
+		// Middle
+		else {
+			if (density < emptyDensityThresh) {
+				buildOrder = getOrder(buildOrder, "LUMBERJACK", 1, lumberjackCount);
+				buildOrder = getOrder(buildOrder, "SOLDIER", 1, soldierCount);
+				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount);	
+			}
+			
+			// Default
+			else {
+				buildOrder = getOrder(buildOrder, "SOLDIER", 1, soldierCount);
+				buildOrder = getOrder(buildOrder, "LUMBERJACK", 1, lumberjackCount);
+				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount);	
+			}
+		}
+		
+		return buildOrder;
+	}
+	
+	private static ArrayList<Object[]> getOrder(ArrayList<Object[]> build, String name, int qty, int existing) {
+		int dif = qty - existing;
+		if (dif > 0) {
+			Object newOrder[] = new Object[2];
+	    	newOrder[0] = name;
+	    	newOrder[1] = dif;
+	    	
+	    	build.add(newOrder);
+		}
+		
+		return build;		
 	}
 }

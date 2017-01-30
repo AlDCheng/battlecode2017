@@ -19,6 +19,8 @@ public class Aqua extends GlobalVars {
 	// Distress signal
 	public static boolean believeHasDied = false;
 	
+	public static float emptyDensity = 0;
+	
 	// Discreteness of  the initial search to find nearest walls...
     private static final float initialWallCheckGrain = 1;
 	
@@ -109,11 +111,14 @@ public class Aqua extends GlobalVars {
 	public static Direction getInitialWalls(MapLocation myLocation) throws GameActionException{
 		
 		// Initialize an array to store the  distances to any walls (obstacles to building)
-		float[] wallDistances = new float[16]; 
+		float[] wallDistances = new float[16];
+		boolean[] hitWall = new boolean[16];
 		Arrays.fill(wallDistances, 0);
 		
+		float emptyArea = 0;
+		
 		// Check up to a distance of 9 away... and 16 different angles
-		for(int i = 1; i <= 9 / initialWallCheckGrain; i++){
+		for(int i = 1; i <= 9 / initialWallCheckGrain; i++){			
 			for(int j = 0; j < 16; j++){
 				
 				// Get the locations to check for the obstacles
@@ -138,10 +143,19 @@ public class Aqua extends GlobalVars {
 					
 					if (wallDistances[j] >= 0){
 						wallDistances[j] *= -1;
-					}				
+					}
+					
+					if(!hitWall[j]) {
+						hitWall[j] = true;
+//						System.out.println((float)(1.0/16.0)*(Math.PI*(float)i*(float)i));
+						emptyArea += (float)(1.0/16.0)*(Math.PI*(float)i*(float)i);
+					}
 				}
 			}
 		}
+		
+		System.out.println("Empty Area: " + emptyArea);
+		emptyDensity = (float)(emptyArea/(Math.PI*81.0));
 		// Placeholder to find the minimum (moving average of three directions)
 		int index = -1;
 		float maximum = Integer.MIN_VALUE;
@@ -196,7 +210,7 @@ public class Aqua extends GlobalVars {
 			// First check if on map
 			if(rc.onTheMap(newLoc, distRad)) {
 				// Then check if occupied
-				if(rc.isCircleOccupiedExceptByThisRobot(newLoc,distRad)) {
+				if(rc.isCircleOccupiedExceptByThisRobot(newLoc, distRad)) {
 					rc.setIndicatorLine(curLoc.add(dir,(float)1), newLoc.add(dir,distRad), 255, 128, 0);
 					
 					// Increase factor
@@ -321,7 +335,7 @@ public class Aqua extends GlobalVars {
 		return finalLoc;
 	}
 	
-	public static float updateTreeDensity() throws GameActionException {
+	public static float calculateTreeDensity() throws GameActionException {
 		
 		//initialize some variables 
 		ArrayList<TreeInfo> neutralTrees = new ArrayList<TreeInfo>();
@@ -333,11 +347,12 @@ public class Aqua extends GlobalVars {
 		float treeArea = 0;
 		
 		//get information about nearby trees
-		TreeInfo[] surroundingTrees = rc.senseNearbyTrees();
+		TreeInfo[] surroundingTrees = rc.senseNearbyTrees(rc.getLocation(), rc.getType().sensorRadius, Team.NEUTRAL);
 		
 		//filter for neutral trees 
 		for (TreeInfo tree : surroundingTrees) {
-			if (tree.getTeam() == Team.NEUTRAL && rc.canSenseAllOfCircle(tree.getLocation(),tree.getRadius())) {
+//			if (tree.getTeam() == Team.NEUTRAL && rc.canSenseAllOfCircle(tree.getLocation(),tree.getRadius())) {
+			if (rc.canSenseAllOfCircle(tree.getLocation(),tree.getRadius())) {
 				treeArea = treeArea + (float) (Math.PI * Math.pow(tree.getRadius(), 2));
 			}
 		}
