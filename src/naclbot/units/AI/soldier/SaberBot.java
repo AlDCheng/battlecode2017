@@ -100,7 +100,7 @@ public class SaberBot extends GlobalVars {
 
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
-	private static final float separationDistance = sensorRadius; // stores how large of a distance soldiers will attempt to keep from nearby units when they engage them...
+	private static final float separationDistance = sensorRadius - 1; // stores how large of a distance soldiers will attempt to keep from nearby units when they engage them...
 	private static MapLocation archonLocation; // Stores the location of the archon that the soldier is by default sent to attack....
 	
     // Miscellaneous variables.....
@@ -306,7 +306,11 @@ public class SaberBot extends GlobalVars {
                 			}            		
                 		} 
             		}            		
-            	}            	
+            	}  
+            	
+               	// SYSTEM CHECK- Print out the amount of bytecode used prior to movecorrect
+		       	System.out.println("Bytecode used before move correct: " + Clock.getBytecodeNum());
+            	
                 
             	// -------------------- MOVE CORRECTION ---------------------//
             	
@@ -344,7 +348,7 @@ public class SaberBot extends GlobalVars {
 		       		}		       		
 		       	}
 		       	          	
-		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to dodge....
+		       	// SYSTEM CHECK- Print out the amount of bytecode used after move correct
 		       	System.out.println("Bytecode used after move correct: " + Clock.getBytecodeNum());
 		       	
 		     // ------------------------ Movement Execution  ------------------------//
@@ -356,7 +360,7 @@ public class SaberBot extends GlobalVars {
 		       		System.out.println("Soldier succesfully moved to desired location");
 		       		
 		       		// Check to see if the robot will die there
-		       		checkDeath(desiredMove);
+		       		// checkDeath(desiredMove);
 		       		// Move to the target location
 		       		rc.move(desiredMove);
 		       	}
@@ -519,8 +523,7 @@ public class SaberBot extends GlobalVars {
 			// Track the enemy....            			
 			return engage(enemyRobots);           			
 		}
-		else{		
-
+		else{				
 			// SYSTEM CHECK IF the robot has need to defend, it will do so...
 			System.out.println("Travelling back to defend....");			
 			
@@ -535,10 +538,30 @@ public class SaberBot extends GlobalVars {
 	       		Routing.setRouting(goalLocation);    
 	       		
 				isCommanded = true;
-			}		
-	
-			// Call the move function
-			return moveTowardsGoalLocation(enemyRobots);	
+			}
+			
+			// Get an enemy to attack on the way, if it can find one...
+			
+			// See if a robot to be tracked can be found, allow soldier to track any and all units
+			normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);			
+			
+			// If there was no nearby enemy on the way back to defend...			
+			if (normieEmiliaLover == null){
+				
+				// Call the move function
+				return moveTowardsGoalLocation(enemyRobots);	
+			}
+			else{				
+				// Update the normieID
+				normieID = normieEmiliaLover.ID;	foundNormie = true;
+				
+				// SYSTEM CHECK - Notify what the robot will now track and set an indicator RED DOT on it
+	    		System.out.println("The soldier has noticed the enemy Robot with ID: " + normieID);
+
+				// Call the engage function.........
+				return engage(enemyRobots);  
+			
+			}
 		}            		         		
 	} 
 	

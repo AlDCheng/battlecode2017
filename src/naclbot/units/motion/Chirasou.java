@@ -1,4 +1,6 @@
 package naclbot.units.motion;
+import java.util.ArrayList;
+
 import battlecode.common.*;
 import naclbot.variables.GlobalVars;
 
@@ -144,6 +146,24 @@ public class Chirasou extends GlobalVars {
 		else{
 			return null;
 		}
+    }
+    
+   // Secondary routine to obtain the nearby soldiers to the enemy.......
+    
+    public static ArrayList<RobotInfo> getNearestSoldiers(RobotInfo[] teamSoldiers, MapLocation myLocation){
+    	
+    	// Initialize a value to store the minimum and the index of the nearest ally
+    	
+    	ArrayList<RobotInfo> nearbySoldiers = new ArrayList<RobotInfo>();
+
+		// Iterate through all nearby allies
+		for (int i = 0; i < teamSoldiers.length; i++){
+			// Find minimal distance
+			if (teamSoldiers[i].type == RobotType.SOLDIER){
+				nearbySoldiers.add(teamSoldiers[i]);
+			}			
+		}	
+		return nearbySoldiers;
     }
     
     // Function for units to collect bullets from any nearby trees......
