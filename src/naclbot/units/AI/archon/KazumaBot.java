@@ -38,6 +38,9 @@ public class KazumaBot extends GlobalVars {
 	private static Direction lastDirection = new Direction(0);
 	
 	private static final float crowdThresh = (float)0.5;
+	private static boolean startPoll = false;
+	
+	public static int archonNumber;
 	
 	// Starting game phase
 	public static void init() throws GameActionException {
@@ -49,14 +52,14 @@ public class KazumaBot extends GlobalVars {
 		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X, (int) (rc.getLocation().x * 100));
 		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y, (int) (rc.getLocation().y * 100));
 		
+		archonNumber = rc.readBroadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL);
+		rc.broadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL, archonNumber + 1);
+		
 		// Only have one gardener in play
 		int numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
 		
 		// Def not Aqua
         remIsBestGirl = rc.getRoundNum();
-        
-        // Broadcast density for gardeners
-//        rc.broadcastFloat(SPARCITY_CHANNEL, calculateTreeDensity());
         
         int treeNum = 0;
         if (numberofGardenersConstructed <= 0) {
@@ -86,8 +89,6 @@ public class KazumaBot extends GlobalVars {
             	// Store the location that archon wants to go to.... it doesnt want to move by default
             	MapLocation desiredMove = myLocation;	
             	
-              	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
-            	
             	// Get the total number of units constructed thus far.....
 //            	numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
             	int gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
@@ -98,18 +99,45 @@ public class KazumaBot extends GlobalVars {
         		boolean crowded = (Aqua.checkBuildRadius((float)30, (float)3, (float)0.5) >= crowdThresh);
         		System.out.println("Gardener Count: " + gardenerCount);
         		
-        		
-//                System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + gardenerCount);
-                
-        		// Building gardeners condition
-        		if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
+        		// If not crowded...
+        		// See if we can start polling for a new gardener.
+    			int pollState = rc.readBroadcast(BroadcastChannels.GARDENER_POLL);
+    			
+    			if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
                 	constructGardeners(1);
                 }
-                if (!crowded) {
-                	if (rc.getTreeCount() > 4*gardenerCount){
-                		constructGardeners(1);                		
-                	}
-                }
+    			else if ((!crowded) || (pollState == 1)) {
+        			System.out.println("Polling State: " + pollState);
+        			// If available:
+        			if (pollState == 2) {
+        				constructGardeners(1);
+        			}
+        			else if ((pollState == 0) && (rc.getTeamBullets() >= 100)) {
+        				rc.broadcast(BroadcastChannels.GARDENER_BUILD_FILL, 0);
+        				rc.broadcast(BroadcastChannels.GARDENER_POLL, 1);
+        				startPoll = true;
+        			}
+        			else if ((pollState == 1) && (startPoll)) {
+        				startPoll = false;
+        				int fillState = rc.readBroadcast(BroadcastChannels.GARDENER_BUILD_FILL);
+        				
+        				System.out.println("Build Fill: " + fillState);
+        				
+        				if (fillState >= 1) {
+        					constructGardeners(1);
+        					rc.broadcast(BroadcastChannels.GARDENER_POLL, 2);
+        				}
+        				else {
+        					rc.broadcast(BroadcastChannels.GARDENER_POLL, 0);
+        				}
+        			}
+        		}                
+        		// Building gardeners if none exists (i.e. killed)
+        		
+    			int treeCount = rc.getTreeCount();
+        		if (rc.isBuildReady() && (treeCount > 10) && (3*gardenerCount < treeCount)) {
+        			constructGardeners(1);
+        		}
             	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Currently not doing anything..............." );
@@ -192,9 +220,21 @@ public class KazumaBot extends GlobalVars {
             	// SYSTEM CHECK - Print out the gardener limit and the current number of gardeners constructed
 //            	System.out.println("Gardener Limit: " + getGardenerLimit(remIsBestGirl) + ", current constructed number: " + numberofGardenersConstructed);
             	
+            	// On turn 1
             	if (remIsBestGirl == 1){
             		lastDirection = Aqua.getInitialWalls(myLocation);
             		initialGoal = rc.getLocation().add(lastDirection, 10);
+            		
+            		// Broadcast density for gardeners
+//                    float treeDensity = Aqua.calculateTreeDensity();
+//                    System.out.println("Tree Density: " + treeDensity);
+            		System.out.println("Empty Density: " + Aqua.emptyDensity);
+                    
+                    int broadcastStart = BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL + 2*archonNumber;
+                    int myID = rc.getID();
+                    System.out.println("My ID: " + myID);
+                    rc.broadcast(broadcastStart, myID);
+                    rc.broadcastFloat(broadcastStart+1, Aqua.emptyDensity);
             	}
             	// Get the total number of gardeners constructed thus far.....
             	int numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
@@ -234,10 +274,16 @@ public class KazumaBot extends GlobalVars {
 	            		
 	            		// Update broadcasted counter
 	            		rc.broadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS, numberofGardenersConstructed+1);
+	            		rc.broadcast(BroadcastChannels.GARDENER_POLL, 0);
+	            		
+	            		// Reset polling 
 	            		
 	            		//update last built location
 	            		lastBuilt = rc.getLocation();              	
 	            	}
+            	}
+            	else if(rc.readBroadcast(BroadcastChannels.GARDENER_POLL) == 2) {
+            		return;
             	}
             	
             	// Movement----------------------------------------------------------------------------------

@@ -46,7 +46,21 @@ public class BroadcastChannels extends GlobalVars {
 	// How many archons are currently alive 
 	public final static int ARCHONS_ALIVE_CHANNEL = 10;
 	
+	// Stores tree density surrounding archon
+		// Archon1: 11 - ID, 12 - Density
+		// Archon2: 13 - ID, 14 - Density
+		// Archon3: 15 - ID, 16 - Density
 	public final static int ARCHONS_TREE_DENSITY_CHANNEL = 11;
+	
+	// Signals if gardener avaibility polling has started
+		// 0: Poll can be started
+		// 1: Poll is in progress
+		// 2: Poll is done; new gardener can be built
+	public final static int GARDENER_POLL = 9498;
+	
+	// Tells if gardeners are surrounded; and that archon needs to build new one
+	public final static int GARDENER_BUILD_FILL = 9499;
+		
 	
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	

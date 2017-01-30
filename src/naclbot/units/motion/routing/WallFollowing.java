@@ -150,7 +150,7 @@ public class WallFollowing extends GlobalVars{
 		
 		try {			
 			// Indicator line pink for debug
-			rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+//			rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
 			
 			// Get point distance
 			float distance = curLoc.distanceTo(dest);
@@ -280,7 +280,7 @@ public class WallFollowing extends GlobalVars{
 						}
 					}
 					else {
-						rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+//						rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 					}
 					// Set next distance to be check
 					// Decrease by interval value set
@@ -360,7 +360,7 @@ public class WallFollowing extends GlobalVars{
 						}
 					}
 					else {
-						rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+//						rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 					}
 					// Set next distance to be check
 					// Decrease by interval value set

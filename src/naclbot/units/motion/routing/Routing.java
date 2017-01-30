@@ -274,7 +274,7 @@ public class Routing extends GlobalVars{
 			RobotType curType = rc.getType();
 			
 			// Draw pink line for reference
-			 rc.setIndicatorLine(curLoc, dest, 203, 192, 255);
+//			 rc.setIndicatorLine(curLoc, dest, 203, 192, 255);
 			
 			// Get direction to point
 			Direction destDir = new Direction(curLoc, dest);
@@ -973,9 +973,9 @@ public class Routing extends GlobalVars{
 		System.out.println(intendedPoint);
 		for (int i = 0; i < prevPath.size() - offset; i++) {
 			MapLocation prevLoc = (MapLocation)prevPath.get(i)[0];
-			System.out.println((MapLocation)prevPath.get(i)[0] + ", " + (float)prevPath.get(i)[1] + "; " + 
-						prevLoc.distanceTo(intendedPoint));
-			rc.setIndicatorDot((MapLocation)prevPath.get(i)[0], 255, 0, 0);
+//			System.out.println((MapLocation)prevPath.get(i)[0] + ", " + (float)prevPath.get(i)[1] + "; " + 
+//						prevLoc.distanceTo(intendedPoint));
+//			rc.setIndicatorDot((MapLocation)prevPath.get(i)[0], 255, 0, 0);
 			if (intendedPoint.isWithinDistance((MapLocation)prevPath.get(i)[0],(float)prevPath.get(i)[1])) {
 				return true;
 			}
