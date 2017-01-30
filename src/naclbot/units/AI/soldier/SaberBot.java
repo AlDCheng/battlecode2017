@@ -463,7 +463,7 @@ public class SaberBot extends GlobalVars {
     		System.out.println("Distress Signal Received....");
     		
     		// If the distressed gardener is being attacked by a scout.....
-    		if (distressInfo.enemyType == 2){
+    		if (distressInfo.enemyType == 2 || distressInfo.enemyType == 3){
     			
     			// Set the location to defend...
     			defendLocation = new MapLocation (distressInfo.xPosition, distressInfo.yPosition);
@@ -475,9 +475,6 @@ public class SaberBot extends GlobalVars {
     	
     	// If the robot is meant to defend........
     	if (defendLocation != null){
-    		
-    		// Make sure to override the status of command for the robot, defending takes precedence over commands
-    		isCommanded = false;    		
     		
 			// Call the defend function to determine what to do.....
     		return defend(enemyRobots);
@@ -536,10 +533,12 @@ public class SaberBot extends GlobalVars {
 				
 	     		// Append the location to the routing...
 	       		Routing.setRouting(goalLocation);    
-			}
-			
+	       		
+				isCommanded = true;
+			}		
+	
 			// Call the move function
-			return move(enemyRobots);	
+			return moveTowardsGoalLocation(enemyRobots);	
 		}            		         		
 	} 
 	

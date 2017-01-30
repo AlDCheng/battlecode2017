@@ -9,6 +9,7 @@ import naclbot.units.motion.shoot.Korosenai;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.Todoruno;
+import naclbot.units.motion.Todoruno.Rotation;
 import naclbot.variables.GlobalVars;
 import naclbot.variables.BroadcastChannels;	
 
@@ -222,7 +223,7 @@ public class RemBot extends BestGirlBot {
             	
             	// If the robot cannot move to the location determined above, call the movement correction function
             	if(!rc.canMove(desiredMove)){
-            		desiredMove = movementCorrect(desiredMove);        		
+            		desiredMove = movementCorrect(desiredMove, rotation);        		
             	}            	
             	
     			// ------------------------ MOVEMENT EXECUTION  ------------------------//
@@ -409,7 +410,7 @@ public class RemBot extends BestGirlBot {
 	// ------------------------------- MOVEMENT CORRECTION ------------------------------//
 	// ----------------------------------------------------------------------------------//	
     
-    private static MapLocation movementCorrect(MapLocation desiredLocation) throws GameActionException{
+    public static MapLocation movementCorrect(MapLocation desiredLocation, Rotation rotation) throws GameActionException{
     	
     	// First check if the desired move cannot be made because it is out of bounds...
     	if(!rc.onTheMap(desiredLocation)){

@@ -67,7 +67,8 @@ public class BestGirlBot extends GlobalVars {
 	protected static MapLocation lastPosition; // The previous location that the scout was at...
 	protected static Direction lastDirection; // The direction in which the scout last traveled
     public static boolean rotationDirection = true; // Boolean for rotation direction - true for counterclockwise, false for clockwise
-	
+	private static Todoruno.Rotation rotation;	
+    
 	// ------------- OPERATION VARIABLES -------------//
 	
 	// Variables related to tracking....
@@ -79,8 +80,6 @@ public class BestGirlBot extends GlobalVars {
 	private static RobotInfo[] previousRobotData; // Array to store the data of enemy robots from the previous turn.....
     private static int[] noTrack = new int[3]; // Array to store the data regarding the last three enemies the scout has tracked
     private static int noTrackUpdateIndex;  // Index to check where to store the next datum regarding  enemies not to track..
-	private static int roundsCurrentlyTracked; 	// Stores the number of rounds that the scout has been tracking the current enemy
-    public static int hasNotTracked; // Variable to see how long the robot has not tracked another unit for
     
     // Variables related to gardener defense.....
     private static MapLocation defendLocation; // Location that the scout must defend...
@@ -117,7 +116,8 @@ public class BestGirlBot extends GlobalVars {
 	// ------------- ADDITIONAL VARIABLES/CONSTANTS -------------//
 
 	// Variables related to operational behavior...
-	protected static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
+	protected static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....
+	private static boolean allowedToEngage = false; // Determines if the robot will attempt to engage a target or not....
 
 	// Various behavioral constants...
 	private static final float obstacleCheck = (float)0.4;    
@@ -198,15 +198,27 @@ public class BestGirlBot extends GlobalVars {
         // Update the number of scouts so that other scouts can recognize....
         rc.broadcast(BroadcastChannels.SCOUT_NUMBER_CHANNEL, scoutNumber + 1);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
-
+        
+        // Get the initial rotation orientation of the scout......
+        
+		float randomize = (float) Math.random();
+		
+		if(randomize >= 0.5){
+			rotation = new Todoruno.Rotation(true);
+		}
+		else{
+			rotation = new Todoruno.Rotation(false);
+		}
         
         // If the scout is the first to be made and was made early enough, call Rembot..........
         if(rc.readBroadcast(BroadcastChannels.HIRE_REMBOT_CHANNEL) == 1){
         	rc.broadcast(BroadcastChannels.HIRE_REMBOT_CHANNEL, 0);    
+        	// RemBot.init();
+        }
+        
+        if(scoutNumber == 0){
         	RemBot.init();
         }
-        RemBot.init();
-
         
         // By default pass on to the main function
         main();    
@@ -217,10 +229,7 @@ public class BestGirlBot extends GlobalVars {
 		
 	protected static void main() throws GameActionException{	            
         
-		// Initialize other parameters for tracking
-	    roundsCurrentlyTracked = 0;
-	    
-	    // Clear memory of last tracked members
+		// Clear memory of last tracked members
 	    Arrays.fill(noTrack, -1);    
 	    
         // Code to be performed every turn        
@@ -269,11 +278,6 @@ public class BestGirlBot extends GlobalVars {
 		       	// SYSTEM CHECK - Show where the scout believes its nearest civilian is using a WHITE LINE
 		       	// rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);		       	
             	
-            	// If the robot has not tracked anything for a long time fill the no track with -1 so it can track something again // UPDATE
-            	if (hasNotTracked > 25){
-            		Arrays.fill(noTrack, -1);
-            	}
-            	
 		       	// ------------------------ BROADCAST UPDATES ------------------------ //
 			    	
 		       	// Update the nearest enemy and archon locations - If it sees any.......
@@ -296,49 +300,16 @@ public class BestGirlBot extends GlobalVars {
 		       	if(desiredMove != null){
 			       	// SYSTEM CHECK - Print out where the desired move is.....
 			       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());
-		       	}
-            	
-            	// -------------------- MOVE CORRECTION ---------------------//
-            	
-            	// Get the correction from the wrapping correct all move function....
-            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, allies, myLocation, desiredMove);            	
-		       	
-		       	if(correctedMove != null){
-		       		
-	    	       	// SYSTEM CHECK - Print out where the desired move is.....
-			       	System.out.println("Corrected move is: " + correctedMove.toString());	
-			       	
-			       	// Set the desired location to be the corrected location
-			       	desiredMove = correctedMove;
-		       	}
-		       	// If the robot could not find a location to go to even with the corrected location.....
-		       	else{	       		
-		       		// SYSTEM CHECK - Print out that the scout never had a place to go to...
-		       		System.out.println("No move possible..... will simply remain in place");
-		       		
-		       		desiredMove = myLocation;		       		
-		       	}
-		       	
-		       	if(desiredMove.equals(myLocation)){
-		       		
-		       		// Check to see if the robot is in a corner...
-		       		int corner = Yuurei.checkIfNearCorner(bodyRadius, strideRadius, desiredMove);
-		       		
-		       		// If the above function returns a positive integer, the robot is near a corner....
-		       		if (corner != 0){
-		       			
-		       			// SYSTEM CHECK - Print out that the robot is near a corner....
-		       			System.out.println("Currently near a corner, will attempt to rectify....");
-		       			
-		       			desiredMove = Yuurei.moveOutOfCorner(strideRadius, corner, desiredMove);		       	
-		       		}		       		
-		       	}
-		       	
+		       	}           	
+ 	
 		       	// --------------------------- DODGING ------------------------ //
 		       	
-            	// Call the dodge function
-            	MapLocation dodgeLocation = Yuurei.attemptDodge(desiredMove, myLocation, nearbyBullets, strideRadius, bodyRadius, -1, rotationDirection, false);
-            	    			
+		    	// Call the dodge function
+		       	MapLocation dodgeLocation = null;		       	
+		       	
+		       	// Call the dodge function
+		     	dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, null, nearbyBullets, strideRadius, bodyRadius); 
+		     	
             	// If there is a location that the unit can dodge to..
             	if (dodgeLocation != null){
             		
@@ -347,9 +318,18 @@ public class BestGirlBot extends GlobalVars {
             		
             		// Set the location to dodge to as the new dodge location.....
             		desiredMove = dodgeLocation;
-            	}            	
+            	}    	
+		       
+            	// -------------------- MOVE CORRECTION ---------------------//
+		      	
+            	// If the robot cannot move to the location determined above, call the movement correction function
+            	if(!rc.canMove(desiredMove)){
+            		desiredMove = RemBot.movementCorrect(desiredMove, rotation);        		
+            	} 	
 		       	
-		       	// If the robot can move to the location it wishes to go to.....
+            	// ------------------------ MOVEMENT EXECUTION  ------------------------//
+            	
+            	// If the robot can move to the location it wishes to go to.....
 		       	if(rc.canMove(desiredMove)){
 		       		
 		       		// Check to see if the robot will die there
@@ -362,14 +342,17 @@ public class BestGirlBot extends GlobalVars {
 		       	// If the robot didn't move along, check if it would die from staying in its current location....
 		       	else{
 		       		checkDeath(myLocation);
-		       	}  	
+		       	} 
+		       	
+				// Check to see if the unit can shake a tree....
+				Chirasou.attemptInteractWithTree(myLocation, bodyRadius);
 
             	// ------------------------ Shooting -----------------------------//
             	
             	// SYSTEM CHECK - Notify that the scout is now attempting to shoot at something........
             	System.out.println("Moving on to shooting phase...................");
             	
-            	if (trackID >= 0 && trackedRobot != null){
+            	if (trackID >= 0 && trackedRobot != null && allowedToEngage){
             		
             		System.out.println("Attempted to shoot");
             		
@@ -388,13 +371,13 @@ public class BestGirlBot extends GlobalVars {
                 lastPosition =  rc.getLocation();
                 lastDirection = new Direction(myLocation, lastPosition);
                 
-                // If the robot was not tracking, increment the value by one round....
-                if (!isTracking){
-                	hasNotTracked += 1;
-                }
-                
                 // Store the data for the locations of the enemies previously.....
                 previousRobotData = enemyRobots;
+                
+                // Make sure that the scout no longer scouts the same robot again....
+                trackID = -1;
+                trackedRobot = null;
+                isTracking = false;
                 
 	            // SYSTEM CHECK  Make sure the robot finishes its turn
                 System.out.println("Turn completed!");
@@ -424,6 +407,8 @@ public class BestGirlBot extends GlobalVars {
 		// If the scout found some distress signal this turn...
     	if(distressInfo != null){
     		
+    		allowedToEngage = true;
+    		
     		// SYSTEM CHECK - Print out that a distress signal has been received...
     		System.out.println("Distress Signal Received....");
     		
@@ -439,13 +424,17 @@ public class BestGirlBot extends GlobalVars {
     	}
     	
     	// If the robot is meant to defend........
-    	if (defendLocation != null){            		
+    	if (defendLocation != null){ 
+    		
+    		allowedToEngage = true;
 			
     		return defend(enemyRobots);
     	}
 		
     	// If the team currently doesn't have too many bullets and the robot is currently not tracking anything...... call the harvest function
-    	else if ((teamBullets < harvestThreshold && nearestBulletTree != null) && !isTracking){
+    	else if ((teamBullets < harvestThreshold && nearestBulletTree != null) && enemyRobots.length <= 2){
+    		
+    		allowedToEngage = false;
     		
     		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
     		System.out.println("Team requires additional bullets, so will attempt to find more");            		
@@ -456,6 +445,8 @@ public class BestGirlBot extends GlobalVars {
     	
     	// Otherwise just call the move function normally......
     	else {
+    		
+    		allowedToEngage = false;
     		return move(enemyRobots);
     	}
 	}
@@ -466,7 +457,8 @@ public class BestGirlBot extends GlobalVars {
     private static MapLocation move(RobotInfo[] enemyRobots) throws GameActionException{
     	
     	// If the robot is currently not tracking anything
-    	if(trackID == -1 || !rc.canSenseRobot(trackID)){    		
+    	if(trackID == -1 || !rc.canSenseRobot(trackID)){  
+    		
     		// See if a robot to be tracked can be found
     		trackedRobot = findNewTrack(enemyRobots);    
     		
@@ -489,43 +481,78 @@ public class BestGirlBot extends GlobalVars {
     			trackID = -1;
     			trackedRobot = null;
     			
-    			// Posit the desired move location as a forward movement along the last direction
-    			MapLocation desiredMove = myLocation.add(lastDirection, (float) (Math.random() * 0.5  + 1));
+    			// Attempt to move in the last direction traveled....
+        		for (int i = 5; i >= 1; i--){
+        			
+        			// Get the distance to move away for..... and the resulting map location
+        			float testDistance = strideRadius / 5 * i;	            			
+        			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
+        			
+        			// Check if the robot can move to the location and if it can, do so.....
+        			if (rc.canMove(testLocation)){	 
+        				
+        				// SYSTEM CHECK - Show a LIGHT GRAY LINE to the location that the lumberjack now wishes to go to....
+        				// rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
+        				return testLocation;	            	
+        			}		            			
+        			// SYSTEM CHECK Place a dot on all rejected points...
+        			rc.setIndicatorDot(testLocation, 255, 211, 25);
+        		}
+        		
+        		// If a move in the last direction was not possible, simply order the robot to remain still...		            		
+        		
+    			// SYSTEM CHECK - Print out that the robot cannot move in its previous direction and will remain still...
+    			// System.out.println("Cannot seem to move in the last direction traveled and no other commands issued.. Unit will not move");
     			
-    			// SYSTEM Check - Set LIGHT GREY LINE indicating where the scout would wish to go
-    			rc.setIndicatorLine(myLocation, desiredMove, 110, 110, 110);    			
-       			
-        		// SYSTEM CHECK - Notify that nothing to be scouted has been found
-        		// System.out.println("The scout cannot find anything to track");
-    			
-    			return desiredMove;
+    			// Return the current location of the robot.......
+    			return myLocation.add(lastDirection, strideRadius/5);	      
+        		
     				
     		}
     	} else{ // If the robot is actually currently tracking something
     		
     		// If the currently tracked robot is a gardener, execute special tracking method    		
-    		if (trackedRobot.type == battlecode.common.RobotType.GARDENER){
+    		if (trackedRobot.type == battlecode.common.RobotType.GARDENER){    			
+    			
+    			// Initially only rotate around gardeners
+    			if (onlyRemIsBestGirl <= 150){
+    				
+    				allowedToEngage = false;    				
+    				
+    				// Rotate a far, safe distance about the enemy....
+        			return Todoruno.rotateAboutEnemy(myLocation, trackedRobot, strideRadius, 11, rotation);
+    			}
+    			allowedToEngage = true;
     			
     			// SYSTEM CHECK - Print out that the robot is currently tracking a gardener....
     			System.out.println("Currently tracking a gardener...");
     			
     			return trackGardener(enemyRobots);     			
     			
-    		} else if (trackedRobot.type == battlecode.common.RobotType.ARCHON){
+    		} else if (trackedRobot.type == battlecode.common.RobotType.ARCHON){    
     			
-    			return track(enemyRobots, (float) 1.5);
+    			allowedToEngage = false;
+    			
+    			// Rotate a far, safe distance about the enemy....
+    			return Todoruno.rotateAboutEnemy(myLocation, trackedRobot, strideRadius, 11, rotation);
     			
     		} else if (trackedRobot.type == battlecode.common.RobotType.SCOUT){
     			
+    			// Track the enemy......
     			return track(enemyRobots, 1);
     		}
     		
     		else{ // Otherwise the enemy is a soldier/tank/lumberjack and it would be wise to run away!!
     			
     			// SYSTEM CHECK - Display BLACK DOT on nearest hostile to run away from...
-    			rc.setIndicatorDot(trackedRobot.location, 0, 0, 0);
+    			rc.setIndicatorDot(trackedRobot.location, 0, 0, 0);    			
     			
-    			return runAway(enemyRobots);
+    			allowedToEngage = false;
+    			
+    			// Rotate a far, safe distance about the enemy....
+    			return Todoruno.rotateAboutEnemy(myLocation, trackedRobot, strideRadius, 11, rotation);
+    			
+    			// return runAway(enemyRobots);
     		}
     	}        	
     }
@@ -717,7 +744,7 @@ public class BestGirlBot extends GlobalVars {
 	    	// rc.setIndicatorLine(myLocation, desiredMove, 255, 255, 0);   
 	    	
 	    	// Reset the enemy track ID, since the robot should always search for the nearest hostile enemies...
-	    	trackID = -1;  	trackedRobot = null;	roundsCurrentlyTracked = 0;	isTracking = false;
+	    	trackID = -1;  	trackedRobot = null;	isTracking = false;
 	    	
         	return desiredMove;   
     	}
@@ -728,7 +755,7 @@ public class BestGirlBot extends GlobalVars {
     		System.out.println("The enemy I just saw disappeared from sight.....");
 			
     		// Don't update no track in case the spooky comes back
-        	trackID = -1;	trackedRobot = null;	roundsCurrentlyTracked = 0;	isTracking = false;  
+        	trackID = -1;	trackedRobot = null;	isTracking = false;  
         	
         	// Call the move function again.....
         	return move(enemyRobots);
@@ -919,7 +946,7 @@ public class BestGirlBot extends GlobalVars {
 		
 		
 		// If the robot can currently sense the robot it is tracking and if it has not been tracking this robot for too long
-    	if ((rc.canSenseRobot(trackID) && roundsCurrentlyTracked < 80)){
+    	if (rc.canSenseRobot(trackID)){
     		
     		MapLocation desiredMove = null;
     		
@@ -931,26 +958,17 @@ public class BestGirlBot extends GlobalVars {
     		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
     		rc.setIndicatorLine(myLocation, trackedRobot.location, 150, 0, 200);
     		
-    		// Increment number of rounds tracked
-        	roundsCurrentlyTracked +=1;
-        	
-        	desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, multiplier);
+    		desiredMove = Todoruno.moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, multiplier);
         	
         	isTracking = true;
-        	hasNotTracked = 0;
         	
         	return desiredMove;
         	
         // If the robot has been tracking its current prey for too long or has lost sight of its target
     	} else {
-    		
-    		// If the robot has been tracking the current enemy for a long time make sure it doesnt check the same enemy again
-    		noTrack[noTrackUpdateIndex % 3] = trackID;
-			noTrackUpdateIndex += 1;
 			
         	trackID = -1;
         	trackedRobot = null;
-        	roundsCurrentlyTracked = 0;
         	isTracking = false;        	
 			
         	// SYSTEM CHECK - Notify of target loss
@@ -968,8 +986,9 @@ public class BestGirlBot extends GlobalVars {
     	
     	// If there is actually an enemy robot nearby
     	if (enemyRobots.length > 0){
-    		// Return the closest one or gardener    		
-    		return getNextTarget(enemyRobots);    		
+    		
+    		// Return the enemy....
+    		return Chirasou.getNearestAlly(enemyRobots, myLocation);		
     	} else{
     		// Otherwise return that there is no enemy to be found
     		return null;    		
@@ -1074,13 +1093,9 @@ public class BestGirlBot extends GlobalVars {
 	    	
 	    // Of the gardener is no longer visible, run following code..
     	} else{    		
-    		// If the scout can no longer sense the target gardener...
-    		noTrack[noTrackUpdateIndex % 3] = trackID;
-			noTrackUpdateIndex += 1;
-			
-        	trackID = -1;
+
+    		trackID = -1;
         	trackedRobot = null;
-        	roundsCurrentlyTracked = 0;
         	isTracking = false;        	
 			
         	// Update the location of be null, so that the new gardener refreshes the data...
@@ -1130,46 +1145,6 @@ public class BestGirlBot extends GlobalVars {
 		return rc.senseNearbyRobots(myLocation, distance, team);
 	}	
 	
-	// Function to retrieve the nearest enemy to the robot
-	
-	private static RobotInfo getNextTarget(RobotInfo[] enemyRobots){
-
-		// Parameter to store the smallest distance to another robot
-		float minimum = Integer.MAX_VALUE;
-				
-		// Parameter to store the array index of the closest robot				
-		int index = -1;			
-		for (int i = 0; i < enemyRobots.length; i++){
-			
-			// If the type of the robot spotted is a gardener, return it
-			if (enemyRobots[i].type == battlecode.common.RobotType.GARDENER){
-				
-				return enemyRobots[i];
-				
-			} else{		
-				// Otherwise search for the closest one that has not recently been tracked
-				float dist = myLocation.distanceTo(enemyRobots[i].location);
-				
-				if (dist < minimum && dist < 7){
-					// If the robot has not been tracked recently
-					if (!arrayContainsInt(noTrack, enemyRobots[i].ID)){
-						
-						// Update the index						
-						minimum = dist;
-						index = i;		
-					}
-				}			
-			}
-		}
-		// This should always happen, but if the found index is positive return the closest robot that is a Gardener
-		if (index >= 0){	
-			
-			return enemyRobots[index];	
-			
-		} else{			
-			return null;
-		}		
-	}	
 
 	// Function to check if the scout will die if it moves to a certain location
 	
