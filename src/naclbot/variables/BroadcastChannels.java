@@ -105,11 +105,14 @@ public class BroadcastChannels extends GlobalVars {
 	
 	// ----------------------- REMBOT INFORMATION -------------------------//
 	
+	// Channel that the RemBot will update every turn with a round number so that the gardeners know that it is alive....
+	public final static int REMBOT_INDICATOR_CHANNEL = 8858;
+	
 	// Channel to determine whether or not a robot will hire a Rembot or no.....
-	public final static int HIRE_REMBOT_CHANNEL = 9959;	
+	public final static int HIRE_REMBOT_CHANNEL = 8959;	
 	
 	// Stores whether or not there is a RemBot on the team alive or no....
-	public final static int REMBOT_ALIVE_CHANNEL = 9963;
+	public final static int REMBOT_ALIVE_CHANNEL = 8963;
 	
 	// Stores the beginning of the information that the team RemBot will send after its turn.......
 		// RemBot Information
@@ -121,7 +124,8 @@ public class BroadcastChannels extends GlobalVars {
 		// Bit 5 - Tanks seen thus far
 		// Bit 6 - Enemy trees seen thus far
 		// Bit 7 - Neutral trees seen this turn	
-	public final static int REMBOT_INFORMATION_CHANNEL_START = 9964;
+		// Bit 8 - Neutral tree area seen this turn.....
+	public final static int REMBOT_INFORMATION_CHANNEL_START = 8964;
 
 
 	// ----------------------- SCOUT INFORMATION -------------------------//

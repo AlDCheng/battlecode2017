@@ -102,12 +102,15 @@ public class RemBot extends BestGirlBot {
 			// Main actions of the scout.....
 			try{
 				
+				// After 600 rounds return back to normal scout operations.....
 				if(onlyRemIsBestGirl >= 600){
+					
+					// Call the main function of BestGirlBot.........................
 					BestGirlBot.main();
-				}
-				
+				}				
 				
 				if(rotation != null){
+					
 					// SYSTEM CHECK - Print out the rotation orientation of the RemBot....
 					System.out.println("Current rotation orientation: " + rotation.printOrientation());
 				}      
@@ -172,7 +175,10 @@ public class RemBot extends BestGirlBot {
             	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilianLocation, onlyRemIsBestGirl);            	
             	BroadcastChannels.broadcastEnemyArchonLocations(enemyRobots);
             	
-            	// Update the distress info and retreat to the gardener if necessary..... if necessary            	
+            	// Broadcast the round number to the rembot indicator channel.....
+            	rc.broadcast(BroadcastChannels.REMBOT_INDICATOR_CHANNEL, onlyRemIsBestGirl);
+            	
+            	// Update the distress info and retreat to the gardener if necessary..... if necessary (although rembot won't)      	
             	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, explorerDefendDistance);
             	
             	// TODO (UPDATE INITIAL UNIT COUNTS)........
@@ -481,6 +487,7 @@ public class RemBot extends BestGirlBot {
     	
     	// Array to store the number of neutral trees seen this turn...
     	private int neutralTrees;
+    	private float neutralTreesArea;
     	
     	// Constructor initializes all of the lists as empty
     	EnemyData(){
@@ -494,14 +501,18 @@ public class RemBot extends BestGirlBot {
     		this.enemyTanks = new ArrayList<RobotInfo>();
     		
     		this.enemyTrees = new ArrayList<TreeInfo>(); 
+    		
     		this.neutralTrees = 0;
+    		this.neutralTreesArea = 0;
     	}    
     	
     	// Function that takes in all the units that RemBOt has snesed this turn and updates the arrays of data
     
 	    public void update(RobotInfo[] enemyRobots, TreeInfo[] nearbyTrees){
 	    	
-    		neutralTrees = 0;
+	    	// Reset the values for neutral trees and area....
+    		this.neutralTrees = 0;
+    		this.neutralTreesArea = 0;
     			
 	    	// If there is an enemyRobot nearby...
 	    	if(enemyRobots!= null){
@@ -540,7 +551,8 @@ public class RemBot extends BestGirlBot {
 	    	System.out.println("Enemy trees seen: " + this.enemyTrees.size());
 	    	
 	    	// Print out the number of neutral trees seen this turn........
-	    	System.out.println("Neutral trees seen this turn: " + this.neutralTrees);	    	
+	    	System.out.println("Neutral trees seen this turn: " + this.neutralTrees);	
+	    	System.out.println("Neutral tree area seen this turn: " + this.neutralTreesArea);
 	    }
 	    
 	    // Function to broadcast the values stored in the arrays of RemBot......
@@ -561,7 +573,8 @@ public class RemBot extends BestGirlBot {
 	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 6, this.enemyTrees.size());
 	    	
 	     	// Broadcast out the number of neutral trees seen this turn........
-	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 7, this.neutralTrees);	    	
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 7, this.neutralTrees);
+	    	rc.broadcastFloat(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 8, this.neutralTreesArea);	 
 	    }
 	    
 	    
@@ -596,7 +609,10 @@ public class RemBot extends BestGirlBot {
 	    		else{
 	    			
 	    			// Increment the list of neutral trees seen...	    			
-	    			neutralTrees +=1;	  
+	    			neutralTrees +=1;
+	    			
+	    			// Increment the area by the area of each neutral tree....
+	    			neutralTreesArea += ((tree.radius) * (tree.radius) * Math.PI);
 		    		
 		    		// Return true.....
 	    			return true;	    			
