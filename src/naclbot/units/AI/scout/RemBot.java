@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import battlecode.common.*;
 import naclbot.units.motion.Yuurei;
+import naclbot.units.motion.search.EnemyArchonSearch;
 import naclbot.units.motion.shoot.Korosenai;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.Chirasou;
@@ -31,7 +32,6 @@ import naclbot.variables.BroadcastChannels;
 // Anyone who sincerely doubts that Rem is best girl can look somewhere else - this code is only for those who are true believers.........
 
 public class RemBot extends BestGirlBot {	
-	
 	
 	// ----------------------------------------------------------------------------------//
 	// ------------------------- VARIABLES SPECIFIC TO REMBOT ---------------------------//
@@ -63,13 +63,11 @@ public class RemBot extends BestGirlBot {
 	
 	// Initialization function for RemBot.....
 	
-	public static void init(){
+	public static void init(){		
 		
-		MapLocation[] initialEnemyArchonLocations = rc.getInitialArchonLocations(enemies);
-		if(initialEnemyArchonLocations.length > 0){
-			archonLocation = initialEnemyArchonLocations[0];
-		}
-		//archonLocation = rc.getInitialArchonLocations(enemies)[0]; // Utilize the first archonlocation by default.......
+		archonLocation = EnemyArchonSearch.getCorrespondingArchon();
+		// SYSTEM CHECK - Draw a line to the target enemy archon location...
+		rc.setIndicatorLine(myLocation, archonLocation, 255, 0, 0);
 		
 		float randomize = (float) Math.random();
 		
@@ -93,13 +91,18 @@ public class RemBot extends BestGirlBot {
 	
 	// Main function body.......
 	
-	public static void main(){		
+	protected static void main(){		
 		
 		// Code to be performed every turn   
 		while (true){
 			
 			// Main actions of the scout.....
 			try{
+				
+				if(onlyRemIsBestGirl >= 600){
+					BestGirlBot.main();
+				}
+				
 				
 				if(rotation != null){
 					// SYSTEM CHECK - Print out the rotation orientation of the RemBot....
@@ -173,11 +176,17 @@ public class RemBot extends BestGirlBot {
             	
             	// If the robot thought it died previously but didn't.... update information...
             	if(believeHasDied){
-            		fixAccidentalDeathNotification();
+            		isAlive();
             	}
             	
 				// Update data stored in the Rembot's unit array.....
 				enemyData.update(enemyRobots, nearbyTrees);
+				
+				// Broadcast the new data
+				enemyData.broadcastTotals();
+				
+				// SYSTEM CHECK - after the update print out the number of each thing that the RemBot has seen thus far....	    	
+		    	enemyData.printTotals();	
 
             	// ------------------------ MOVEMENT FUNCTIONS------------------------ //      
 				
@@ -218,9 +227,17 @@ public class RemBot extends BestGirlBot {
     			
     			// If the robot can move to the location chosen, do so
 				if(rc.canMove(desiredMove)){
+					
+					// Check to see if the robot will die there
+					checkRemDeath(desiredMove);
+					
+					// Move to the target location
 					rc.move(desiredMove);
 				}
 				else{
+					// Check to see if the robot will die there
+					checkRemDeath(myLocation);
+					
 					// SYSTEM CHECK - Print out that the robot did not move this turn....
 					System.out.println("RemBot didn't move this turn... Subaru didn't notice her T_T");
 				}
@@ -279,9 +296,23 @@ public class RemBot extends BestGirlBot {
 	    		return Todoruno.passByEnemy(myLocation, targetLocation, investigateRobot, strideRadius, keepAwayDistance, rotation);  		
 	    	}
     	}
-    	else{
-    		
-    		if(toInvestigate && investigateRobot != null){
+    	else{    		
+    		// If the robot reached the archon Location and no enemies were found.....
+    		if(myLocation.distanceTo(targetLocation) <= 2 && !toInvestigate){
+    			
+    			// Get the locations of the archons
+    			MapLocation[] initialLocations = rc.getInitialArchonLocations(enemies);
+    			
+    			// Randomly select one
+    			int randomize = (int) (Math.random() * initialLocations.length);
+    			
+    			// Set it as the target archon location.....
+    			archonLocation = initialLocations[randomize];
+    			
+    			return moveTowardsLocation(archonLocation);		
+    			
+    		}
+    		else if(toInvestigate && investigateRobot != null){
     		
 	    		// SYSTEM CHECK - Print out that the robot is currently rotating about the enemy...
 	    		System.out.println("Circling about the enemies at the target location....");
@@ -290,7 +321,7 @@ public class RemBot extends BestGirlBot {
 	    		hasBegunInvestigating = true;
 	    		
 	    		return  Todoruno.rotateAboutEnemy(myLocation, investigateRobot, strideRadius, keepAwayDistance, rotation);
-    		}
+    		}    		
     		else{
     			// SYSTEM CHECK - Print out that the robot is far from the location and there is no nearby enemy
 	    		System.out.println("No nearby enemies sighted but close to destination - simply moving towards target destination");
@@ -420,24 +451,29 @@ public class RemBot extends BestGirlBot {
     }
     
     
-    
-    
 	// ----------------------------------------------------------------------------------//
-	// ------------------------------- DATA STPRAGE CLASS -------------------------------//
+	// ------------------------------- DATA STORAGE CLASS -------------------------------//
 	// ----------------------------------------------------------------------------------//	
+    
+    
+    // Class to store data about the number of unique enemy units/trees of each type the RemBot has seen thus far....
     
     private static class EnemyData{
     	
+    	// Arrays to store the number of civilian units
        	private ArrayList<RobotInfo> enemyArchons;
     	private ArrayList<RobotInfo> enemyGardeners;
     	
+    	// Arrays to store the number of combat units
     	private ArrayList<RobotInfo> enemyLumberjacks;
-    	private ArrayList<RobotInfo> enemyScouts;
-    	
+    	private ArrayList<RobotInfo> enemyScouts;    	
     	private ArrayList<RobotInfo> enemySoldiers;
     	private ArrayList<RobotInfo> enemyTanks;
     	
+    	// Arrays to store the number of enemy trees seen
     	private ArrayList<TreeInfo> enemyTrees;
+    	
+    	// Array to store the number of neutral trees seen this turn...
     	private int neutralTrees;
     	
     	// Constructor initializes all of the lists as empty
@@ -447,15 +483,15 @@ public class RemBot extends BestGirlBot {
     		this.enemyGardeners = new ArrayList<RobotInfo>();
     		
     		this.enemyLumberjacks = new ArrayList<RobotInfo>();
-    		this.enemyScouts = new ArrayList<RobotInfo>();
-    		
+    		this.enemyScouts = new ArrayList<RobotInfo>();    		
     		this.enemySoldiers = new ArrayList<RobotInfo>();
     		this.enemyTanks = new ArrayList<RobotInfo>();
     		
     		this.enemyTrees = new ArrayList<TreeInfo>(); 
     		this.neutralTrees = 0;
-    	}
-    
+    	}    
+    	
+    	// Function that takes in all the units that RemBOt has snesed this turn and updates the arrays of data
     
 	    public void update(RobotInfo[] enemyRobots, TreeInfo[] nearbyTrees){
 	    	
@@ -476,9 +512,7 @@ public class RemBot extends BestGirlBot {
 	    		for(TreeInfo nearbyTree: nearbyTrees){
 	    			addTree(nearbyTree);
 	    		}	    		
-	    	}	    	
-	    	// SYSTEM CHECK - after the update print out the number of each thing that the RemBot has seen thus far....	    	
-	    	// printTotals();	    	
+	    	}	    	    	
 	    }
 	    
 	    
@@ -486,14 +520,42 @@ public class RemBot extends BestGirlBot {
 	    
 	    public void printTotals(){
 	    	
+	    	// Print out the total number of civilian units
 	    	System.out.println("Enemy archons seen: " + this.enemyArchons.size());
 	    	System.out.println("Enemy gardeners seen: " + this.enemyGardeners.size());
+	    	
+	    	// Print out the numbers of combat units
 	    	System.out.println("Enemy lumberjacks seen: " + this.enemyLumberjacks.size());
 	    	System.out.println("Enemy scouts seen: " + this.enemyScouts.size());
 	    	System.out.println("Enemy soldiers seen: " + this.enemySoldiers.size());
 	    	System.out.println("Enemy tanks seen: " + this.enemyTanks.size());
+	    	
+	    	// Print out the numbers of enemy trees seen
 	    	System.out.println("Enemy trees seen: " + this.enemyTrees.size());
+	    	
+	    	// Print out the number of neutral trees seen this turn........
 	    	System.out.println("Neutral trees seen this turn: " + this.neutralTrees);	    	
+	    }
+	    
+	    // Function to broadcast the values stored in the arrays of RemBot......
+	    
+	    public void broadcastTotals() throws GameActionException{
+	    	
+	       	// Broadcast out the total number of civilian units
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START, this.enemyArchons.size());
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 1, this.enemyGardeners.size());
+	    	
+	    	// Broadcast out the numbers of combat units
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 2, this.enemyLumberjacks.size());
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 3, this.enemyScouts.size());
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 4, this.enemySoldiers.size());
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 5, this.enemyTanks.size());
+	    	
+	    	// Broadcast out the numbers of enemy trees seen
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 6, this.enemyTrees.size());
+	    	
+	     	// Broadcast out the number of neutral trees seen this turn........
+	    	rc.broadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 7, this.neutralTrees);	    	
 	    }
 	    
 	    
@@ -668,5 +730,66 @@ public class RemBot extends BestGirlBot {
 		   		return false;
 		   	}  	
 	    }    
-    }  
+    } 
+    
+	// ----------------------------------------------------------------------------------//
+	// --------------------------- MISCELANNELOUS FUNCTIONS -----------------------------//
+	// ----------------------------------------------------------------------------------//	 
+    
+	// Function to check if the scout will die if it moves to a certain location
+	
+    private static void checkRemDeath(MapLocation location) throws GameActionException{
+    	
+    	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
+		boolean beingAttacked = iFeed.willBeAttacked(location);
+		
+		// If it will get hit from that location....
+		if (beingAttacked) {
+			
+			// SYSTEM CHECK - Print out that the robot thinks it will die this turn....
+			System.out.println("Moving to desired location will result in death........");
+			
+			// If the lumberjack will lose all of its health from moving to that location....
+			boolean willDie = iFeed.willFeed(location);
+			
+			// If the lumberjack believes that it will die this turn....
+			if (willDie) {
+				
+				// Set the belief variable to true.....
+				believeHasDied = true;
+				
+				// Get the current number of scouts in service
+		        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
+		        
+		        // Update scout number for other units to see.....
+		        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber - 1);
+		        
+		        // Get the current number of RemBots in service
+		        int currentRemBotNumber = rc.readBroadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL);
+		        
+		        rc.broadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL, currentRemBotNumber - 1);
+			}
+		}
+	}
+    
+    // Function to correct an accidental death update
+    
+    private static void isAlive() throws GameActionException{
+    	
+    	// Reset belief in the robot dying this round....
+    	believeHasDied = false;    	
+
+		// Get the current number of lumberjacks in service
+        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
+        
+        // Update lumberjack number for other units to see.....
+        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber + 1);        
+     
+        // Get the current number of RemBots in service
+        int currentRemBotNumber = rc.readBroadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL);
+        
+        // Broadcast corrected number of RemBots for everyone to see
+        rc.broadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL, currentRemBotNumber + 1);
+    	
+    }	
 }

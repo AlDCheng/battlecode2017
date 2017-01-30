@@ -11,6 +11,24 @@ public class EnemyArchonSearch extends GlobalVars {
 	public static MapLocation myArchon;
 	public static MapLocation oppositeEnemyArchon;
 	
+	public static MapLocation getCorrespondingArchon(){
+		
+		// Declare variables
+		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation myLocation = rc.getLocation();
+		float minDistance = 100000;
+		
+		// Determine archon that hired this particular gardener 
+		for (MapLocation archon: archons) {
+			if (myLocation.distanceTo(archon) < minDistance) {
+				myArchon = archon;
+				minDistance = myLocation.distanceTo(archon);
+			} 
+		}
+		
+		return opposingEnemyArchon(myArchon);	
+	}
+	
 	public static void manageCorrespondingArchon() throws GameActionException {
 		
 		// Declare variables

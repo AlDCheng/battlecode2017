@@ -954,6 +954,14 @@ public class BarusuBot extends GlobalVars {
     			minimum = distancesToTrees[i];
     		}    		
     	}
+    	
+    	// If the tree sensed was outside of range because it was too large...
+    	if (minimum >= sensorRadius){
+    		
+    		// Set the distance to scan at be equivalent to the sensor range of the lumberjack.....
+    		minimum = sensorRadius;
+    	}
+    	
     	// Assert that a valid tree was found....
     	if (directionIndex >= 0){
     		// Obtain again the direction that corresponds to the directionIndex value...

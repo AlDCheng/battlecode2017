@@ -75,14 +75,34 @@ public class BroadcastChannels extends GlobalVars {
 	
 	public final static int GARDENER_DISTRESS_CHANNEL = 9502;
 	
-	// ----------------------- SCOUT INFORMATION -------------------------//
+	// ----------------------- LUMBERJACK INFORMATION -------------------------//
 	
 	// Stores how many lumber jacks have been constructed so far......
 	public final static int LUMBERJACK_NUMBER_CHANNEL = 9950;
 	
 	// Stores how many lumber jacks are currently alive
 	public final static int LUMBERJACKS_ALIVE_CHANNEL = 9951;
-	 
+	
+	// ----------------------- REMBOT INFORMATION -------------------------//
+	
+	// Channel to determine whether or not a robot will hire a Rembot or no.....
+	public final static int HIRE_REMBOT_CHANNEL = 9959;	
+	
+	// Stores whether or not there is a RemBot on the team alive or no....
+	public final static int REMBOT_ALIVE_CHANNEL = 9963;
+	
+	// Stores the beginning of the information that the team RemBot will send after its turn.......
+		// RemBot Information
+		// Bit 0 - Archons seen thus far
+		// Bit 1 - Gardeners seen thus far
+		// Bit 2 - Lumberjacks seen thus far 
+		// Bit 3 - Scouts seen thus far
+		// Bit 4 - Soldiers seen thus far
+		// Bit 5 - Tanks seen thus far
+		// Bit 6 - Enemy trees seen thus far
+		// Bit 7 - Neutral trees seen this turn	
+	public final static int REMBOT_INFORMATION_CHANNEL_START = 9964;
+
 
 	// ----------------------- SCOUT INFORMATION -------------------------//
 	
@@ -100,10 +120,10 @@ public class BroadcastChannels extends GlobalVars {
 	// ---------------------- SOLDIER INFORMATION -------------------------//
 	
 	// Stores how many channels have been updated with information this turn
-	public final static int SOLDIER_NUMBER_CHANNEL = 9970;
+	public final static int SOLDIER_NUMBER_CHANNEL = 9974;
 	
 	// Stores how many soldiers are currently alive on a given turn....
-	public final static int SOLDIERS_ALIVE_CHANNEL = 9971;
+	public final static int SOLDIERS_ALIVE_CHANNEL = 9975;
 	
 	// ---------------------- SOLDIER INFORMATION -------------------------//
 	

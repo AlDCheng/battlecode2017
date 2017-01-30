@@ -201,11 +201,12 @@ public class BestGirlBot extends GlobalVars {
 
         
         // If the scout is the first to be made and was made early enough, call Rembot..........
-        if(scoutNumber == 0 && initRound <= 200){
+        if(rc.readBroadcast(BroadcastChannels.HIRE_REMBOT_CHANNEL) == 1){
+        	rc.broadcast(BroadcastChannels.HIRE_REMBOT_CHANNEL, 0);    
         	RemBot.init();
         }
-        
         RemBot.init();
+
         
         // By default pass on to the main function
         main();    
@@ -214,7 +215,7 @@ public class BestGirlBot extends GlobalVars {
 	
 	// Main function of the scout - carries out all of the necessary tasks in a turn.....
 		
-	private static void main() throws GameActionException{	            
+	protected static void main() throws GameActionException{	            
         
 		// Initialize other parameters for tracking
 	    roundsCurrentlyTracked = 0;
@@ -350,8 +351,10 @@ public class BestGirlBot extends GlobalVars {
 		       	
 		       	// If the robot can move to the location it wishes to go to.....
 		       	if(rc.canMove(desiredMove)){
+		       		
 		       		// Check to see if the robot will die there
 		       		checkDeath(desiredMove);
+		       		
 		       		// Move to the target location
 		       		rc.move(desiredMove);
 		       	}
@@ -1170,7 +1173,7 @@ public class BestGirlBot extends GlobalVars {
 
 	// Function to check if the scout will die if it moves to a certain location
 	
-    public static void checkDeath(MapLocation location) throws GameActionException{
+    private static void checkDeath(MapLocation location) throws GameActionException{
     	
     	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
 		boolean beingAttacked = iFeed.willBeAttacked(location);
@@ -1202,7 +1205,7 @@ public class BestGirlBot extends GlobalVars {
     
     // Function to correct an accidental death update
     
-    public static void fixAccidentalDeathNotification() throws GameActionException{
+    private static void fixAccidentalDeathNotification() throws GameActionException{
     	
     	// Reset belief in the robot dying this round....
     	believeHasDied = false;    	
