@@ -1,5 +1,7 @@
 //
 package naclbot.units.motion;
+import java.util.ArrayList;
+
 import battlecode.common.*;
 import naclbot.units.motion.shoot.Korosenai;
 import naclbot.variables.GlobalVars;
@@ -376,6 +378,53 @@ public class Todoruno extends GlobalVars {
 		}	
 		return startingLocation;		
 	}
+	
+	public static MapLocation engageSoldier(
+			
+		// Input Variables
+		MapLocation startingLocation, // The current location of the robot
+		
+		RobotInfo enemySoldier, // The RobotInfo of the enemy soldier....
+		
+		float strideRadius, // The stride radius of the robot.........
+		
+		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............			
+		
+		TreeInfo[] nearbyTrees){
+	
+		ArrayList<RobotInfo> nearbySoldiers = null;
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		return null;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	// This function should be called whenever the unit is close to pass by distance of the robot..... TODO

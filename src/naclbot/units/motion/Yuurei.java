@@ -26,7 +26,7 @@ public class Yuurei extends GlobalVars {
 	public static final float dodgeAngleOffset = (float)(Math.PI * 2 / dodgeAngleNumber);
 	
 	// Value after which units decide to give up trying to dodge......
-	public static final float maxIncomingBullets = 5;
+	public static final float maxIncomingBullets = 4;
 	
 	// Do all wrapper for the functions.....
 	// ONLY Use if there are bullets nearby.. Otherwise there is no point in calling this function
@@ -80,6 +80,10 @@ public class Yuurei extends GlobalVars {
 		float bodyRadius // Float representing how wide the robot
 		){			
 		
+       	// SYSTEM CHECK- Print out the amount of bytecode used thus far
+       	System.out.println("Bytecode used prior at call to dodge: " + Clock.getBytecodeNum());		       	
+       	
+		
 		if(desiredLocation != null){
 			
 			// SYSTEM CHECK - Draw a blue dot on the location that the robot wishes to go to....
@@ -87,7 +91,7 @@ public class Yuurei extends GlobalVars {
 		}
 	
 		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
-		float scanRadius = strideRadius + bodyRadius + (float) (0.5);	
+		float scanRadius = strideRadius + bodyRadius;
 		
 		Direction directionAway;
 		
@@ -103,8 +107,9 @@ public class Yuurei extends GlobalVars {
 		Team team = rc.getTeam();
 		
 		// Get the bullet lines for the current scenario....
-		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation, team);
-		
+		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation, team);		
+
+       			
        	// SYSTEM CHECK- Print out the amount of bytecode used prior to  calculating the dodge location......
        	System.out.println("Bytecode used prior to calculating dodge location: " + Clock.getBytecodeNum());
 		
@@ -141,7 +146,7 @@ public class Yuurei extends GlobalVars {
 			// If bullets will collide with the desired location
 			else{
 				// Return the result of the dodge function...					
-				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius  + (float) 0.05, directionAway);				
+				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius, directionAway);				
 			}
 		}
 		// If there are no bullets nearby, just return the original desired location....
@@ -167,28 +172,44 @@ public class Yuurei extends GlobalVars {
 			
 			Direction directionAway // Direction away from offending robot - will be prioritized in the dodge......
 			){
-
+		
+	      	// SYSTEM CHECK- Print out the amount of byte code used prior to  calculating the dodge location......
+	       	System.out.println("Bytecode used prior to intitial calculation of dodge location: " + Clock.getBytecodeNum());
+	       	
 			// Location to start search
 			MapLocation scanStartLocation = startingLocation;
 			float searchRadius = bodyRadius;
+
 			
 			// Iterate through all the scanning angles - does this clockwise or counterclockwise depending on the current rotation setting of the robot
-			for (int i = 0; i <= 8; i++){
+			for (int i = 0; i <= dodgeAngleNumber / 2; i++){
+				
+		      	// SYSTEM CHECK- Print out the amount of byte code per offset interval....
+		       	System.out.println("Bytecode used for dodging on offset: " + i + ": " + Clock.getBytecodeNum());
 				
 				// Obtain the direction created by the offset
 				Direction testDir1 = new Direction(directionAway.radians - (i * dodgeAngleOffset));
 				Direction testDir2 = new Direction(directionAway.radians + (i * dodgeAngleOffset));
 				
 				// Iterate through a number of points determined by the granularity of the search
-				for(int j = 0; strideRadius - (scanGranularity * j) > 0; j++){
+				for(float j = strideRadius / 2; j <= strideRadius; j+= strideRadius/2){
+					
+			      	// SYSTEM CHECK- Print out the amount of byte code used prior to 
+			       	System.out.println("Bytecode used for dodging on distance: " + j + ": " + Clock.getBytecodeNum());
 					
 					// Obtain the possible new locations
 					MapLocation testLocation1 = scanStartLocation.add(testDir1, searchRadius - (scanGranularity * j));
 					MapLocation testLocation2 = scanStartLocation.add(testDir2, searchRadius - (scanGranularity * j));
 			
+					// SYSTEM CHECK- Print out the amount of byte code used prior to 
+					System.out.println("Bytecode used for prior to validating Location1: " + j + ": " + Clock.getBytecodeNum());
+										
 					if(isLocationValid(testLocation1)){
 						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge				
-							
+													
+				      	// SYSTEM CHECK- Print out the amount of byte code used prior to 
+				       	System.out.println("Bytecode used after validating Location1: " + j + ": " + Clock.getBytecodeNum());
+						
 						if(!ifBulletLinesWillIntersect(bulletLines, testLocation1, bodyRadius)){	
 							
 							// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
@@ -197,21 +218,29 @@ public class Yuurei extends GlobalVars {
 							return testLocation1;
 						}
 						// If the robot would collide with a bullet in the location 
-						else{
-							
+						else{							
 							// SYSTEM CHECK - Show which location the robot decides as invalid - red
-							rc.setIndicatorDot(testLocation1, 255, 0, 0);								
+							rc.setIndicatorDot(testLocation1, 255, 0, 0);	
 						}						
 					}
 					// If the test location isn't possible for the robot to move to
 					else{
+						
 					// SYSTEM CHECK - Show which location the robot decides as invalid - lavender
 					rc.setIndicatorDot(testLocation1, 230, 230, 250);
+					
 					}
+					
+					// SYSTEM CHECK- Print out the amount of byte code used prior to 
+					System.out.println("Bytecode used for prior to validating Location2: " + j + ": " + Clock.getBytecodeNum());
+					
 					if(isLocationValid(testLocation2)){
 						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge				
 							
 						if(!ifBulletLinesWillIntersect(bulletLines, testLocation2, bodyRadius)){	
+							
+					      	// SYSTEM CHECK- Print out the amount of byte code used prior to 
+					       	System.out.println("Bytecode used after validating Location2: " + j + ": " + Clock.getBytecodeNum());
 							
 							// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
 							rc.setIndicatorDot(testLocation2, 0, 0, 128);
@@ -222,7 +251,8 @@ public class Yuurei extends GlobalVars {
 						else{
 							
 							// SYSTEM CHECK - Show which location the robot decides as invalid - red
-							rc.setIndicatorDot(testLocation2, 255, 0, 0);								
+							rc.setIndicatorDot(testLocation2, 255, 0, 0);
+							break;
 						}						
 					}
 					// If the test location isn't possible for the robot to move to
@@ -496,9 +526,18 @@ public class Yuurei extends GlobalVars {
 		for(Line bulletLine: bulletLines){
 			
 			// If either endpoint is within one body radius of the test location, return true...
-			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius || bulletLine.middle.distanceTo(testLocation) <= bodyRadius){			
+			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius){			
 				return true;
 			}
+			
+			if(bulletLine.end.distanceTo(testLocation) <= bodyRadius){
+				return true;
+			}			
+			if(bulletLine.middle.distanceTo(testLocation) <= bodyRadius){
+				return true;
+			}
+			
+			
 		}
 		// If no intersecting lines have been found...  return false - no collisions will occur...
 		return false;	
