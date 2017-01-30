@@ -274,7 +274,7 @@ public class Routing extends GlobalVars{
 			RobotType curType = rc.getType();
 			
 			// Draw pink line for reference
-//			 rc.setIndicatorLine(curLoc, dest, 203, 192, 255);
+            rc.setIndicatorLine(curLoc, dest, 203, 192, 255);
 			
 			// Get direction to point
 			Direction destDir = new Direction(curLoc, dest);

@@ -80,8 +80,11 @@ public class Yuurei extends GlobalVars {
 		float bodyRadius // Float representing how wide the robot
 		){			
 		
-		// SYSTEM CHECK - Draw a bule dot on the location that the robot wishes to go to....
-		rc.setIndicatorDot(desiredLocation, 0, 0, 255);
+		if(desiredLocation != null){
+			
+			// SYSTEM CHECK - Draw a blue dot on the location that the robot wishes to go to....
+			rc.setIndicatorDot(desiredLocation, 0, 0, 255);
+		}
 	
 		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
 		float scanRadius = strideRadius + bodyRadius + (float) (0.5);	

@@ -332,6 +332,52 @@ public class Todoruno extends GlobalVars {
 	}
 	
 	
+	public static MapLocation engageCivilian(
+			
+		// Input variables....
+		MapLocation startingLocation, // The current location of the robot....
+		
+		RobotInfo enemyRobot, // The enemyRobot to be engaged
+		
+		float strideRadius // Float representing the distance the robot can travel in one turn... 																												
+	
+		) throws GameActionException{ 
+		
+		// SYSTEM CHECK - Print out that the robot is attempting to find a location to shoot the civilian from.....
+		System.out.println("Attempting to find a location to shoot the gardener/Archon from....");
+		
+		Direction directionTo = startingLocation.directionTo(enemyRobot.location);
+			
+		for (int i = 5; i >= 1; i--){
+			
+			float distanceCheck = i * strideRadius / 5;
+			
+			for (int j = 0; j <= 6; j ++){
+				
+				Direction directionCheck1 = new Direction((float) (directionTo.radians + j * Math.PI / 6));
+				Direction directionCheck2 = new Direction((float) (directionTo.radians - j * Math.PI / 6));
+				
+				MapLocation testLocation1 = startingLocation.add(directionCheck1, distanceCheck);
+				MapLocation testLocation2 = startingLocation.add(directionCheck2, distanceCheck);
+				
+				if(!Korosenai.isLineBLockedByTree(testLocation1, enemyRobot.location, 2)){
+					
+					// SYSTEM CHECK - Show the location to shoot from as a green dot....
+					rc.setIndicatorDot(testLocation1, 0, 255, 0);
+					return testLocation1;				
+				}
+				if(!Korosenai.isLineBLockedByTree(testLocation2, enemyRobot.location, 2)){
+					
+					// SYSTEM CHECK - Show the location to shoot from as a green dot....
+					rc.setIndicatorDot(testLocation2, 0, 255, 0);
+					return testLocation2;				
+				}				
+			}		
+		}	
+		return startingLocation;		
+	}
+	
+	
 	// This function should be called whenever the unit is close to pass by distance of the robot..... TODO
 	
 	public static MapLocation passByEnemy(	
@@ -431,19 +477,7 @@ public class Todoruno extends GlobalVars {
 				return rotateAboutEnemy(startingLocation, enemyRobot, strideRadius, passDistance, rotationOrientation);				
 			}			
 		}
-		
-		
-
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	}		
 	
 	// TODO - for scouts.......
 	

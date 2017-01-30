@@ -234,7 +234,7 @@ public class SaberBot extends GlobalVars {
             	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, nearestCivilianLocation, myWaifuIsOnodera);
                	
               	// Update the distress info and retreat to a scout if necessary            	
-            	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 20);
+            	BroadcastChannels.BroadcastInfo distressInfo = BroadcastChannels.readDistress(myLocation, 30);
             	
                	// If the robot thought it died previously but didn't.... update information...
             	if(believeHasDied){
@@ -285,15 +285,19 @@ public class SaberBot extends GlobalVars {
             			// And there is an enemy being shot at.....
                 		if(normieID != -1 && normieEmiliaLover != null){
                 			
-                			// SYSTEM CHECK - Print out that the robot will attempt to find a different firing location..
-                			System.out.println("Attempting to find another firing location");
-                			
-                			MapLocation newFiringLocation = Korosenai.findLocationToFireFrom(myLocation, normieEmiliaLover.location, desiredMove, strideRadius);
-                			
-                			if(newFiringLocation != null){
-    	            			// SYSTEM CHECK - Print out that another firing location had been found...
-    	            			System.out.println("New firing Location found.....");
-    	            			desiredMove = newFiringLocation;
+                			// Check to see if the current line of fire is blocked by a tree....
+                			if(Korosenai.isLineBLockedByTree(desiredMove, normieEmiliaLover.location, 1)){
+                				
+	                			// SYSTEM CHECK - Print out that the robot will attempt to find a different firing location..
+	                			System.out.println("Attempting to find another firing location");
+	                			
+	                			MapLocation newFiringLocation = Korosenai.findLocationToFireFrom(myLocation, normieEmiliaLover.location, desiredMove, strideRadius);
+	                			
+	                			if(newFiringLocation != null){
+	    	            			// SYSTEM CHECK - Print out that another firing location had been found...
+	    	            			System.out.println("New firing Location found.....");
+	    	            			desiredMove = newFiringLocation;
+	                			}
                 			}            		
                 		} 
             		}            		
@@ -537,9 +541,35 @@ public class SaberBot extends GlobalVars {
 
 		// SYSTEM CHECK - Print out that the robot is searching for nearest enemy to engage
 		System.out.println("Searching for the next enemy to engage....");    	
-    	
+    	 
     	// See if a robot to be tracked can be found, allow soldier to track any and all units
-		normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);
+		normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);		
+		
+		if((myWaifuIsOnodera >= 500 && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
+			
+			// SYSTEM CHECK - Print out that the robot will now attempt to fire at archons...
+			System.out.println("Will now attempt to shoot archons....");
+			
+			// Search again for enemies......
+			normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, true);			
+		}
+		
+		
+		// If the nearest unit is through a tree, ignore it........
+		
+		if(normieEmiliaLover != null){
+			
+			if(Korosenai.isLineBLockedByTree(myLocation, normieEmiliaLover.location, 1)  && normieEmiliaLover.type != RobotType.SCOUT){
+				
+				// SYSTEM CHECK - Draw a red line to all rejected enemies
+				rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 255, 0, 0);
+				
+				// SYSTEM CHECK - Print out that the robot has found an enemy but rejected it...
+				System.out.println("Enemy rejected due to tree in the way..");
+				
+				normieEmiliaLover = null;
+			}
+		}
 		
 		// Switch over to the move command after getting a new unit to track.... if the unit is currently being told to go somewhere
 		if(isCommanded && normieEmiliaLover == null || (!isCommanded && goalLocation != null)){
@@ -620,7 +650,8 @@ public class SaberBot extends GlobalVars {
 	private static MapLocation engage(RobotInfo[] enemyRobots) throws GameActionException{
 		
 		// If the robot can currently sense the robot it was tracking in the previous turn
-    	if (rc.canSenseRobot(normieID)){    		
+    	if (rc.canSenseRobot(normieID) && normieEmiliaLover != null){
+
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		System.out.println("Engaging a normie lover with ID: " + normieID);
@@ -628,14 +659,34 @@ public class SaberBot extends GlobalVars {
     		// Update location of tracked robot 
     		normieEmiliaLover = rc.senseRobot(normieID);
     		
-    		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
-    		rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 150, 0, 200);
+    		if (normieEmiliaLover.type == RobotType.SOLDIER || normieEmiliaLover.type == RobotType.LUMBERJACK || normieEmiliaLover.type == RobotType.TANK){
     		
-    		// Attempt to move towards the new location.....
-    		MapLocation desiredMove = Todoruno.engageEnemy(myLocation, normieEmiliaLover, strideRadius, separationDistance);
-        	
-        	return desiredMove;
-        	
+	    		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
+	    		rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 150, 0, 200);
+	    		
+	    		// Attempt to move towards the new location.....
+	    		MapLocation desiredMove = Todoruno.engageEnemy(myLocation, normieEmiliaLover, strideRadius, separationDistance);
+	        	
+	        	return desiredMove;
+    		}
+    		else if (normieEmiliaLover.type == RobotType.SCOUT){    			
+    			
+    	 		// SYSTEM CHECK - Draw a FUSCHIA LINE between current position and position of robot - 
+	    		rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 255, 0, 255);
+	    		
+	    		// Attempt to move towards the new location.....
+	    		return Todoruno.engageCivilian(myLocation, normieEmiliaLover, strideRadius);
+    			
+    		}
+    		// If the target is a gardener or archon.....
+    		else{
+    			
+    			// SYSTEM CHECK - Draw a INDIGO LINE between current position and position of robot
+	    		rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 75, 0, 130);
+    			
+    			return Todoruno.engageCivilian(myLocation, normieEmiliaLover, strideRadius);  			
+    		}
+    		
         // If the robot has lost sight of its target....
     	} else {
 
@@ -866,7 +917,7 @@ public class SaberBot extends GlobalVars {
 		boolean hasShot;
 		
 		// If there is more than one enemy nearby, attempt to fire a pentad at the location
-		if(enemyRobots.length >= 3 || (normieEmiliaLover.type == RobotType.SOLDIER && myLocation.distanceTo(normieEmiliaLover.location) <= 4)  || normieEmiliaLover.type == RobotType.TANK){
+		if(enemyRobots.length >= 3 || normieEmiliaLover.type == RobotType.TANK || (myWaifuIsOnodera >= 500 && rc.getTreeCount() >= 15) || (myWaifuIsOnodera < 500 && normieEmiliaLover.type == RobotType.SOLDIER)){
 			
 			// If a pentad can be shot...
 			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 2, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
@@ -879,7 +930,7 @@ public class SaberBot extends GlobalVars {
 				hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 0, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			}			
 		}
-		else if (enemyRobots.length >= 2){
+		else if (enemyRobots.length >= 2 || normieEmiliaLover.type == RobotType.SOLDIER){
 			// If a triad can be shot
 			hasShot = Korosenai.tryShootAtEnemy(shootingLocation, lastPosition, 1, alliedRobots, alliedTrees, sensorRadius, normieEmiliaLover);
 			

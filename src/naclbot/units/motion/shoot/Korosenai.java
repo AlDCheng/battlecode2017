@@ -30,8 +30,8 @@ public class Korosenai extends GlobalVars {
 	public static final float pentadOffset = 15;
 	
 	// Firing location finder constants;
-	public static final int firingLocationChecksPerSide = 3;
-	public static final float firingAngleOffset = (float) (Math.PI/20);
+	public static final int firingLocationChecksPerSide = 8;
+	public static final float firingAngleOffset = (float) (Math.PI/60);
 	
 	// Probability that if a robot has previous enemy data, it will shoot at the next location the enemy might travel at.....
 	public static final float probabilityPredict = (float) 0.2;
@@ -245,7 +245,8 @@ public class Korosenai extends GlobalVars {
     		
     		// If no allies are going to be instantly hit by the bullets... 
     		if (!isDirectionOccupiedByAlly(currentLocation, targetedDirection, nearbyAllies, maximumAllyCheckDistance) && 
-    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance) &&
+    					!isLineBLockedByTree(currentLocation, targetedEnemy.location, 1)){
     			
     			// If the opponent is a gardener, attempt to shoot through a tree....
     			if(targetedEnemy.type == RobotType.GARDENER){
@@ -292,7 +293,8 @@ public class Korosenai extends GlobalVars {
     			
     			// If no allies are going to be instantly hit by the bullets... 
 	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) || 
-	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)
+	    				|| isLineBLockedByTree(currentLocation, targetedEnemy.location, 1)){
 	    				
 	    			return false;	    			
 	    		}    
@@ -305,7 +307,7 @@ public class Korosenai extends GlobalVars {
 	    		}    		
     		}   
    
-			if(rc.canFireTriadShot() && rc.getTeamBullets() > 50){
+			if(rc.canFireTriadShot()){
 				// Fire!
 				rc.fireTriadShot(targetedDirection);
 				
@@ -328,8 +330,9 @@ public class Korosenai extends GlobalVars {
     			Direction fireDirection = new Direction (targetedDirection.radians + j * pentadOffset);
     			
     			// Check to see if no allies are going to be hit by bullets.....
-	    		if (!isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
-	    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
+	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)
+	    				|| isLineBLockedByTree(currentLocation, targetedEnemy.location, 1)){
 	    			
 	    			return false;
 	    		}
@@ -343,7 +346,7 @@ public class Korosenai extends GlobalVars {
     		}
 		    			
 			// Make sure your team is rich enough for you to fire something at them......
-			if(rc.canFirePentadShot()&& rc.getTeamBullets() > 100){
+			if(rc.canFirePentadShot()){
     			// Fire!
     			rc.firePentadShot(targetedDirection);
     			

@@ -910,7 +910,7 @@ public class BarusuBot extends GlobalVars {
     				// Make sure that the tree is not a friendly tree
     				if (treeX.team != allies){    					
 	    				// Add the tree to the list of tree distances
-	    				distancesToTrees[i] = treeX.location.distanceTo(myLocation);    
+	    				distancesToTrees[i] = j;
 	    				// SYSTEM CHECK - Place a YELLOW DOT on any potential trees sensed
 	    				rc.setIndicatorDot(locationToCheck, 255, 255, 0);
     				}

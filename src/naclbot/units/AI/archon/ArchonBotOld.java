@@ -499,7 +499,7 @@ public class ArchonBotOld extends GlobalVars {
     	}
     	// Make the robot bounce of walls if they are too far......
     	if (!rc.canMove(desiredMove)){
-    		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+    		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius);
     		
     		myDirection = new Direction(myLocation, newLocation);
     		
