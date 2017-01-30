@@ -50,7 +50,7 @@ public class BestGirlBot extends GlobalVars {
 	
 	// Gamne-defined robot class related parameters
 	protected static final float strideRadius = battlecode.common.RobotType.SCOUT.strideRadius;
-	private static final float bodyRadius = battlecode.common.RobotType.SCOUT.bodyRadius;
+	protected static final float bodyRadius = battlecode.common.RobotType.SCOUT.bodyRadius;
 	protected static final float sensorRadius = battlecode.common.RobotType.SCOUT.sensorRadius;
 	
 	// ------------- PERSONAL VARIABLES -------------//
@@ -64,7 +64,7 @@ public class BestGirlBot extends GlobalVars {
 	
 	// Personal movement variables
 	protected static MapLocation myLocation; // The current location of the scout...
-	private static MapLocation lastPosition; // The previous location that the scout was at...
+	protected static MapLocation lastPosition; // The previous location that the scout was at...
 	protected static Direction lastDirection; // The direction in which the scout last traveled
     public static boolean rotationDirection = true; // Boolean for rotation direction - true for counterclockwise, false for clockwise
 	
@@ -202,8 +202,10 @@ public class BestGirlBot extends GlobalVars {
         
         // If the scout is the first to be made and was made early enough, call Rembot..........
         if(scoutNumber == 0 && initRound <= 200){
-        	//RemBot.init();
+        	RemBot.init();
         }
+        
+        RemBot.init();
         
         // By default pass on to the main function
         main();    

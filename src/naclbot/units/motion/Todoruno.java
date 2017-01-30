@@ -350,12 +350,18 @@ public class Todoruno extends GlobalVars {
 		
 		) throws GameActionException{
 		
+		// SYSTEM CHECK  Draw a VIOLET RED line to the target location.......
+		rc.setIndicatorLine(startingLocation, targetLocation, 199, 21, 133);
+		
+		// SYSTEM CHECK - Print out that the robot is attempting to pass by...
+		System.out.println("Attempting to pass by an enemy with ID: " + enemyRobot.ID);
+		
+		
 		// Get the direction to the target location
 		Direction directionToTarget = startingLocation.directionTo(targetLocation);
 		
-		// Get the directions to and from the enemy
+		// Get the directions to the enemy....
 		Direction directionToEnemy = startingLocation.directionTo(enemyRobot.location);		
-		Direction directionFromEnemy = enemyRobot.location.directionTo(startingLocation);
 		
 		// Get the direction to the enemy....
 		float distanceToEnemy = startingLocation.distanceTo(enemyRobot.location);
@@ -373,7 +379,13 @@ public class Todoruno extends GlobalVars {
 		}
 		
 		// Angle to rotate about the target.....
-		float angleToRotate = strideRadius/passDistance;
+		float angleToRotate = strideRadius/passDistance;		
+		
+		System.out.println((directionToTarget.radians + (float)(2 * Math.PI) % (2 * Math.PI)));
+		System.out.println((directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI));
+		System.out.println((directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) - Math.PI / 2);
+		System.out.println((directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) + Math.PI / 2);
+
 		
 		// Rotate clockwise if....
 		if((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI)){
@@ -404,7 +416,7 @@ public class Todoruno extends GlobalVars {
 			
 			rotationOrientation.orientation = true;
 			
-			if ((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) > (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) + Math.PI / 2){
+			if ((directionToTarget.radians + (float)(2 * Math.PI)) % (2 * Math.PI) < (directionToEnemy.radians + (float)(2 * Math.PI)) % (2 * Math.PI) - Math.PI / 2){
 				
 				// SYSTEM CHECK - The unit should simply attempt to continue to the target location....	 - Print out that
 				System.out.println("Sufficiently rotated about enemy, will now proceed to target location");
@@ -437,24 +449,24 @@ public class Todoruno extends GlobalVars {
 	
 	
 	public static MapLocation rotateAboutEnemy(
-			
-			// Input variables....
-			MapLocation startingLocation, // The current location of the robot....
-			
-			RobotInfo enemyRobot, // The enemyRobot to be engaged
-			
-			float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
-			
-			float engageDistance, // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
-			
-			Rotation rotationOrientation // Represents if the unit currently forced into 
+		
+		// Input variables....
+		MapLocation startingLocation, // The current location of the robot....
+		
+		RobotInfo enemyRobot, // The enemyRobot to be engaged
+		
+		float strideRadius, // Float representing the distance the robot can travel in one turn... 																																					
+		
+		float engageDistance, // Float representing the distance that the robot will attempt to keep between itself and the robot near it....
+		
+		Rotation rotationOrientation // Represents if the unit currently forced into 
 
-			) throws GameActionException{
-		
-		
+		) throws GameActionException{	
+				
+
 		// SYSTEM CHECK - Draw a pink line to the enemy that the robot is attempting to rotate about...
 		rc.setIndicatorLine(startingLocation, enemyRobot.location, 255, 20, 147);
-		
+			
 		// Get the location of the enemy, the distance from it
 		MapLocation enemyLocation = enemyRobot.location;		
 		float distanceFromEnemy = startingLocation.distanceTo(enemyLocation);

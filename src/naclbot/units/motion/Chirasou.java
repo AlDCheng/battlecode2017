@@ -132,7 +132,7 @@ public class Chirasou extends GlobalVars {
 			// Find minimal distance
 			float dist = myLocation.distanceTo(currentEnemies[i].location);
 
-			if (dist < minimum ){
+			if (dist < minimum && currentEnemies[i].type != RobotType.SCOUT){
 				minimum = dist;
 				index = i;	
 			}			

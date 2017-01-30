@@ -265,7 +265,7 @@ public class LumberjackBot extends GlobalVars {
             	
             	// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
             	if (!rc.canMove(desiredMove)){
-            		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+            		MapLocation newLocation = Yuurei.correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius);
             		
             		myDirection = new Direction(myLocation, newLocation);
             		

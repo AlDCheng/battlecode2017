@@ -32,21 +32,27 @@ public strictfp class RobotPlayer extends GlobalVars{
         // You can add the missing ones or rewrite this into your own control structure.
         switch (rc.getType()) {
 			case ARCHON:
-			    KazumaBot.init();			
+				// EmiliaBot.init();
+			    KazumaBot.init();	
 			    break; 
 			case GARDENER:
+				// EmiliaBot.init();
 			    GARNiDELiABot.init();
 			    break;
 			case SOLDIER:
+				// EmiliaBot.init();
 				SaberBot.init();
 			    break;
 			case TANK:
+				// EmiliaBot.init();
 				TankBot.init();
 			    break;
 			case LUMBERJACK:
+				// EmiliaBot.init();
 				BarusuBot.init();
 			    break;
 			case SCOUT:
+				// EmiliaBot.init();
 			    BestGirlBot.init();
 			    break;
 	    

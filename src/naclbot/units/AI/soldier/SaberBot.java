@@ -250,47 +250,7 @@ public class SaberBot extends GlobalVars {
 		       	if(desiredMove != null){
 			       	// SYSTEM CHECK - Print out where the desired move is.....
 			       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());
-		       	}           	
-    
-            
-            	// -------------------- MOVE CORRECTION ---------------------//
-            	
-		       	// Get the correction from the wrapping correct all move function....
-            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, allies, myLocation, desiredMove);            	
-		       	
-		       	if(correctedMove != null){
-		       		
-	    	       	// SYSTEM CHECK - Print out where the desired move is.....
-			       	System.out.println("Corrected move is: " + correctedMove.toString());	
-			       	
-			       	// Set the desired location to be the corrected location
-			       	desiredMove = correctedMove;
-		       	}
-		       	// If the robot could not find a location to go to even with the corrected location.....
-		       	else{	       		
-		       		// SYSTEM CHECK - Print out that the scout never had a place to go to...
-		       		System.out.println("No move possible..... will simply remain in place");
-		       		
-		       		desiredMove = myLocation;		       		
-		       	}
-		       	
-		       	if(desiredMove.equals(myLocation)){
-		       		
-		       		// Check to see if the robot is in a corner...
-		       		int corner = Yuurei.checkIfNearCorner(bodyRadius, strideRadius, desiredMove);
-		       		
-		       		// If the above function returns a positive integer, the robot is near a corner....
-		       		if (corner != 0){
-		       			
-		       			// SYSTEM CHECK - Print out that the robot is near a corner....
-		       			System.out.println("Currently near a corner, will attempt to rectify....");
-		       			
-		       			desiredMove = Yuurei.moveOutOfCorner(strideRadius, corner, desiredMove);		       	
-		       		}		       		
-		       	}
-		       	          	
-		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to dodge....
-		       	System.out.println("Bytecode used prior to dodge: " + Clock.getBytecodeNum());
+		       	}        	
             	
             	// --------------------------- DODGING ------------------------ //
 
@@ -337,7 +297,48 @@ public class SaberBot extends GlobalVars {
                 			}            		
                 		} 
             		}            		
-            	}
+            	}            	
+                
+            	// -------------------- MOVE CORRECTION ---------------------//
+            	
+		       	// Get the correction from the wrapping correct all move function....
+            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, allies, myLocation, desiredMove);            	
+		       	
+		       	if(correctedMove != null){
+		       		
+	    	       	// SYSTEM CHECK - Print out where the desired move is.....
+			       	System.out.println("Corrected move is: " + correctedMove.toString());	
+			       	
+			       	// Set the desired location to be the corrected location
+			       	desiredMove = correctedMove;
+		       	}
+		       	// If the robot could not find a location to go to even with the corrected location.....
+		       	else{	       		
+		       		// SYSTEM CHECK - Print out that the scout never had a place to go to...
+		       		System.out.println("No move possible..... will simply remain in place");
+		       		
+		       		desiredMove = myLocation;		       		
+		       	}
+		       	
+		       	if(desiredMove.equals(myLocation)){
+		       		
+		       		// Check to see if the robot is in a corner...
+		       		int corner = Yuurei.checkIfNearCorner(bodyRadius, strideRadius, desiredMove);
+		       		
+		       		// If the above function returns a positive integer, the robot is near a corner....
+		       		if (corner != 0){
+		       			
+		       			// SYSTEM CHECK - Print out that the robot is near a corner....
+		       			System.out.println("Currently near a corner, will attempt to rectify....");
+		       			
+		       			desiredMove = Yuurei.moveOutOfCorner(strideRadius, corner, desiredMove);		       	
+		       		}		       		
+		       	}
+		       	          	
+		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to dodge....
+		       	System.out.println("Bytecode used after move correct: " + Clock.getBytecodeNum());
+		       	
+		     // ------------------------ Movement Execution  ------------------------//
 
     	       	// If the robot can move to the location it wishes to go to.....
 		       	if(rc.canMove(desiredMove) && desiredMove != myLocation){

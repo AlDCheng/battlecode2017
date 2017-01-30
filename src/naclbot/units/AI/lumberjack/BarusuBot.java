@@ -9,9 +9,6 @@ import naclbot.units.motion.routing.Routing;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 import naclbot.units.interact.iFeed;
-
-
-import java.util.ArrayList;
 import java.util.Arrays;
 
 /* --------------------------   Overview  --------------------------

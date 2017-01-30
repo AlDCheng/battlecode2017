@@ -573,11 +573,8 @@ public class Yuurei extends GlobalVars {
 		MapLocation startingLocation, // Location that the robot is currently at....
 		
 		float bodyRadius, // Float representing how wide the robot
-		float strideRadius, // Float representing the distance the robot can travel in one turn... 
-		
-		boolean rotationDirection // Boolean representing the rotation direction of the robot currently, dodge will attempt to prioritize this...
-		   						  // True entails counterclockwise and clockwise rotation follows from false
-		
+		float strideRadius // Float representing the distance the robot can travel in one turn... 
+
 		) throws GameActionException{
 		
 		// Variable to store the output of this function
@@ -639,7 +636,6 @@ public class Yuurei extends GlobalVars {
 			Direction oppositeDirection = new Direction(desiredLocation, startingLocation);
 			
 			newLocation = startingLocation.add(oppositeDirection, strideRadius);
-			rotationDirection = !rotationDirection;
 			
 			// SYSTEM CHECK - Display the corrected move on screen as an orange line
 			rc.setIndicatorLine(startingLocation, newLocation, 255, 165, 0);
@@ -741,10 +737,11 @@ public class Yuurei extends GlobalVars {
     		
     	) throws GameActionException{
     	    	
+    	// If no desired move was initially inputted or if the desired move already works.....
 	   if(desiredMove == null){
 		   return null;
 	   }
-    	
+	      	
 	    // Check if the initially selected position was out of bounds...
 		
 	   	// SYSTEM CHECK - Show desired move after path planning
@@ -766,7 +763,7 @@ public class Yuurei extends GlobalVars {
 		
 		// Check to see if the desired move is out of bounds and make it bounce off of the wall if it is...            	
 		if (!rc.canMove(desiredMove)){
-			MapLocation newLocation = correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius, rotationDirection);
+			MapLocation newLocation = correctOutofBoundsError(desiredMove, myLocation, bodyRadius, strideRadius);
 			
 			desiredMove = newLocation;
 			

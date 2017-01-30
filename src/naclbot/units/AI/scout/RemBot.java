@@ -41,6 +41,7 @@ public class RemBot extends BestGirlBot {
 	private static float explorerDefendDistance = 60;	// Constant to update the distance for which the scout will attempt to defend its archon......
 	private static final float keepAwayDistance = (float) 10; // Distance at which the scouts will attempt to stay away from the unit they are investigating
 	private static Todoruno.Rotation rotation;	
+	private static boolean isStuck; // Represents whether or not the robot couldn't find a move to make the previous turn...
 	
 	// Store the archon location to go too.....
 	private static MapLocation archonLocation;
@@ -50,11 +51,12 @@ public class RemBot extends BestGirlBot {
 	
 	// Variable to show whether or not the scout has seen an enemy yet....
 	private static boolean toInvestigate = false;
+	private static boolean hasBegunInvestigating = false;
 	
 	// Variables regarding the currently investigated unit....
 	private static int investigateID = -1;
-	private static RobotInfo investigateData = null;	
-	
+	private static RobotInfo investigateRobot = null;	
+		
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- RUNTIME FUNCTIONS -------------------------------//
 	// ----------------------------------------------------------------------------------//	
@@ -63,6 +65,10 @@ public class RemBot extends BestGirlBot {
 	
 	public static void init(){
 		
+		MapLocation[] initialEnemyArchonLocations = rc.getInitialArchonLocations(enemies);
+		if(initialEnemyArchonLocations.length > 0){
+			archonLocation = initialEnemyArchonLocations[0];
+		}
 		//archonLocation = rc.getInitialArchonLocations(enemies)[0]; // Utilize the first archonlocation by default.......
 		
 		float randomize = (float) Math.random();
@@ -98,9 +104,7 @@ public class RemBot extends BestGirlBot {
 				if(rotation != null){
 					// SYSTEM CHECK - Print out the rotation orientation of the RemBot....
 					System.out.println("Current rotation orientation: " + rotation.printOrientation());
-				}
-				// SYSTEM CHECK  Make sure the robot starts its turn
-                System.out.println("Remember guys Rem is best girl!!!");                 
+				}      
         		
 				// ------------------------ INTERNAL VARIABLES UPDATE ------------------------ //     
 
@@ -113,11 +117,16 @@ public class RemBot extends BestGirlBot {
             	// If there are enemy nearby, get the nearest enemy
             	if(enemyRobots.length > 0){
             		
-            		RobotInfo nearestEnemy = Chirasou.getNearestAlly(enemyRobots, myLocation);
+            		// SYSTEM CHECK - Print out that there is a nearby enemy...
+            		System.out.println("Nearby enemies sighted....");            	
             		
-            		investigateID = nearestEnemy.ID;
-            		investigateData = nearestEnemy;
-            		toInvestigate = true;            		
+            		RobotInfo nearestEnemy = Chirasou.getNearestNonScoutEnemy(enemyRobots, myLocation);   
+            		
+            		if(nearestEnemy!= null){
+		        		investigateID = nearestEnemy.ID;
+		        		investigateRobot = nearestEnemy;
+		        		toInvestigate = true;        
+            		}
             	}
             	
             	// Update game variables
@@ -146,7 +155,7 @@ public class RemBot extends BestGirlBot {
 		       	}	
             	
 		       	// SYSTEM CHECK - Show where the scout believes its nearest civilian is using a WHITE LINE
-		       	rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);
+		       	// rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);
 		       	
 		      	// SYSTEM CHECK - Show where the scout is attempting to search....... LIGHT GREEN LINE
 		     	// rc.setIndicatorLine(myLocation, archonLocation, 152, 251, 152);
@@ -166,36 +175,79 @@ public class RemBot extends BestGirlBot {
             	if(believeHasDied){
             		fixAccidentalDeathNotification();
             	}
+            	
+				// Update data stored in the Rembot's unit array.....
+				enemyData.update(enemyRobots, nearbyTrees);
 
             	// ------------------------ MOVEMENT FUNCTIONS------------------------ //      
 				
-				if(investigateID != -1 && investigateData != null){
-					
-					if(rc.canSenseRobot(investigateID)){
-						
-						MapLocation desiredMove = Todoruno.rotateAboutEnemy(myLocation, investigateData, strideRadius, keepAwayDistance, rotation);
-						
-						if(rc.canMove(desiredMove)){
-							rc.move(desiredMove);
-						}						
-					}				
+    			MapLocation desiredMove = move(enemyRobots, archonLocation);
+    			
+		       	if(desiredMove != null){
+			       	// SYSTEM CHECK - Print out where the desired move is.....
+			       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());
+		       	}   
+		       	
+		    	// --------------------------- DODGING ------------------------ //
+
+            	// Call the dodge function
+		       	MapLocation dodgeLocation = null;
+		       	
+		       	// Obtain a dodge location from the dodge function....
+		       	dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, null, nearbyBullets, strideRadius, bodyRadius); 
+		       	
+		     	// If there is a location that the unit can dodge to..
+            	if (dodgeLocation != null){
+            		
+            		if(!dodgeLocation.equals(desiredMove)){
+            			
+	            		desiredMove = dodgeLocation;
+	            	   	// SYSTEM CHECK - Show desired move after path planning
+	        	    	System.out.println("desiredMove altered by dodge to: " + desiredMove.toString());
+            		} 
+            	}
+    			
+            	// -------------------- MOVE CORRECTION ---------------------//
+            	
+            	// If the robot cannot move to the location determined above, call the movement correction function
+            	if(!rc.canMove(desiredMove)){
+            		desiredMove = movementCorrect(desiredMove);        		
+            	}            	
+            	
+    			// ------------------------ MOVEMENT EXECUTION  ------------------------//
+    			
+    			// If the robot can move to the location chosen, do so
+				if(rc.canMove(desiredMove)){
+					rc.move(desiredMove);
 				}
-				
-				enemyData.update(enemyRobots, nearbyTrees);
-				
-				
+				else{
+					// SYSTEM CHECK - Print out that the robot did not move this turn....
+					System.out.println("RemBot didn't move this turn... Subaru didn't notice her T_T");
+				}
+
 				// ------------------------ ROUND END VARIABLE UPDATES ---------------------- //	
 				
-				System.out.println(unitNumber);
-				System.out.println(myID);
-				
+		        // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
+                lastPosition =  rc.getLocation();
+                lastDirection = new Direction(myLocation, lastPosition);                
+					
+                // Clear the investigation variables so that RemBot always selects the nearest enemy to investigate
 				investigateID = -1;
-				investigateData = null;
+				investigateRobot = null;
+				toInvestigate = false;
 				
-			     Clock.yield();
+				// Clear the isStuck value so that it doens't attempt to unstick itself repeatedly
+				isStuck = false;
+				
+	            // SYSTEM CHECK  Make sure the robot finishes its turn
+                System.out.println("Turn completed!");
+				
+				// Yield until the next turn...
+			    Clock.yield();
 			}
 			catch (Exception exception){
-				System.out.println("Explorer Scout Exception");
+				
+				System.out.println("RemBot Exception");
                 exception.printStackTrace();
 			}			
 		}	
@@ -205,26 +257,50 @@ public class RemBot extends BestGirlBot {
 	// ------------------------------- MOVEMENT FUNCTIONS -------------------------------//
 	// ----------------------------------------------------------------------------------//	
 	
-// General move function.....
+	// General move function.....
     
     private static MapLocation move(RobotInfo[] enemyRobots, MapLocation targetLocation) throws GameActionException{
     	
     	// If the robot has yet to see a robot and it is far away from the initial archon location, move towards it....
-    	if (myLocation.distanceTo(targetLocation) >= 5 || !toInvestigate){   	
+    	if (myLocation.distanceTo(targetLocation) >= 20 && !hasBegunInvestigating){   	
     		
-    		// Attempt to move towards the location
-    		return moveTowardsLocation(targetLocation);
-    		
-    	
-    	
-    		
-    		
-    		
-    		
+    		if(!toInvestigate && investigateRobot == null){
+	    		// SYSTEM CHECK - Print out that the robot is far from the location and there is no nearby enemy
+	    		System.out.println("No nearby enemies sighted - simply moving towards target destination");
+	    		
+	    		// Attempt to move towards the location
+	    		return moveTowardsLocation(targetLocation);
+    		}
+    		else{  
+    			
+	    		// SYSTEM CHECK - Print out that the robot has seen an enemy to investigate and will attempt to pass by it...
+	    		System.out.println("Rotating about enemy to get towards target location");
+	    		
+	    		return Todoruno.passByEnemy(myLocation, targetLocation, investigateRobot, strideRadius, keepAwayDistance, rotation);  		
+	    	}
     	}
-    	
-    	return null;
+    	else{
+    		
+    		if(toInvestigate && investigateRobot != null){
+    		
+	    		// SYSTEM CHECK - Print out that the robot is currently rotating about the enemy...
+	    		System.out.println("Circling about the enemies at the target location....");
+	    		
+	    		// Set it so that the robot will continue to attempt to investigate...
+	    		hasBegunInvestigating = true;
+	    		
+	    		return  Todoruno.rotateAboutEnemy(myLocation, investigateRobot, strideRadius, keepAwayDistance, rotation);
+    		}
+    		else{
+    			// SYSTEM CHECK - Print out that the robot is far from the location and there is no nearby enemy
+	    		System.out.println("No nearby enemies sighted but close to destination - simply moving towards target destination");
+	    		
+	    		// Attempt to move towards the location
+	    		return moveTowardsLocation(targetLocation);    			
+    		}
+    	} 	
     }
+
     
     // Function to control how scouts move to a location.... (assumes the location is on the map)
     	// First check to see if they can move completely towards the target location
@@ -245,21 +321,39 @@ public class RemBot extends BestGirlBot {
 			return furthestMove;
 		}
 		else{
+			rc.setIndicatorLine(myLocation, myLocation.add(lastDirection, 20), 255, 255, 255);
+			rc.setIndicatorLine(myLocation, targetLocation, 155, 255, 255);
+			
+			boolean isBlockedByRobot = false;
+			
+			for(int i = -1; i <= 1; i ++){
+				
+				Direction directionToCheck = new  Direction((float) (directionTo.radians + Math.PI/6 *i));
+				
+				MapLocation blockingCheck = myLocation.add(directionToCheck, bodyRadius + strideRadius);
+				
+				if(rc.senseRobotAtLocation(blockingCheck) != null){
+					
+					// SYSTEM CHECK - Print out a red dot on the robot that is blocking the way...
+					rc.setIndicatorDot(blockingCheck, 200, 0, 0);
+					
+					isBlockedByRobot = true;					
+				}
+			}			
 			// If there is a robot in the way, attempt to path around it......
-			if(rc.senseRobotAtLocation(furthestMove) != null){
+			if(isBlockedByRobot){
 				
 				// SYSTEM CHECK - Print out that there is an enemy in the way
 				System.out.println("There appears to be a robot in my way....");
 				
 				// Attempt to move randomly in the desired direction......
-				MapLocation moveAttempt = Yuurei.tryMoveInDirection(directionTo, 30, 5, strideRadius, myLocation);
+				MapLocation moveAttempt = Yuurei.tryMoveInDirection(lastDirection, 30, 5, strideRadius, myLocation);
 				
 				// If the moveAttempt was succesful debug lines....
 				if(moveAttempt!= null){
-					// SYSTEM CHECK - Show where the move is with a CYAN LINE...
-					rc.setIndicatorLine(myLocation, moveAttempt, 0, 139, 139);
-				}
-				
+					// SYSTEM CHECK - Show where the move is with a BLUE-VIOLET LINE...
+					rc.setIndicatorLine(myLocation, moveAttempt, 138, 48, 226);
+				}				
 				return moveAttempt;
 			}
 			
@@ -274,6 +368,58 @@ public class RemBot extends BestGirlBot {
 			}			
 		}
     }
+    
+	// ----------------------------------------------------------------------------------//
+	// ------------------------------- MOVEMENT CORRECTION ------------------------------//
+	// ----------------------------------------------------------------------------------//	
+    
+    private static MapLocation movementCorrect(MapLocation desiredLocation) throws GameActionException{
+    	
+    	// First check if the desired move cannot be made because it is out of bounds...
+    	if(!rc.onTheMap(desiredLocation)){
+    		
+    		// SYSTEM CHECK - Print out that the robot's move was out of bounds...
+    		System.out.println("Cannot move to desired location - it is out of bounds....");
+    		
+    		// Get the new corrected location....
+    		desiredLocation = Yuurei.correctOutofBoundsError(desiredLocation, myLocation, bodyRadius, bodyRadius);
+    		
+    		// Switch the direction of rotation so that the scout doesn't try to continuously rotate around....
+    		rotation.switchOrientation();
+    	}
+    	
+    	Direction newDirection = myLocation.directionTo(desiredLocation);
+    	
+    	// If the robot cannot move in the desired direction......
+    	if(!rc.canMove(desiredLocation)){
+    		
+    		// SYSTEM CHECK - Print out that the robot will attempt to move randomly..
+    		System.out.println("Will attempt to move randomly - cannot move to initial desired destination");
+    		
+    		MapLocation testLocation = Yuurei.tryMoveInDirection(newDirection, 20, 9, strideRadius, myLocation);   
+    		
+    		desiredLocation = testLocation;
+    	}
+    	
+    	// If the robot has resolved the conflict....
+    	if(desiredLocation != null){
+    		
+			// SYSTEM CHECK - Display the corrected move on screen as an orange line
+			rc.setIndicatorLine(myLocation, desiredLocation, 255, 165, 0);
+    		
+    		return desiredLocation;
+    	}	
+    	else{
+    		// SYSTEM CHECK - Print out that the robot couldn't find a location to move to...
+    		System.out.println("Cannot move to desired location and cannot find a new location.. will not move this turn...");
+    		
+    		isStuck = true;
+    		
+        	return myLocation;    		
+    	}
+    }
+    
+    
     
     
 	// ----------------------------------------------------------------------------------//
@@ -292,7 +438,7 @@ public class RemBot extends BestGirlBot {
     	private ArrayList<RobotInfo> enemyTanks;
     	
     	private ArrayList<TreeInfo> enemyTrees;
-    	private ArrayList<TreeInfo> neutralTrees;
+    	private int neutralTrees;
     	
     	// Constructor initializes all of the lists as empty
     	EnemyData(){
@@ -307,12 +453,14 @@ public class RemBot extends BestGirlBot {
     		this.enemyTanks = new ArrayList<RobotInfo>();
     		
     		this.enemyTrees = new ArrayList<TreeInfo>(); 
-    		this.neutralTrees = new ArrayList<TreeInfo>();   
-    	}   	
+    		this.neutralTrees = 0;
+    	}
     
     
 	    public void update(RobotInfo[] enemyRobots, TreeInfo[] nearbyTrees){
 	    	
+    		neutralTrees = 0;
+    			
 	    	// If there is an enemyRobot nearby...
 	    	if(enemyRobots!= null){
 	    		
@@ -328,10 +476,9 @@ public class RemBot extends BestGirlBot {
 	    		for(TreeInfo nearbyTree: nearbyTrees){
 	    			addTree(nearbyTree);
 	    		}	    		
-	    	}
-	    	
+	    	}	    	
 	    	// SYSTEM CHECK - after the update print out the number of each thing that the RemBot has seen thus far....	    	
-	    	printTotals();	    	
+	    	// printTotals();	    	
 	    }
 	    
 	    
@@ -346,8 +493,7 @@ public class RemBot extends BestGirlBot {
 	    	System.out.println("Enemy soldiers seen: " + this.enemySoldiers.size());
 	    	System.out.println("Enemy tanks seen: " + this.enemyTanks.size());
 	    	System.out.println("Enemy trees seen: " + this.enemyTrees.size());
-	    	System.out.println("Neutral trees seen: " + this.neutralTrees.size());
-	    	
+	    	System.out.println("Neutral trees seen this turn: " + this.neutralTrees);	    	
 	    }
 	    
 	    
@@ -381,17 +527,8 @@ public class RemBot extends BestGirlBot {
 	    		}
 	    		else{
 	    			
-	    			for(TreeInfo neutralTree: neutralTrees){
-	    				
-	    				if(neutralTree.ID == tree.ID){
-	    					return false;
-	    				}	    				
-	    			}	    			
-	    			// If after iterating through all the trees, tree wasn't found, add it to the list
-	    			this.neutralTrees.add(tree);
-	    			
-	    			// SYSTEM CHECK - Print out that a new neutral tree has been noticed...
-		    		System.out.println("New neutral tree has been noticed with ID: " + tree.ID);	    	
+	    			// Increment the list of neutral trees seen...	    			
+	    			neutralTrees +=1;	  
 		    		
 		    		// Return true.....
 	    			return true;	    			
@@ -531,8 +668,5 @@ public class RemBot extends BestGirlBot {
 		   		return false;
 		   	}  	
 	    }    
-    }
-    
-    
-    
+    }  
 }
