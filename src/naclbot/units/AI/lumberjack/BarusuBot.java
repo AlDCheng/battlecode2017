@@ -6,6 +6,7 @@ import naclbot.units.motion.Move;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.routing.Routing;
+import naclbot.units.motion.search.EnemyArchonSearch;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 import naclbot.units.interact.iFeed;
@@ -110,6 +111,7 @@ public class BarusuBot extends GlobalVars {
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
 	private static boolean nearbyAllyCheckOverride; // Stores whether or not the lumberjack will attempt to avoid hitting nearby allies.....
+	private static MapLocation archonLocation; // Stores the location of the archon that the soldier is by default sent to attack....
 	
 	// Miscellaneous variables.....
 	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
@@ -181,6 +183,12 @@ public class BarusuBot extends GlobalVars {
         // Update broadcasts for unitcount and lumberjack count for other robots....
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         rc.broadcast(BroadcastChannels.LUMBERJACK_NUMBER_CHANNEL, lumberjackNumber);
+        
+		// Retrieve the correct corresponding archon...
+		archonLocation = EnemyArchonSearch.getCorrespondingArchon();
+		
+		// SYSTEM CHECK - Draw a line to the target enemy archon location...
+		rc.setIndicatorLine(myLocation, archonLocation, 255, 0, 0);
         
         // Pass into main function
         main();        
@@ -419,6 +427,20 @@ public class BarusuBot extends GlobalVars {
             	// Attempt to move away from the initial ally directly after spawn.... # TODO Update the initial direction.....
             	if (roundNumber <= initRound + initialDispersionRounds){
             		
+            		// On the last round of dispersion, run towards the enemy....
+            		if (roundNumber == initRound + initialDispersionRounds){      
+            			
+            			// At the end of the initial dispersion rounds, tell the robot to go towards the enemy archon....
+	            		setCommandLocation(archonLocation);
+	            		
+	            		// If there was a valid point to go to...
+	            		if(isCommanded){    			
+
+	            			// Tell the robot to go towards the commanded location....		            			
+	            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
+	            		}            			
+            		}
+            		
             		// System Check - Print out that the lumberjack is attempting to move away from its starting location
             		System.out.println("Attempting to move away from the start location");
             		
@@ -453,6 +475,7 @@ public class BarusuBot extends GlobalVars {
         			return myLocation;		    
             		
             	}
+            	
             	// Since the lumberjack should have successfully separated from the robot that made it... attempt to find a new tree to find...
             	else{	            		
             

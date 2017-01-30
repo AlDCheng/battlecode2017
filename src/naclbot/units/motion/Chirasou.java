@@ -145,5 +145,40 @@ public class Chirasou extends GlobalVars {
 			return null;
 		}
     }
-	
+    
+    // Function for units to collect bullets from any nearby trees......
+    
+    public static void attemptInteractWithTree(MapLocation startingLocation, float bodyRadius) throws GameActionException{
+    	
+    	// Boolean to store whether or not a unit has interacted with a tree yet or no....
+    	boolean hasShaken = false;
+    	
+    	// Iterate over ten different angles....
+    	for (int i = 0; i <= 12; i ++){
+    		
+    		// Derive the direction to check....
+    		Direction directionToCheck = new Direction((float) (i * Math.PI / 6));
+    		
+    		// Derive the location to check
+    		MapLocation locationToCheck = startingLocation.add(directionToCheck, (float)(bodyRadius + 0.9));
+    		
+    		// Get the tree at the location checked, if there is one....
+    		TreeInfo tree = rc.senseTreeAtLocation(locationToCheck);
+    		
+    		// If there is a tree there and no tree has yet been shaken....
+    		if (tree != null && !hasShaken){
+    			
+    			// If there are bullets in the tree.....
+    			if(tree.getContainedBullets() > 0){
+    				
+    				// SYSTEM CHECK - Place a orange dot on any tree that has been shaken...
+    				rc.setIndicatorDot(locationToCheck, 255, 165, 0);
+    				
+    				// Shake the tree and set the boolean for having shaken a tree to true....
+    				rc.shake(tree.ID);
+    				hasShaken = true;
+    			}
+    		}    		
+    	}    	
+    }
 }

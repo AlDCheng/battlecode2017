@@ -150,7 +150,7 @@ public class WallFollowing extends GlobalVars{
 		
 		try {			
 			// Indicator line pink for debug
-//			rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+     		rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
 			
 			// Get point distance
 			float distance = curLoc.distanceTo(dest);

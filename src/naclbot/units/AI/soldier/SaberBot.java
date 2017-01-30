@@ -5,10 +5,12 @@ import battlecode.common.*;
 import naclbot.variables.BroadcastChannels;
 import naclbot.variables.GlobalVars;
 import naclbot.units.interact.iFeed;
+import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.Todoruno;
 import naclbot.units.motion.Yuurei;
 import naclbot.units.motion.shoot.Korosenai;
 import naclbot.units.motion.routing.Routing;
+import naclbot.units.motion.search.EnemyArchonSearch;
 
 
 
@@ -172,8 +174,11 @@ public class SaberBot extends GlobalVars {
         rc.broadcast(BroadcastChannels.SOLDIER_NUMBER_CHANNEL, soldierNumber + 1);
         rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
         
-     // Utilize the first archonlocation by default....... // TODO
-        archonLocation = rc.getInitialArchonLocations(enemies)[0];
+		// Retrieve the correct corresponding archon...
+		archonLocation = EnemyArchonSearch.getCorrespondingArchon();
+		
+		// SYSTEM CHECK - Draw a line to the target enemy archon location...
+		rc.setIndicatorLine(myLocation, archonLocation, 255, 0, 0);
         
         main();
     }
@@ -402,11 +407,12 @@ public class SaberBot extends GlobalVars {
             	else{
               		// SYSTEM CHECK - Inform that the robot has not shot something this round.......
             		System.out.println("The robot has not fired a shot this round....");            		
-            	}
-            	
-            	
+            	}            	
+				
+				// Check to see if the unit can shake a tree....
+				Chirasou.attemptInteractWithTree(myLocation, bodyRadius);
+            	            	
             	// ------------------  Round End Updates --------------------//
-
 
                 // Make it so that the last direction traveled is the difference between the robot's current and final positions for the round...
                 lastDirection = new Direction(myLocation, lastPosition);

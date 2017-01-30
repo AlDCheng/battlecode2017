@@ -65,7 +65,9 @@ public class RemBot extends BestGirlBot {
 	
 	public static void init(){		
 		
+		// Retrieve the correct corresponding archon...
 		archonLocation = EnemyArchonSearch.getCorrespondingArchon();
+		
 		// SYSTEM CHECK - Draw a line to the target enemy archon location...
 		rc.setIndicatorLine(myLocation, archonLocation, 255, 0, 0);
 		
@@ -241,6 +243,9 @@ public class RemBot extends BestGirlBot {
 					// SYSTEM CHECK - Print out that the robot did not move this turn....
 					System.out.println("RemBot didn't move this turn... Subaru didn't notice her T_T");
 				}
+				
+				// Check to see if the unit can shake a tree....
+				Chirasou.attemptInteractWithTree(myLocation, bodyRadius);
 
 				// ------------------------ ROUND END VARIABLE UPDATES ---------------------- //	
 				
@@ -302,7 +307,7 @@ public class RemBot extends BestGirlBot {
     			
     			// Get the locations of the archons
     			MapLocation[] initialLocations = rc.getInitialArchonLocations(enemies);
-    			
+
     			// Randomly select one
     			int randomize = (int) (Math.random() * initialLocations.length);
     			

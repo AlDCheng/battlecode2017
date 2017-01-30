@@ -99,8 +99,11 @@ public class Yuurei extends GlobalVars {
 			directionAway = enemyLocation.directionTo(startingLocation);
 		}
 		
+		// Get the team of the robot - this is important as there is an issue with red side an predicting bullets.....
+		Team team = rc.getTeam();
+		
 		// Get the bullet lines for the current scenario....
-		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation);
+		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation, team);
 		
        	// SYSTEM CHECK- Print out the amount of bytecode used prior to  calculating the dodge location......
        	System.out.println("Bytecode used prior to calculating dodge location: " + Clock.getBytecodeNum());
@@ -121,7 +124,7 @@ public class Yuurei extends GlobalVars {
 			boolean willCollide = false;
 			
 			// Iterate through each bullet line - if the desired location would intersect with any of them.... attempt to find a new point to go to..
-			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius + (float) 0.1)){
+			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius + (float) 0.3)){
 				
 				willCollide = true;
 			}
@@ -267,8 +270,11 @@ public class Yuurei extends GlobalVars {
 		// System.out.println("Inputs are..... nearbyBullets: " + nearbyBullets);
 		// System.out.println("bodyRadius: " + bodyRadius + "strideRadius" + strideRadius);
 		
+		// Get the team of the robot - this is important as there is an issue with red side an predicting bullets.....
+		Team team = rc.getTeam();
+		
 		// Obtain the locations of all bullets within the scanRadius centered at the robot's current location
-		ArrayList <MapLocation> newBulletLocations = getNextBulletLocations(nearbyBullets, scanRadius, startingLocation);
+		ArrayList <MapLocation> newBulletLocations = getNextBulletLocations(nearbyBullets, scanRadius, startingLocation, team);
 		
 		// Add the current bullet locations to the array list...
 		for(int i = 0; i < nearbyBullets.length; i++){
@@ -488,6 +494,7 @@ public class Yuurei extends GlobalVars {
 		//TODO IMplement a different intersect function -based off of distance to a line....
 		
 		for(Line bulletLine: bulletLines){
+			
 			// If either endpoint is within one body radius of the test location, return true...
 			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius || bulletLine.middle.distanceTo(testLocation) <= bodyRadius){			
 				return true;
@@ -500,7 +507,7 @@ public class Yuurei extends GlobalVars {
 
 	// Function to obtain the locations of all the bullets visible within the next turn...
 	
-	public static ArrayList<MapLocation> getNextBulletLocations(BulletInfo[] nearbyBullets, float distance, MapLocation centre) {
+	public static ArrayList<MapLocation> getNextBulletLocations(BulletInfo[] nearbyBullets, float distance, MapLocation centre, Team team) {
 		
 		// Initialize a list of locations where all the bullets will be...
 		ArrayList <MapLocation> newBulletLocations = new ArrayList<MapLocation>(nearbyBullets.length);
@@ -531,7 +538,7 @@ public class Yuurei extends GlobalVars {
 	
 	// Function to obtain the lines of all the bullets in this turn....
 	
-	public static ArrayList<Line> getBulletLines(BulletInfo[] nearbyBullets, float distance, MapLocation centre) {
+	public static ArrayList<Line> getBulletLines(BulletInfo[] nearbyBullets, float distance, MapLocation centre, Team team) {
 		
 		// Initialize a list of locations where all the bullets will be...
 		ArrayList <Line> bulletLines = new ArrayList<Line>();
@@ -552,8 +559,20 @@ public class Yuurei extends GlobalVars {
 			// If either endpoing of the bullet's trajectory is within the search bounds....
 			if(currentLocation.distanceTo(centre) <= distance || newLocation.distanceTo(centre) <= distance){
 				
-				// Create the line corresponding to that bullet's path during this turn.....
-				Line newLine = new Line(currentLocation, newLocation);
+				// Initialize the bullet line...
+				Line newLine;
+				
+				// Due to red team issues, utilize a new location.....
+				if (team.equals(Team.A)){
+					
+					MapLocation redTeamNewLocation = newLocation.add(currentDirection, currentSpeed);	
+					newLine = new Line(newLocation, redTeamNewLocation);
+					
+				}
+				else{
+					// Create the line corresponding to that bullet's path during this turn.....
+					newLine = new Line(currentLocation, newLocation);
+				}
 				
 				// Add the line to the list of bullet lines....
 				bulletLines.add(newLine);
