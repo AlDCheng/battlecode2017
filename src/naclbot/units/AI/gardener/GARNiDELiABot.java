@@ -55,7 +55,7 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	// Build
 	public static ArrayList<Object[]> buildOrder = new ArrayList<Object[]>();
-	private static int scanInt = 5;
+	private static int scanInt = 2;
 	private static int buildRadius = 1;
 	private static float scanRad = (float)1;
 	
@@ -99,6 +99,8 @@ public class GARNiDELiABot extends GlobalVars {
         progressTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
         
         // Determine build order
+        
+        System.out.println("Attempt to find parent");
         int archonNum = determineParent();
         System.out.println("Archon Num: " + archonNum);
         if(archonNum >= 0) {
@@ -145,6 +147,8 @@ public class GARNiDELiABot extends GlobalVars {
 				MapLocation myLocation = rc.getLocation();
 //				initDir = new Direction(myLocation, oppositeEnemyArchon);
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots((float)10, enemyTeam);
+				
+				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem); 
 				
 				// If the robot thought it died previously but didn't.... update information...
             	if(believeHasDied){
