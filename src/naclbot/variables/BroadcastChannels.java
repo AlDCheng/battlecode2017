@@ -89,6 +89,12 @@ public class BroadcastChannels extends GlobalVars {
 	
 	public final static int GARDENER_DISTRESS_CHANNEL = 9502;
 	
+	// Stores units being built
+	public final static int GARDENER_CONSTRUCT_LUMBERJACK = 9001;
+	public final static int GARDENER_CONSTRUCT_SCOUT = 9002;
+	public final static int GARDENER_CONSTRUCT_SOLDIER = 9003;
+	public final static int GARDENER_CONSTRUCT_TANK = 9004;
+	
 	// ----------------------- LUMBERJACK INFORMATION -------------------------//
 	
 	// Stores how many lumber jacks have been constructed so far......

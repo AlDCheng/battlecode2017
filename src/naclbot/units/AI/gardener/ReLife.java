@@ -60,22 +60,41 @@ public class ReLife extends GlobalVars {
 					} else {
 						openness = 0;
 						// Tree weighting; radius = 1 (body) + 2 (tree)
-						float treeLen = rc.senseNearbyTrees(potLoc, radius, null).length;
-						openness += treeLen;
+						TreeInfo[] trees = rc.senseNearbyTrees(potLoc, radius, null);
+						for (int i = 0; i < trees.length; i++) {
+							if (trees[i].team == us) {
+								openness += 5;							
+							}
+							else {
+								openness += 1;
+							}
+						}
 						
 						// Unit weighting (for own Team)
-						openness += rc.senseNearbyRobots(potLoc, radius, us).length;
+						RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
+						for (int i = 0; i < ourBots.length; i++) {
+							if (ourBots[i].type == battlecode.common.RobotType.ARCHON) {
+								openness += 3;
+							}
+							else if (ourBots[i].type == battlecode.common.RobotType.GARDENER) {
+								openness += 5;
+							}
+							else {
+								openness += 1;
+							}
+						}
 						// Unit weighting (for enemy Team)
 //						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
 						RobotInfo[] themBots = rc.senseNearbyRobots(potLoc, radius, them);
-						for (int i = 0; i < themBots.length; i++) {
+						openness += 0.1*themBots.length;
+						/*for (int i = 0; i < themBots.length; i++) {
 							if (themBots[i].type == battlecode.common.RobotType.ARCHON) {
 								openness += 3;
 							}
 							else {
 								openness += 0.1;
 							}
-						}
+						}*/
 					}
 					
 //					System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);

@@ -20,6 +20,9 @@ public class Aqua extends GlobalVars {
 	public static boolean believeHasDied = false;
 	
 	public static float emptyDensity = 0;
+	private static float gardenerWeight = 2;
+	private static float bulletWeight = 0;
+	private static float enemyWeight = 0;
 	
 	// Discreteness of  the initial search to find nearest walls...
     private static final float initialWallCheckGrain = 1;
@@ -116,6 +119,7 @@ public class Aqua extends GlobalVars {
 		Arrays.fill(wallDistances, 0);
 		
 		float emptyArea = 0;
+		float emptyAreaWall = 0;
 		
 		// Check up to a distance of 9 away... and 16 different angles
 		for(int i = 1; i <= 9 / initialWallCheckGrain; i++){			
@@ -132,6 +136,10 @@ public class Aqua extends GlobalVars {
 					// SYSTEM CHECK If the location is free print a BLUE DOT
 					//rc.setIndicatorDot(locationToCheck, 0, 0, 128);
 					
+					if ((i == 9) && !(hitWall[j])) {
+						emptyArea += (float)(1.0/16.0)*(Math.PI*(float)9*(float)9);
+					}
+					
 					if (wallDistances[j] >= 0){
 						wallDistances[j] = i * initialWallCheckGrain;
 					}
@@ -145,17 +153,21 @@ public class Aqua extends GlobalVars {
 						wallDistances[j] *= -1;
 					}
 					
-					if(!hitWall[j]) {
+					if(!hitWall[j] && rc.isLocationOccupiedByTree(locationToCheck)) {
 						hitWall[j] = true;
 //						System.out.println((float)(1.0/16.0)*(Math.PI*(float)i*(float)i));
 						emptyArea += (float)(1.0/16.0)*(Math.PI*(float)i*(float)i);
+					}
+					else if(!hitWall[j]) {
+						hitWall[j] = true;
+						emptyAreaWall += (float)(1.0/16.0)*(Math.PI*(float)9*(float)9);
 					}
 				}
 			}
 		}
 		
 		System.out.println("Empty Area: " + emptyArea);
-		emptyDensity = (float)(emptyArea/(Math.PI*81.0));
+		emptyDensity = (float)(emptyArea/(Math.PI*81.0 - emptyAreaWall));
 		// Placeholder to find the minimum (moving average of three directions)
 		int index = -1;
 		float maximum = Integer.MIN_VALUE;
@@ -258,7 +270,7 @@ public class Aqua extends GlobalVars {
 		// Unit weighting (for own Team)
 		minOpenness += rc.senseNearbyRobots(radius, us).length;
 		// Unit weighting (for enemy Team)
-		minOpenness += 3*rc.senseNearbyRobots(radius, them).length;
+		minOpenness += enemyWeight*rc.senseNearbyRobots(radius, them).length;
 		
 		int empty = 0;
 		int totalchecks = 0;
@@ -297,15 +309,15 @@ public class Aqua extends GlobalVars {
 						RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
 						for (int i = 0; i < ourBots.length; i++) {
 							if (ourBots[i].type == battlecode.common.RobotType.GARDENER) {
-								openness += 1;
+								openness += 1*gardenerWeight;
 							}
 							else {
 								//openness += 0.1;
 							}
 						}
 						// Unit weighting (for enemy Team)
-						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
-						openness += 5*rc.senseNearbyBullets(potLoc, radius).length;
+						openness += enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
+						openness += bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
 						
 						// Check if every space is open
 						if(openness == 0) {

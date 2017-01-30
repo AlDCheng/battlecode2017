@@ -49,7 +49,9 @@ public class iFeed extends GlobalVars {
     	if (bulletsThatWillHit.size() > 0) {
     		remainingHealth = healthLeftBullets(bulletsThatWillHit,currentHealth);
     		
-    		if (remainingHealth < 15) {
+    		System.out.println("Remaining Health: " + remainingHealth);
+    		
+    		if (remainingHealth < 0.1*rc.getType().maxHealth) {
     			System.out.println("will die plz");
     			return true;
     		}
@@ -62,7 +64,7 @@ public class iFeed extends GlobalVars {
     	if (nearbyRobots.length > 0) {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
     		
-    		if (remainingHealth < 15) {
+    		if (remainingHealth < 0.1*rc.getType().maxHealth) {
     			System.out.println("will die plz");
     			return true;
     		} else {
@@ -171,6 +173,12 @@ public class iFeed extends GlobalVars {
  		
  		for(Line bulletLine: bulletLines){
  			// If either endpoint is within one body radius of the test location, return true...
+// 			System.out.println(bulletLine.start + "; " + bulletLine.end);
+ 			rc.setIndicatorLine(bulletLine.start, bulletLine.end, 255, 0, 0);
+ 			
+ 			MapLocation start = bulletLine.start;
+ 			MapLocation end = bulletLine.end;
+ 			
  			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius || bulletLine.middle.distanceTo(testLocation) <= bodyRadius){			
  				intersectBulletDamage.add(bulletLine.damage);
  			}

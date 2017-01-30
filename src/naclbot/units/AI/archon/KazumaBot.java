@@ -106,7 +106,7 @@ public class KazumaBot extends GlobalVars {
     			if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
                 	constructGardeners(1);
                 }
-    			else if ((!crowded) || (pollState == 1)) {
+    			else if (((!crowded) || (pollState == 1)) && (remIsBestGirl >= 75)) {
         			System.out.println("Polling State: " + pollState);
         			// If available:
         			if (pollState == 2) {
