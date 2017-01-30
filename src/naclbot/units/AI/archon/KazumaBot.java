@@ -33,6 +33,7 @@ public class KazumaBot extends GlobalVars {
 	private static final float bodyRadius = battlecode.common.RobotType.ARCHON.bodyRadius;
 	
 	private static int remIsBestGirl = 0;
+	private static int unitNumber;
 	private static final int initMove = 30;
 	private static MapLocation initialGoal, lastPosition;
 	private static Direction lastDirection = new Direction(0);
@@ -51,6 +52,9 @@ public class KazumaBot extends GlobalVars {
 		// Let everyone know where the archon started off......
 		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X, (int) (rc.getLocation().x * 100));
 		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_Y, (int) (rc.getLocation().y * 100));
+		
+		unitNumber = rc.readBroadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL);
+        rc.broadcast(BroadcastChannels.UNIT_NUMBER_CHANNEL, unitNumber + 1);
 		
 		archonNumber = rc.readBroadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL);
 		rc.broadcast(BroadcastChannels.ARCHON_NUMBER_CHANNEL, archonNumber + 1);
@@ -85,6 +89,9 @@ public class KazumaBot extends GlobalVars {
 
             	// Update own location
             	MapLocation myLocation = rc.getLocation();
+            	
+            	RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+            	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), remIsBestGirl);
             	
             	// Store the location that archon wants to go to.... it doesnt want to move by default
             	MapLocation desiredMove = myLocation;	
@@ -247,8 +254,8 @@ public class KazumaBot extends GlobalVars {
             	// Boolean to determine whether or not the archon attempted to hire a gardener this turn or not......
             	boolean hiredGardener = false;  
             	
-            	Direction testDirection = null;
-            	Direction gardenerDirection = null;
+            	Direction testDirection = new Direction(0);
+            	Direction gardenerDirection = new Direction(0);
             	
             	// Build if not crowded
             	if (!crowded || (remIsBestGirl <= initMove)) {

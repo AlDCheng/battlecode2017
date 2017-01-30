@@ -299,13 +299,13 @@ public class BarusuBot extends GlobalVars {
 		       	// If the robot can move to the location it wishes to go to.....
 		       	if(rc.canMove(desiredMove)){
 		       		// Check to see if the robot will die there
-		       		checkDeath(desiredMove);
+//		       		checkDeath(desiredMove);
 		       		// Move to the target location
 		       		rc.move(desiredMove);
 		       	}
 		       	// If the robot didn't move along, check if it would die from staying in its current location....
 		       	else{
-		       		checkDeath(myLocation);
+//		       		checkDeath(myLocation);
 		       	}
 		       	
 		    	// ------------------------ UNIT/TREE INTERACTION ---------------------- //		       	

@@ -24,6 +24,8 @@ public class Aqua extends GlobalVars {
 	private static float bulletWeight = 0;
 	private static float enemyWeight = 0;
 	
+	private static final float sensorRadius = battlecode.common.RobotType.ARCHON.sensorRadius;	
+	
 	// Discreteness of  the initial search to find nearest walls...
     private static final float initialWallCheckGrain = 1;
 	
@@ -66,6 +68,7 @@ public class Aqua extends GlobalVars {
 		
 		// Find optimal space to move to 
 		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees());
+//    	disperseLocation = findOptimalSpace(30, sensorRadius-3, sensorRadius-3, initDirection.getAngleDegrees());
 		if (disperseLocation != null){            		
     		desiredMove = disperseLocation;
     	}
@@ -309,7 +312,10 @@ public class Aqua extends GlobalVars {
 						RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
 						for (int i = 0; i < ourBots.length; i++) {
 							if (ourBots[i].type == battlecode.common.RobotType.GARDENER) {
-								openness += 1*gardenerWeight;
+								openness += 2*gardenerWeight;
+							}
+							else if (ourBots[i].type == battlecode.common.RobotType.ARCHON) {
+								openness += 2;
 							}
 							else {
 								//openness += 0.1;

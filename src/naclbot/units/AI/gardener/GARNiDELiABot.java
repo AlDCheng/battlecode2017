@@ -66,7 +66,7 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	private static float emptyDensity = 1;
 	private static final float emptyDensityThresh = (float)0.5;
-	private static final float initDistThresh = (float)20;
+	private static final float initDistThresh = (float)40;
 	private static final float farDistThresh = (float)60;
 	
 	// Unit entry point
@@ -146,7 +146,7 @@ public class GARNiDELiABot extends GlobalVars {
 				// Get current location
 				MapLocation myLocation = rc.getLocation();
 //				initDir = new Direction(myLocation, oppositeEnemyArchon);
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots((float)10, enemyTeam);
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				
 				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem); 
 				
@@ -810,6 +810,7 @@ public class GARNiDELiABot extends GlobalVars {
 				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount+progressScout);
 			}
 			else {
+				buildOrder = getOrder(buildOrder, "SOLDIER", 1, soldierCount);
 				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount+progressScout);
 			}
 		}
@@ -824,7 +825,7 @@ public class GARNiDELiABot extends GlobalVars {
 			
 			// Default
 			else {
-				buildOrder = getOrder(buildOrder, "SOLDIER", 1, soldierCount);
+				buildOrder = getOrder(buildOrder, "SOLDIER", 2, soldierCount);
 //				buildOrder = getOrder(buildOrder, "LUMBERJACK", 1, lumberjackCount);
 				buildOrder = getOrder(buildOrder, "SCOUT", 1, scoutCount+progressScout);	
 			}
