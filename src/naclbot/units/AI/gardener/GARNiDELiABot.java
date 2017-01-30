@@ -364,11 +364,11 @@ public class GARNiDELiABot extends GlobalVars {
                 	
                 	// No override/order/it failed
                 	if(!hold && rc.isBuildReady()) {
-                		if (gardenerCount > 1 && !holdBuild) {
-                			holdBuild = true;
-                		}
-                		else {
-	                		holdBuild = false;
+//                		if (gardenerCount > 1 && !holdBuild && bulletNum < 150) {
+//                			holdBuild = true;
+//                		}
+//                		else {
+//	                		holdBuild = false;
 	                		System.out.println("Tree Dir: " + buildDirs[0]);
 		                	if ((buildDirs[0] != null) && (unitStart > spaceTime)) {
 		                		System.out.println("Try planting tree");
@@ -379,7 +379,7 @@ public class GARNiDELiABot extends GlobalVars {
 		                	else if (buildDirs[1] != null) {
 		                		buildNextUnit(buildDirs[1], bulletNum, (float)(.7)*(1-emptyDensity));
 		                	}
-                		}
+//                		}
                 	}
                 }
                 
