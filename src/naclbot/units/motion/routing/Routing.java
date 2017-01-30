@@ -124,7 +124,7 @@ public class Routing extends GlobalVars{
 //	    		System.out.println(pastLoc);
 	    		//System.out.println(pastLoc.get(0).distanceTo(curLoc));
 //	    		if(pastLoc.get(0).distanceTo(curLoc) < 2*maxDist) {
-	    			if(Routing.checkPrevPath(curLoc, 3)) {
+	    			if(Routing.checkPrevPath(curLoc, 1)) {
 	//	    			System.out.println("BP-0.5");
 			    		if(WallFollowing.wallFollow) {
 	//		    			pastLoc.remove(0);
@@ -211,6 +211,7 @@ public class Routing extends GlobalVars{
 	    		else {
 //	    			resetRouting();
 	    			WallFollowing.switchWallFollowing(FD);
+	    			return;
 	    		}
 	    		
 	    		// Bug trail
@@ -449,14 +450,16 @@ public class Routing extends GlobalVars{
 						// rc.setIndicatorLine(curLoc, curLoc.add(newDestDir), 255, 0, 0);
 						
 //						System.out.println(rightMod + ", " + upMod);
-						
-						nextPoints = moveAroundTree(curLoc, destDir, curType.bodyRadius);
+						if(rc.senseNearbyTrees(curType.sensorRadius/4 + curType.bodyRadius).length < 5) {
+							nextPoints = moveAroundTree(curLoc, destDir, curType.bodyRadius);
+						}
 						// nextPoints is empty if there are no space; otherwise append re-routing path
 						if(!(nextPoints.isEmpty())) {
 							nextPoints.add(dest); // Add final destination to path
 							return nextPoints; // Return path to exit function
 						}
 						
+						/*
 						// Check horizontal lines behind unit
 						// - Checks up to sensorRadius boundary at intervals of bodyRadius
 						for(float vOffset = curType.bodyRadius/2; vOffset < 1*curType.sensorRadius-curType.bodyRadius; vOffset += curType.bodyRadius) {
@@ -478,7 +481,7 @@ public class Routing extends GlobalVars{
 								nextPoints.add(dest); // Add final destination to path
 								return nextPoints; // Return path to exit function
 							}
-						}
+						}*/
 					}
 				}
 			}
@@ -524,13 +527,15 @@ public class Routing extends GlobalVars{
 						
 //						System.out.println(rightMod + ", " + upMod);
 						
-						nextPoints = moveAroundTree(curLoc, destDir, curType.bodyRadius);
+						if(rc.senseNearbyTrees(curType.sensorRadius/4 + curType.bodyRadius).length < 5) {
+							nextPoints = moveAroundTree(curLoc, destDir, curType.bodyRadius);
+						}
 						// nextPoints is empty if there are no space; otherwise append re-routing path
 						if(!(nextPoints.isEmpty())) {
 							nextPoints.add(dest); // Add final destination to path
 							return nextPoints; // Return path to exit function
 						}
-						
+						/*
 						// Check vertical lines behind unit
 						// - Checks up to sensorRadius boundary at intervals of bodyRadius
 						for(float hOffset = curType.bodyRadius/2; hOffset < 1*curType.sensorRadius-curType.bodyRadius; hOffset += curType.bodyRadius) {
@@ -554,7 +559,7 @@ public class Routing extends GlobalVars{
 								return nextPoints; // Return path to exit function
 							}
 						}
-						
+						*/
 						// No path found
 						return new ArrayList<MapLocation>();
 					}
@@ -969,8 +974,8 @@ public class Routing extends GlobalVars{
 	}
 	
 	public static boolean checkPrevPath(MapLocation intendedPoint, int offset) {
-		System.out.println();
-		System.out.println(intendedPoint);
+//		System.out.println();
+//		System.out.println(intendedPoint);
 		for (int i = 0; i < prevPath.size() - offset; i++) {
 			MapLocation prevLoc = (MapLocation)prevPath.get(i)[0];
 //			System.out.println((MapLocation)prevPath.get(i)[0] + ", " + (float)prevPath.get(i)[1] + "; " + 

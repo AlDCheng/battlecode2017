@@ -167,9 +167,9 @@ public class WallFollowing extends GlobalVars{
 			// If can move in intended direction, exit
 			if (!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(destDir, distDest), rc.getType().bodyRadius)) {
 				System.out.print("Seeing if path has cleared");
-				if (((progX * (curLoc.x - stuckLoc.x) > maxDist) && (progX != 0)) ||
-						((progY * (curLoc.y - stuckLoc.y) > maxDist) && (progY != 0))) {
-//				if(distance < initialDist) {
+//				if (((progX * (curLoc.x - stuckLoc.x) > maxDist) && (progX != 0)) ||
+//						((progY * (curLoc.y - stuckLoc.y) > maxDist) && (progY != 0))) {
+				if(distance < 0.9*initialDist) {
 					if(!Routing.checkPrevPath(curLoc.add(destDir, distDest))) {
 						if (Move.tryMoveReturn(destDir, degreeOffset, checks, distDest, distIntervals, nextPoints)) {
 						
@@ -183,7 +183,9 @@ public class WallFollowing extends GlobalVars{
 			}
 			
 			rc.setIndicatorLine(curLoc, curLoc.add(startAngle,2), 255, 0, 0);
-			if (tryWallFollowReturn(startAngle, wfOffset, maxDist, maxDist/2, nextPoints, curLoc)) {
+//			rc.setIndicatorLine(curLoc, curLoc.add(destDir,2), 255, 0, 0);
+//			if (tryWallFollowReturn(startAngle, wfOffset, maxDist, maxDist/2, nextPoints, curLoc)) {
+			if (tryWallFollowReturnAlt(startAngle, wfOffset/3, maxDist, maxDist/2, nextPoints, curLoc)) {
 				nextPoints.add(dest); // Append final destination to path
 				return nextPoints;
 			}
@@ -244,7 +246,7 @@ public class WallFollowing extends GlobalVars{
 				
 				// While distance length is above a certain threshold, continue searching
 				while(distanceCheck > 0.0001) {
-					System.out.println(dir + ", " + distanceCheck);
+//					System.out.println(dir + ", " + distanceCheck);
 					
 					//rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
 					
@@ -374,5 +376,176 @@ public class WallFollowing extends GlobalVars{
 		
 		// A move never happened, so return false.
 		return nextLoc;
-	}	
+	}
+	
+	// - Test functions	
+	public static boolean tryWallFollowReturnAlt(Direction dir, float degreeOffset, float distance, float distanceInterval, 
+			ArrayList<MapLocation> newPath, MapLocation curLoc) throws GameActionException {
+
+		MapLocation moveLoc = tryWallFollowAlt(dir, degreeOffset, distance, distanceInterval, rc.getType().bodyRadius, curLoc);
+		
+		if(moveLoc != null) {
+			newPath.add(moveLoc);
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	public static MapLocation tryWallFollowAlt(Direction dir, float degreeOffset, float distance, float distanceInterval,
+			float bodyRadius, MapLocation curLoc) throws GameActionException {
+			
+			
+				// Set first distance length to check to be max	    
+				float totalAngle = 0;
+				MapLocation nextLoc = curLoc;
+				
+				Direction dirBU = dir;
+				int modifiedAngle = 0;
+				
+				System.out.println("Trying to wall-follow");
+				// Toggle based off starting angle state:
+				// Blocked:
+				if((rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,2*(float)maxDist), bodyRadius))
+						|| (!rc.onTheMap(curLoc.add(dir,2*(float)maxDist), bodyRadius))) {
+					System.out.println("Starting: wall");
+					
+					while (totalAngle < 359) {
+					
+						float distanceCheck = distance;
+						
+						// While distance length is above a certain threshold, continue searching
+						while(distanceCheck > 0.0001) {
+//							System.out.println(dir + ", " + distanceCheck);
+							
+							//rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+							
+							//if(!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+bodyRadius), bodyRadius)) {
+							if((!rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)distanceCheck), bodyRadius))
+									&& (rc.onTheMap(curLoc.add(dir,(float)distanceCheck), bodyRadius))) {
+								//if(rc.canMove(dir,distanceCheck)) {
+								
+			//					Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
+//								Direction dirMove = dir.rotateLeftDegrees(rotL * 5);
+								Direction dirMove = dir;
+								
+								System.out.println("Checking if can move...");
+								
+								if(rc.canMove(dirMove,distanceCheck)) {
+									// Check if previously visited
+									if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
+										rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
+										
+										Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
+										
+										startAngle = dirRot;
+//										System.out.println(dirMove + ", " + distanceCheck);
+										return curLoc.add(dirMove,distanceCheck);
+									}
+									else {
+										nextLoc = curLoc.add(dirMove, distanceCheck);
+										
+										Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
+										startAngle = dirRot;
+									}
+									//System.out.println(-rotL * 90);
+								}
+							}
+							else {
+//								rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+							}
+							// Set next distance to be check
+							// Decrease by interval value set
+							distanceCheck -= distanceInterval; 
+						}
+						
+						// Check if we are at HV components, and add extra check
+						dir = dir.rotateLeftDegrees(rotL * degreeOffset);
+						dirBU = dir;
+						if((Math.abs(dir.degreesBetween(Direction.EAST)) <= degreeOffset) && (modifiedAngle <= 0)) {
+							modifiedAngle = 2;
+							dir = Direction.EAST;
+						}
+						else if((Math.abs(dir.degreesBetween(Direction.SOUTH)) <= degreeOffset) && (modifiedAngle <= 0)) {
+							modifiedAngle = 2;
+							dir = Direction.SOUTH;
+						}
+						else if((Math.abs(dir.degreesBetween(Direction.WEST)) <= degreeOffset) && (modifiedAngle <= 0)) {
+							modifiedAngle = 2;
+							dir = Direction.WEST;
+						}
+						else if((Math.abs(dir.degreesBetween(Direction.NORTH)) <= degreeOffset) && (modifiedAngle <= 0)) {
+							modifiedAngle = 2;
+							dir = Direction.NORTH;
+						}
+						else {
+							totalAngle += degreeOffset;
+							modifiedAngle--;
+							
+							if(modifiedAngle > 0) {
+								dir = dirBU;
+							}
+						}
+					}
+				}
+				// Free:
+				else {
+					System.out.println("Starting: empty");
+					while (totalAngle <= 360) {
+						
+						float distanceCheck = distance;
+						
+						// While distance length is above a certain threshold, continue searching
+						while(distanceCheck > 0.0001) {
+							//System.out.println(dir + ", " + distanceCheck);
+							
+							//rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+							
+							//if(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)maxDist+bodyRadius), bodyRadius)) {
+							if((rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dir,(float)distanceCheck), bodyRadius))
+									|| (!rc.onTheMap(curLoc.add(dir,(float)maxDist), bodyRadius))) {
+								//if(rc.canMove(dir,distanceCheck)) {
+								
+			//					Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
+								Direction dirMove = dir.rotateLeftDegrees(-rotL * degreeOffset);
+//								Direction dirMove = dir;
+								
+								if(rc.canMove(dirMove,distanceCheck)) {
+									// Check if previously visited
+									if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
+										rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
+										
+										Direction dirRot = dir.rotateLeftDegrees(rotL * 90);
+										
+										startAngle = dirRot;
+//										System.out.println(dirMove + ", " + distanceCheck);
+										return curLoc.add(dirMove,distanceCheck);
+									}
+									else {
+										nextLoc = curLoc.add(dirMove, distanceCheck);
+										
+										Direction dirRot = dir.rotateLeftDegrees(rotL * 90);
+										startAngle = dirRot;
+									}
+									//System.out.println(-rotL * 90);
+									
+								}
+							}
+							else {
+//								rc.setIndicatorLine(curLoc, curLoc.add(dir, 1), 0, 0, 255);
+							}
+							// Set next distance to be check
+							// Decrease by interval value set
+							distanceCheck -= distanceInterval; 
+						}
+						
+						dir = dir.rotateLeftDegrees(rotL * degreeOffset);
+						totalAngle += degreeOffset;
+					}
+				}
+				
+				// A move never happened, so return false.
+				return nextLoc;
+			}	
 }

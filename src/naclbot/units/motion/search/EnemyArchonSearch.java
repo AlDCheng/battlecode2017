@@ -175,7 +175,13 @@ public class EnemyArchonSearch extends GlobalVars {
 				// If there are no pairs then take distances 
 				return takeDistances(enemyArchons, alliedArchons, realArchon);
 			}
-		} 
+		}
+		
+		// HOTFIX: PLEASE REPLACE
+		if (enemyArchons.length >= 0) {
+			return enemyArchons[0];
+		}
+		
 		return null;
 	}
 	
