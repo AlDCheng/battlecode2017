@@ -907,9 +907,13 @@ public class GARNiDELiABot extends GlobalVars {
 			System.out.println("this is the length of the arraylist: " + totalEmpty);
 			for (TreeInfo tree: nearbyTrees) {
 				
+				if (totalEmpty == 0) {
+					break;
+				}
+				
 				//can be cut down if it is neutral 
-				if (tree.getTeam() == Team.NEUTRAL && !alreadyAssignedTrees.contains(tree)) {
-					
+				else if (tree.getTeam() == Team.NEUTRAL && !alreadyAssignedTrees.contains(tree)) {
+
 					rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + emptyChannelOffsets.get(index), tree.getLocation().x);
 					rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + emptyChannelOffsets.get(index) + 1, tree.getLocation().y);
 					
@@ -917,6 +921,7 @@ public class GARNiDELiABot extends GlobalVars {
 					
 					totalEmpty--;
 					index++;
+					
 				}
 				
 			}
