@@ -10,6 +10,7 @@ import naclbot.variables.BroadcastChannels;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
 import naclbot.units.motion.routing.Routing;
+import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.units.motion.search.EnemyArchonSearch;
 
@@ -19,11 +20,11 @@ import java.util.Arrays;
 
 /* ------------------   Overview ----------------------
  * 
- * AI Controlling the functions of the ScoutBot
+ * THIS IS AN ARCHON BOT, NOT A SCOUT
  *
- * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * ~~ Coded by Alan Cheng (adcheng@mit.edu)
  * 
- * Debug statements all begin with SYSTEM CHECK 
+ * Don't read me plz 
  * 
  ---------------------------------------------------- */
 
@@ -95,6 +96,8 @@ public class KazumaBot extends GlobalVars {
 
             	// Update own location
             	MapLocation myLocation = rc.getLocation();
+            	
+            	Chirasou.attemptInteractWithTree(myLocation, bodyRadius);
             	
             	lastPosition = myLocation;
             	

@@ -8,6 +8,7 @@ import naclbot.variables.GlobalVars;
 import naclbot.variables.BroadcastChannels;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
+import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.search.EnemyArchonSearch;
 import naclbot.units.AI.gardener.ReLife;
 
@@ -185,6 +186,9 @@ public class GARNiDELiABot extends GlobalVars {
 				
 				// Get current location
 				MapLocation myLocation = rc.getLocation();
+				
+				Chirasou.attemptInteractWithTree(myLocation, rc.getType().bodyRadius);
+				
 //				initDir = new Direction(myLocation, oppositeEnemyArchon);
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				
