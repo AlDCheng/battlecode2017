@@ -10,6 +10,7 @@ import naclbot.variables.BroadcastChannels;
 import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
 import naclbot.units.motion.routing.Routing;
+import naclbot.units.motion.Chirasou;
 import naclbot.units.motion.search.TreeSearch;
 import naclbot.units.motion.search.EnemyArchonSearch;
 
@@ -19,11 +20,11 @@ import java.util.Arrays;
 
 /* ------------------   Overview ----------------------
  * 
- * AI Controlling the functions of the ScoutBot
+ * THIS IS AN ARCHON BOT, NOT A SCOUT
  *
- * ~~ Coded by Illiyia (akimn@#mit.edu)
+ * ~~ Coded by Alan Cheng (adcheng@mit.edu)
  * 
- * Debug statements all begin with SYSTEM CHECK 
+ * Don't read me plz 
  * 
  ---------------------------------------------------- */
 
@@ -32,6 +33,7 @@ public class KazumaBot extends GlobalVars {
 	public static Team us = rc.getTeam();
 	private static final float strideRadius = battlecode.common.RobotType.ARCHON.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.ARCHON.bodyRadius;
+	private static MapLocation lastBuilt = null;
 	
 	private static int remIsBestGirl = 0;
 	private static int unitNumber;
@@ -94,6 +96,8 @@ public class KazumaBot extends GlobalVars {
 
             	// Update own location
             	MapLocation myLocation = rc.getLocation();
+            	
+            	Chirasou.attemptInteractWithTree(myLocation, bodyRadius);
             	
             	lastPosition = myLocation;
             	
@@ -243,7 +247,7 @@ public class KazumaBot extends GlobalVars {
 		// Variable to store the number of gardeners hired in this phase....
 		int hiredGardeners = 0;
 		
-		MapLocation lastBuilt = null;
+		
 		
         // Starting phase loop
         while ((hiredGardeners < maxGardeners)) {
@@ -311,8 +315,14 @@ public class KazumaBot extends GlobalVars {
 //            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
 //            		}
                 	
-            		
-            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		if (lastBuilt == null) {
+            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		}
+            		else {
+            			if(lastBuilt.distanceTo(myLocation) > 0.5) {
+            				testDirection = new Direction(myLocation, lastBuilt);
+            			}
+            		}
             		
             		rc.setIndicatorLine(myLocation,myLocation.add(testDirection,3),255,0,172);
             		
