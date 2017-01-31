@@ -1012,7 +1012,7 @@ public class GARNiDELiABot extends GlobalVars {
 			float x = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i);
 			float y = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1);
 			MapLocation loc = new MapLocation(x,y);
-			rc.setIndicatorDot(loc);
-
+			rc.setIndicatorDot(loc, 153, 180, 255);
+		}
 	}
 }
