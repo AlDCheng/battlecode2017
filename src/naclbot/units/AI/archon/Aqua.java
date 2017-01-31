@@ -20,7 +20,7 @@ public class Aqua extends GlobalVars {
 	public static boolean believeHasDied = false;
 	
 	public static float emptyDensity = 0;
-	private static float gardenerWeight = 4;
+	private static float gardenerWeight = 20;
 	private static float bulletWeight = 0;
 	private static float enemyWeight = 0;
 	
@@ -453,5 +453,55 @@ public class Aqua extends GlobalVars {
 		System.out.println("Empty Area: " + emptyArea);
 		float density = (float)(emptyArea/(Math.PI*81.0 - emptyAreaWall));
 		return density;
+	}
+	
+	//---------------------------------------------------------------------------------------------
+	// Scans immediate radius of gardener (in degrees)
+	// Output Format: [0]last availible tree plant space; [1]reserved unit building space
+	public static Direction scanBuildRadius(float angleInterval, float start, float dist, float extend) throws GameActionException {
+		// Storage output
+		Direction finalDir = new Direction(start + (float)Math.PI);
+		
+		// Define direction variable
+		Direction dir = new Direction((float)Math.toRadians(start));
+		Direction dirCheck = new Direction((float)Math.toRadians(start)); 
+		
+		MapLocation curLoc = rc.getLocation();
+		
+		// Make sure only one revolution is checked
+		float totalAngle = 0;
+		
+		// Scan for 1 revolution
+		while (totalAngle <= 181) {
+			
+			// Scan both sides around
+			for (int rotSwitch = -1; rotSwitch < 2; rotSwitch+=2) {
+				// Increment values
+				if (start <= 0) {
+					dirCheck = dir.rotateLeftDegrees(rotSwitch * totalAngle);
+				}
+				else {
+					dirCheck = dir.rotateRightDegrees(rotSwitch * totalAngle);
+				}
+				
+				// Get location to search
+				MapLocation newLoc = curLoc.add(dirCheck,dist);
+				
+				// Check if tree can be planted
+				if(rc.canPlantTree(dirCheck)) {
+//						System.out.println("Can be planted");
+					rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
+					
+					if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist),(float)0.5))) {
+						if (rc.onTheMap(newLoc.add(dirCheck, extend), (float)0.5)) {
+							finalDir = dirCheck;
+						}
+					}
+				}
+			}
+			totalAngle += angleInterval;
+		}
+		
+		return finalDir;
 	}
 }

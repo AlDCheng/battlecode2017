@@ -299,7 +299,8 @@ public class KazumaBot extends GlobalVars {
             		else {
             			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
             		}
-                	gardenerDirection = Aqua.tryHireGardener(testDirection);
+//                	gardenerDirection = Aqua.tryHireGardener(testDirection);
+            		gardenerDirection = Aqua.scanBuildRadius(2, testDirection.opposite().getAngleDegrees(), (float)1.5, (float)1);
             	}
   
             	// If the archon can hire a gardener in a certain direction...
