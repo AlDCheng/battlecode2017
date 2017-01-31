@@ -36,6 +36,7 @@ public class KazumaBot extends GlobalVars {
 	private static MapLocation lastBuilt = null;
 	
 	private static int remIsBestGirl = 0;
+	private static int myID;
 	private static int unitNumber;
 	private static final int initMove = 15;
 	private static MapLocation initialGoal, lastPosition;
@@ -46,11 +47,16 @@ public class KazumaBot extends GlobalVars {
 	
 	public static int archonNumber;
 	
+	public static int nearbyBulletTreeCount;
+	public static int chosenBulletTreeChannel = -1;
+	
 	// Starting game phase
 	public static void init() throws GameActionException {
 		
 		// SYSTEM CHECK Initialization start check
 		System.out.println("Hai, hai Kazuma Desu");
+		
+		myID = rc.getID();
 		
 		// Let everyone know where the archon started off......
 		rc.broadcast(BroadcastChannels.ARCHON_INITIAL_LOCATION_X, (int) (rc.getLocation().x * 100));
@@ -75,6 +81,12 @@ public class KazumaBot extends GlobalVars {
         if (numberofGardenersConstructed <= 0) {
         	treeNum = 1;
         }
+        
+        broadcastBulletTreeCount();
+        
+        System.out.println(rc.readBroadcast(20) + " " +  rc.readBroadcast(21));
+        System.out.println(rc.readBroadcast(22) + " " +  rc.readBroadcast(23));
+        System.out.println(rc.readBroadcast(24) + " " + rc.readBroadcast(25));
         
         // Build gardeners
 		constructGardeners(treeNum);
@@ -396,4 +408,40 @@ public class KazumaBot extends GlobalVars {
         // Move to the mainPhase of operations
         idle();
     }
+	
+	public static void broadcastBulletTreeCount() throws GameActionException {
+		nearbyBulletTreeCount = countNearbyShakeableTrees();
+		
+		// Count nearby bullet trees..
+		if (chosenBulletTreeChannel < 0) {
+			//if hasn't initialized it's own unique channel
+			for (int i=0; i<3; i++) {
+	    		//asserts that channel is currently empty
+	    		if (rc.readBroadcast(BroadcastChannels.ARCHONS_BULLET_TREE_CHANNEL + 2*i) == 0) {
+	    			// sets a unique channel for this archon
+	    			rc.broadcast(BroadcastChannels.ARCHONS_BULLET_TREE_CHANNEL + 2*i, myID);
+	    			chosenBulletTreeChannel = BroadcastChannels.ARCHONS_BULLET_TREE_CHANNEL + 2*i + 1;
+	    			break;
+	    		}
+	    		
+			}
+		}
+	
+		rc.broadcast(chosenBulletTreeChannel, nearbyBulletTreeCount);
+	
+	}
+	
+	//counts number of nearby neutral trees than can be shaken (for scout production)
+	public static int countNearbyShakeableTrees() throws GameActionException { 
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+		int count = 0;
+		
+		for (TreeInfo tree: nearbyTrees) { 
+			if (tree.getTeam() == Team.NEUTRAL && tree.getContainedBullets() > 0) {
+				count++;
+			}
+		}
+		
+		return count; 
+	}
 }
