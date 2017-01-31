@@ -1,4 +1,5 @@
-// Handling the FEEDER units 
+// iFeed.java
+// Isabel Naomi Quispe (naoqi@mit.edu) @pinguina
 
 package naclbot.units.interact;
 

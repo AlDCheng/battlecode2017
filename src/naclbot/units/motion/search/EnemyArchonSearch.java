@@ -1,3 +1,6 @@
+// EnemyArchonSearch.java
+// Isabel Naomi Quispe (naoqi@mit.edu) @pinguina
+
 package naclbot.units.motion.search;
 import battlecode.common.*;
 import naclbot.variables.BroadcastChannels;
