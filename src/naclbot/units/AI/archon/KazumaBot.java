@@ -190,7 +190,7 @@ public class KazumaBot extends GlobalVars {
         		// Building gardeners if none exists (i.e. killed)
         		
     			int treeCount = rc.getTreeCount();
-    			if (rc.getTeamBullets() >= 100) {
+    			if (rc.getTeamBullets() >= 150) {
     				if (rc.isBuildReady() && (treeCount > 10) && (3*gardenerCount < treeCount)) {
             			constructGardeners(1);
             		}

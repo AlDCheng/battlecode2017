@@ -38,7 +38,7 @@ public class ReLife extends GlobalVars {
 		// Unit weighting (for enemy Team)
 		minOpenness += 3*rc.senseNearbyRobots(radius, them).length;
 		
-//		System.out.println("Max Length: " + maxLength);
+		System.out.println("Max Length: " + maxLength);
 		float length = lengthInterval;
 		// Declare angle/length modifiers
 		// Check
@@ -70,7 +70,8 @@ public class ReLife extends GlobalVars {
 							if (trees[i].team == us) {
 								openness += 5;							
 							}
-							else if(trees[i].team == Team.NEUTRAL) {
+							else if((trees[i].team == Team.NEUTRAL) && (trees[i].location.distanceTo(curLoc) < 1)) {
+								System.out.println("Location at tree incident: " + potLoc);
 								angleCongestion = (float)angleInterval/(float)360.0;
 							}
 							else {
