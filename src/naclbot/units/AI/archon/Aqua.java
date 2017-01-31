@@ -83,11 +83,16 @@ public class Aqua extends GlobalVars {
 		
 		// Get corrected movement
 		correctedLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove);
+		
+		System.out.println("Original: " + disperseLocation + ", Corrected: " + correctedLocation + ", Distance: " + disperseLocation.distanceTo(correctedLocation));
+		
 		if (correctedLocation != null) {
-			if (rc.canMove(correctedLocation)) {
-				believeHasDied = manageBeingAttacked(correctedLocation, unitNumber);
-				System.out.println("Valid movement in dispersion");
-					rc.move(correctedLocation);
+			if (disperseLocation.distanceTo(correctedLocation) < 2.8) {
+				if (rc.canMove(correctedLocation)) {
+					believeHasDied = manageBeingAttacked(correctedLocation, unitNumber);
+					System.out.println("Valid movement in dispersion");
+						rc.move(correctedLocation);
+				}
 			}
 		}
 	}
@@ -778,24 +783,27 @@ public class Aqua extends GlobalVars {
 				// Compare with existing, and replace if lower
 				int index = 0;
 				float lowOpen = openness[0];
-				if ((openness[1] - openness[0]) > 4) {
+				if ((openness[1] - openness[0]) > 2) {
 					index = 0;
 					lowOpen = openness[0] - (float)0.75*openness[1];
 				}
-				else if ((openness[0] - openness[1]) > 4) {
+				else if ((openness[0] - openness[1]) > 2) {
 					index = 1;
 					lowOpen = openness[1] - (float)0.75*openness[0];
 				}
 				else {
 					if (openness[1] < openness[0]) {
-						lowOpen = 1;
+						lowOpen = openness[1];
 						index = 1;
 					}
 				}
 				
+				System.out.println("Low Open: " + lowOpen);
+				
 				if (lowOpen < minOpenness) {
 					minOpenness = lowOpen;
 					finalLoc = curLoc.add((float)Math.toRadians(angle + 180*index), length);
+					System.out.println("Adding degree: " + angle + 180*index + ", with value: " + minOpenness);
 				}
 				angle += angleInterval;
 				totalAngle += angleInterval;
@@ -805,7 +813,7 @@ public class Aqua extends GlobalVars {
 		
 //		System.out.println("Final: " + finalLoc[0] + ", " + finalLoc[1]);
 		
-		if(empty == totalchecks) {
+		if(totalchecks - empty == 0) {
 			return curLoc;
 		}
 		return finalLoc;
