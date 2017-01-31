@@ -157,6 +157,24 @@ public class GARNiDELiABot extends GlobalVars {
 			try {
 				Win();
 				
+				updateTargetTrees();
+				
+				float x1 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL);
+				float y1 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL+1);
+				float x2 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL+2);
+				float y2 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL+3);
+				float x3 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL+4);
+				float y3 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL+5);
+				
+				MapLocation loc1 = new MapLocation(x1,y1);
+				MapLocation loc2 = new MapLocation(x2,y2);
+				MapLocation loc3 = new MapLocation(x3,y3);
+				
+				rc.setIndicatorDot(loc1,0,0,0);
+				rc.setIndicatorDot(loc2,0,0,0);
+				rc.setIndicatorDot(loc3,0,0,0);
+				
+				
 				int rem = rc.getRoundNum();
 				
 				boolean hold = false;
@@ -860,5 +878,40 @@ public class GARNiDELiABot extends GlobalVars {
 	        neutralTrees = 0;
 	        neutralTreeArea = 0;
 		}	
+	}
+	
+	//updates broadcast array to hold coordinates of trees around gardeners that lumberjacks should cut down
+	public static void updateTargetTrees() throws GameActionException { 
+		//initialize variables
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+		ArrayList<Integer> emptyChannelOffsets = new ArrayList<Integer>();
+		
+		//iterate over possible array spots to see if there is an empty space
+		for (int i=0; i<3; i++) { 
+			if (rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i) <= 0) { 
+				emptyChannelOffsets.add(2*i);
+			}
+		}
+		
+		
+		if (!emptyChannelOffsets.isEmpty()) {
+			
+			int totalEmpty = emptyChannelOffsets.size();
+			int index = 0;
+			System.out.println("this is the length of the arraylist: " + totalEmpty);
+			for (TreeInfo tree: nearbyTrees) {
+				
+				//can be cut down if it is neutral 
+				if (tree.getTeam() == Team.NEUTRAL) {
+					
+					rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + emptyChannelOffsets.get(index), tree.getLocation().x);
+					rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + emptyChannelOffsets.get(index) + 1, tree.getLocation().y);
+					
+					totalEmpty--;
+					index++;
+				}
+				
+			}
+		}
 	}
 }
