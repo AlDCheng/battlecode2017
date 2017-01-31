@@ -208,7 +208,7 @@ public class SaberBot extends GlobalVars {
     		
     		try{    	
     		    // SYSTEM CHECK  Make sure the robot starts its turn
-                System.out.println("Beginning Turn!");    
+                System.out.println("Unit: " + unitNumber + " is beginning Turn!");    
     			
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//        
     			
@@ -421,16 +421,39 @@ public class SaberBot extends GlobalVars {
 		            	if (normieID != -1){		  
 		            		
 		            		// SYSTEM CHECK - Show who the robot is aiming at...
-		            		System.out.println("Currently shooting at a robot with ID: " + normieID);
-		            		
+		            		System.out.println("Currently shooting at a robot with ID: " + normieID);      		
 		            	            		
-		            	
+		            		// Run the overarching function to decide what and how much to shoot
 		            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
 		            		
+		            		// Set the last location fired from to be the current location fired at
 		            		lastFiredLocation = normieEmiliaLover.location;
 		            		
+		            		// Reset tracking variables.....
 	            			normieID= -1;
 	            			normieEmiliaLover = null;
+	            			
+	            			if(enemyRobots.length >= 1){
+	            				
+	            				// Within the first 300 turns, broadcast any enemies shot at....
+	            				if(myWaifuIsOnodera <= 400){
+	            					
+	            					// Broadcast the location currently fired at.....
+	            					BroadcastChannels.broadcastFiringLocations(unitNumber, lastFiredLocation);
+	            				}
+	            				// Otherwise if sufficient time has passed and there are at least two units nearby...
+	            				else if (myWaifuIsOnodera <= 800 && enemyRobots.length >= 2){
+	            					
+	            					// Broadcast the location currently fired at.....
+	            					BroadcastChannels.broadcastFiringLocations(unitNumber, lastFiredLocation);
+	            				}
+	            				// Otherwise if even more time has passed and there are at least three enemies nearby...
+	            				else if(myWaifuIsOnodera > 800 && enemyRobots.length >= 3){
+	            					
+	            					// Broadcast the location currently fired at.....
+	            					BroadcastChannels.broadcastFiringLocations(unitNumber, lastFiredLocation);
+	            				}	            				
+	            			}
 		            	}		  
 		            	else{
 		            		
@@ -498,8 +521,51 @@ public class SaberBot extends GlobalVars {
 				        					}				
 				        				}
 			            			}
-			        				lastFiredLocation = null;
+			        				lastFiredLocation = null;			        						
 			            		}
+		     		        }
+		            		
+		            		// If there isn't a lastFiredLocation, try to obtain a location to fire at through the 
+		            		else{
+		            			
+		            			// Cannot broadcast far out locations to shoot since there are soldiers who shoot outside of this block...
+		            			/* 
+		            			// Placeholder for a location to fire to...
+		            			MapLocation newFiringLocation = null;
+		            			
+		            			// In the early game adopt a fairly large range...
+		            			if(myWaifuIsOnodera <= 400){
+	            					
+	            					// Obtain a firing location...
+	            					newFiringLocation = BroadcastChannels.readFiringLocations(myLocation, sensorRadius + 2);
+	            				}
+		            			else{
+		            				// Obtain a firing location...
+	            					newFiringLocation = BroadcastChannels.readFiringLocations(myLocation, (float) (sensorRadius + 1.5));
+		            			}
+		            			
+		            			// If there is a place for the robot to fire to.......
+		            			if(newFiringLocation != null){
+
+		            				// SYSTEM CHECK - Print out that that the robot found a location to shoot at
+        							System.out.println("Obtained a far away firing location.....");
+        							
+		            				// Make sure there is no neutral tree visible in the way......
+		            				if (!Korosenai.isLineBLockedByTree(myLocation, newFiringLocation, 1)){		            				Direction firingDirection = myLocation.directionTo(newFiringLocation);
+		            				
+			            				// Check to see if the robot can fire a single...
+		        						if(Korosenai.canFireSingle(firingDirection, myLocation, alliedRobots, alliedTrees)){
+		        							
+		        							// SYSTEM CHECK - Print out that that the robot fired a single at a far away target.....
+		        							System.out.println("Fired a single at unknown enemy.......");
+		        							
+		        							// Fire the triad
+		        							rc.fireSingleShot(firingDirection);
+	        							}				
+		            				}
+		            			}
+		            			*/
+		            			
 		            		}
 		            	}
 		            	
@@ -767,7 +833,7 @@ public class SaberBot extends GlobalVars {
 		}
 		
 		
-		if((myWaifuIsOnodera >= 500 && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
+		if((myWaifuIsOnodera >= 250 * archonLocationFactor && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
 			
 			// SYSTEM CHECK - Print out that the robot will now attempt to fire at archons...
 			System.out.println("Will now attempt to shoot archons....");
