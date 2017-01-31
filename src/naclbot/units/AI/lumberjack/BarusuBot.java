@@ -110,7 +110,7 @@ public class BarusuBot extends GlobalVars {
     // Constants for movement....
     private static final int initialDispersionRounds = 2; // Number of rounds for which the lumberjack will be forced to move away from its initial location
     private static final int distanceDefend = 5; // The maximum distance at which the lumberjack will sincerely attempt to defend its allies...
-    private static final float maxDistanceToTargetTree = (float) 6; // The maximum distance at which a lumberjack a tree to chop down......
+    private static final float maxDistanceToTargetTree = (float) 0; // The maximum distance at which a lumberjack a tree to chop down......
     
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
@@ -497,7 +497,9 @@ public class BarusuBot extends GlobalVars {
 					else{
 						
 						// If there is no robot to track and the robot is not currently attempting to go to a single tree, utilize the target tree....
-						if(targetTree == null){
+						/*
+						  	if(targetTree == null){
+						 
 							
 							// Read the gardener channels to get a new target tree...........
 							targetTree = readTargetTree();
@@ -646,9 +648,10 @@ public class BarusuBot extends GlobalVars {
 								}
 							}
 						}
+						
 						// If the robot had no target tree.......
 						else{
-						
+						*/
 							// Search for a tree to harvest
 			            	TreeInfo nearestNeutralTree = getNextTreeToHarvest(nearbyTrees, myLocation); 
 			 
@@ -719,7 +722,7 @@ public class BarusuBot extends GlobalVars {
 			            			return myLocation;	            		
 			            		}
 			            	}
-		            	}           				
+		            	// }           				
 		            }
 	            }	        		
 			}         
