@@ -76,9 +76,10 @@ public class KazumaBot extends GlobalVars {
 	
 	//--------------------------------------------------------------------------------------------------------------
 	// Idle state / Main function
-	public static void idle() throws GameActionException {	
-        while (true) {
-        	
+	public static void idle() throws GameActionException {
+		int pollTimeOut = 0;
+		boolean hold = false;
+        while (true) {        	
             // catch 
             try {
             	// If can win, win
@@ -110,6 +111,10 @@ public class KazumaBot extends GlobalVars {
         		// See if we can start polling for a new gardener.
     			int pollState = rc.readBroadcast(BroadcastChannels.GARDENER_POLL);
     			
+    			if(!(pollState == 1)) {
+    				pollTimeOut = 0;
+    			}
+    			
     			if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
                 	constructGardeners(1);
                 }
@@ -119,7 +124,7 @@ public class KazumaBot extends GlobalVars {
         			if (pollState == 2) {
         				constructGardeners(1);
         			}
-        			else if ((pollState == 0) && (rc.getTeamBullets() >= 100)) {
+        			else if ((pollState == 0) && (rc.getTeamBullets() >= 150)) {
         				rc.broadcast(BroadcastChannels.GARDENER_BUILD_FILL, 0);
         				rc.broadcast(BroadcastChannels.GARDENER_POLL, 1);
         				startPoll = true;
@@ -138,13 +143,29 @@ public class KazumaBot extends GlobalVars {
         					rc.broadcast(BroadcastChannels.GARDENER_POLL, 0);
         				}
         			}
-        		}                
+        			else {
+        				System.out.println("Poll Timer: " + pollTimeOut);
+        				if (pollTimeOut > 3) {
+        					rc.broadcast(BroadcastChannels.GARDENER_POLL, 0);
+        				}
+        				pollTimeOut++;
+        			}
+        		}
+    			else if (pollState == 1){
+    				System.out.println("Poll Timer: " + pollTimeOut);
+    				if (pollTimeOut > 3) {
+    					rc.broadcast(BroadcastChannels.GARDENER_POLL, 0);
+    				}
+    				pollTimeOut++;
+    			}
         		// Building gardeners if none exists (i.e. killed)
         		
     			int treeCount = rc.getTreeCount();
-        		if (rc.isBuildReady() && (treeCount > 10) && (3*gardenerCount < treeCount)) {
-        			constructGardeners(1);
-        		}
+    			if (rc.getTeamBullets() >= 100) {
+    				if (rc.isBuildReady() && (treeCount > 10) && (3*gardenerCount < treeCount)) {
+            			constructGardeners(1);
+            		}
+    			}
             	
             	// SYSTEM CHECK - Inform that the archon is attempting to construct a gardener....
             	System.out.println("Currently not doing anything..............." );
@@ -154,7 +175,7 @@ public class KazumaBot extends GlobalVars {
             	
             	// Movement----------------------------------------------------------------------------------
             	if (remIsBestGirl > initMove) {
-            		Aqua.disperseFromGardeners(myLocation, strideRadius, bodyRadius, testDirection.opposite());
+            		Aqua.disperseFromGardeners(myLocation, strideRadius, bodyRadius, testDirection.opposite(), unitNumber);
             	}
             	// Move to optimal spot at initialization
             	else {
@@ -164,7 +185,10 @@ public class KazumaBot extends GlobalVars {
             			
             			desiredMove = myLocation.add(dir, strideRadius);
             			rc.setIndicatorLine(rc.getLocation(), desiredMove, 255, 0, 0);
-            			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, us, myLocation, desiredMove));
+            			
+            			MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, us, myLocation, desiredMove);
+    					Aqua.believeHasDied = Aqua.manageBeingAttacked(correctedMove, unitNumber);
+            			rc.move(correctedMove);
             		}
             	}
             	//-------------------------------------------------------------------------------------------
@@ -304,7 +328,7 @@ public class KazumaBot extends GlobalVars {
             	
             	// Movement----------------------------------------------------------------------------------
             	if (remIsBestGirl > initMove) {
-            		Aqua.disperseFromGardeners(myLocation, strideRadius, bodyRadius, testDirection.opposite());
+            		Aqua.disperseFromGardeners(myLocation, strideRadius, bodyRadius, testDirection.opposite(), unitNumber);
             	}
             	// Move to optimal spot at initialization
             	else {
@@ -313,7 +337,9 @@ public class KazumaBot extends GlobalVars {
             			Direction dir = new Direction (rc.getLocation(), initialGoal);
             			
             			desiredMove = myLocation.add(dir, strideRadius);
-            			rc.move(Yuurei.correctAllMove(strideRadius, bodyRadius, false, us, myLocation, desiredMove));
+            			MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, us, myLocation, desiredMove);
+    					Aqua.believeHasDied = Aqua.manageBeingAttacked(correctedMove, unitNumber);
+            			rc.move(correctedMove);
             		}
             	}
             	//-------------------------------------------------------------------------------------------

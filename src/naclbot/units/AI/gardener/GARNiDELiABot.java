@@ -22,6 +22,17 @@ public class GARNiDELiABot extends GlobalVars {
 	public static int tankCount;
 	public static int gardenerCount;
 	
+	// Get enemy info:
+	public static int enemyArchons;
+	public static int enemyGardeners;
+	public static int enemyLumberjacks;
+	public static int enemyScouts;
+	public static int enemySoldiers;
+	public static int enemyTanks;
+	public static int enemyTrees;
+	public static int neutralTrees;
+	public static float neutralTreeArea;
+	
 	// Archon information
 	public static MapLocation myArchon = null;
 	public static MapLocation oppositeEnemyArchon;
@@ -38,7 +49,6 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	// Gardener info
 	static int unitNumber;
-	public static boolean believeHasDied = false;
 	
 	// Timers and CDs
 	public static int buildingLumberjack = 0;
@@ -56,7 +66,7 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	// Build
 	public static ArrayList<Object[]> buildOrder = new ArrayList<Object[]>();
-	private static int scanInt = 2;
+	private static int scanInt = 5;
 	private static int buildRadius = 1;
 	private static float scanRad = (float)1;
 	
@@ -74,8 +84,8 @@ public class GARNiDELiABot extends GlobalVars {
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		
-		// NOT FOUND IN THIS FILE ANYMORE, LOOK IN ENEMYARCHONSEARCH
-		EnemyArchonSearch.getCorrespondingArchon();
+		// Manage archons
+		manageCorrespondingArchon();
 		
 		// Get own soldierNumber - important for broadcasting 
         int gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
@@ -98,6 +108,10 @@ public class GARNiDELiABot extends GlobalVars {
         progressSoldier = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER);
         progressLumberjack = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK);
         progressTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
+        
+        // Get enemy info:
+        
+        getDatafromRem(rc.getRoundNum());
         
         // Determine build order
         
@@ -124,7 +138,7 @@ public class GARNiDELiABot extends GlobalVars {
 		Direction buildDir = initDir;
 		Direction buildVec = new Direction(0);
 		
-		//boolean believeHasDied = false;
+		boolean believeHasDied = false;
 		boolean override = false;
 		boolean canMove = true;
 		
@@ -149,16 +163,17 @@ public class GARNiDELiABot extends GlobalVars {
 //				initDir = new Direction(myLocation, oppositeEnemyArchon);
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				
-				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem);
+				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem); 
+				
+				// If the robot thought it died previously but didn't.... update information...
+            	if(believeHasDied){
+            		believeHasDied = false;
+            		fixAccidentalDeathNotification();
+            	}
 				
 				// Get distress location if applicable
 				System.out.println("Previous health: " + previousHealth);
             	BroadcastChannels.broadcastDistress(previousHealth, enemyRobots, myLocation, unitNumber);
-            	
-            	// If the robot thought it died previously but didn't.... update information...
-            	if(believeHasDied){
-            		fixAccidentalDeathNotification();
-            	}
             	
                 // Check number of all units currently in service
                 scoutCount = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);                
@@ -171,6 +186,9 @@ public class GARNiDELiABot extends GlobalVars {
                 progressSoldier = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER);
                 progressLumberjack = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK);
                 progressTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
+                
+            	// Get enemy info:
+                getDatafromRem(rem);
                 
                 System.out.println("Gardener: " + gardenerCount);
                 System.out.println("Scouts: " + scoutCount + ", Soldiers: " + soldierCount + 
@@ -195,19 +213,41 @@ public class GARNiDELiABot extends GlobalVars {
                 // Attempt movement     
                 MapLocation destPoint = movement(canMove, myLocation, ourTeam, sensorRadius, prevMoveDir);
                 if(destPoint != null) {
-                	checkDeath(myLocation);
+                	believeHasDied = manageBeingAttacked(destPoint);
                 	rc.move(destPoint);
-                	
                 }
                 else {
-                	checkDeath(myLocation);
+                	manageBeingAttacked(myLocation);
                 }
             	
                 //--------------------------------------------------------------------------------
                 // Override
                 
+                // Check for enemy tree count
+                if (!override && (enemyTrees > rc.getTreeCount()) && (initDist > 50)) {
+                	
+                	// If present override next build order with tree
+                	Object order[] = new Object[2];
+                	order[0] = new String("TREE");
+                	order[1] = new Integer(1);
+                	buildOrder.add(0, order);
+                	override = true;
+                }
+                
+                // Check for scout count
+                if (!override && (scoutCount+progressScout <= 0) && (rem > 200)) {
+                	
+                	// If present override next build order with scout
+                	Object order[] = new Object[2];
+                	order[0] = new String("SCOUT");
+                	order[1] = new Integer(1);
+                	buildOrder.add(0, order);
+                	override = true;
+                }
+
                 // Check for surrounding enemies
-                if (!override && rc.senseNearbyRobots(myLocation, sensorRadius, enemyTeam).length > 0) {
+                if ((!override && rc.senseNearbyRobots(myLocation, sensorRadius, enemyTeam).length > 0) ||
+                	(!override && (enemySoldiers > 5) && (rc.getTreeCount() > soldierCount))){
                 	
                 	// If present override next build order with soldier
                 	Object order[] = new Object[2];
@@ -217,11 +257,13 @@ public class GARNiDELiABot extends GlobalVars {
                 	override = true;
                 }
                 
-                if (!override && (scoutCount+progressScout <= 0) && (rem > 200)) {
+                // Check for tree density
+                if (!override && (((neutralTrees > 20) && (lumberjackCount <= 0) && (soldierCount > 1)) ||
+    			((neutralTrees > 20) && (rem > 200) && (saturated) && (lumberjackCount < 10)) ||
+    			((neutralTreeArea > (Math.PI*5*5)) && (rem > 200) && (lumberjackCount < 2)))) {
                 	
-                	// If present override next build order with scout
                 	Object order[] = new Object[2];
-                	order[0] = new String("SCOUT");
+                	order[0] = new String("LUMBERJACK");
                 	order[1] = new Integer(1);
                 	buildOrder.add(0, order);
                 	override = true;
@@ -246,6 +288,7 @@ public class GARNiDELiABot extends GlobalVars {
                 	}
                 	
                 	System.out.println("Congestion: " + ReLife.congestion);
+                	System.out.println("Neutral Trees: " + neutralTrees);
                 	
                 	//----------------------------------------------------------------------------
                 	// Congestion override
@@ -277,7 +320,7 @@ public class GARNiDELiABot extends GlobalVars {
                 			}
                 		}
                 		// Else add lumberjack order
-                		else {
+                		else if (!((String)buildOrder.get(0)[0]).equals("LUMBERJACK")){
                 			Object newOrder[] = new Object[2];
                         	newOrder[0] = new String("LUMBERJACK");
                         	newOrder[1] = 1;
@@ -321,7 +364,10 @@ public class GARNiDELiABot extends GlobalVars {
                     		}
                     		else {
                     			RobotType nextType = parseString(nextBuild);
-                    			if (((nextType != RobotType.SCOUT) && bulletNum < 100) || ((nextType == RobotType.SCOUT) && bulletNum < 80)) {
+                    			if((nextType == RobotType.SCOUT) && (scoutCount + progressScout > 2)) {
+                    				buildOrder.remove(0);
+                    			}
+                    			else if (((nextType != RobotType.SCOUT) && bulletNum < 100) || ((nextType == RobotType.SCOUT) && (bulletNum < 80))) {
                     				System.out.println("Hold it!");
                     				hold = true;
                     				break;
@@ -365,11 +411,11 @@ public class GARNiDELiABot extends GlobalVars {
                 	
                 	// No override/order/it failed
                 	if(!hold && rc.isBuildReady()) {
-//                		if (gardenerCount > 1 && !holdBuild && bulletNum < 150) {
-//                			holdBuild = true;
-//                		}
-//                		else {
-//	                		holdBuild = false;
+                		if (gardenerCount > 1 && !holdBuild && saturated) {
+                			holdBuild = true;
+                		}
+                		else {
+	                		holdBuild = false;
 	                		System.out.println("Tree Dir: " + buildDirs[0]);
 		                	if ((buildDirs[0] != null) && (unitStart > spaceTime)) {
 		                		System.out.println("Try planting tree");
@@ -380,7 +426,7 @@ public class GARNiDELiABot extends GlobalVars {
 		                	else if (buildDirs[1] != null) {
 		                		buildNextUnit(buildDirs[1], bulletNum, (float)(.7)*(1-emptyDensity));
 		                	}
-//                		}
+                		}
                 	}
                 }
                 
@@ -461,8 +507,8 @@ public class GARNiDELiABot extends GlobalVars {
         			// If can move to location...
         			if (newLoc != null) {
         				
-        				// Determine death
-        				checkDeath(newLoc);
+        				// Determine distress
+        				manageBeingAttacked(newLoc);
         				return newLoc;
         			}
         		}
@@ -488,8 +534,8 @@ public class GARNiDELiABot extends GlobalVars {
             		// If can move to location...
             		if (newLoc != null) {
             			
-            			// Determine death
-            			checkDeath(newLoc);
+            			// Determine distress
+            			manageBeingAttacked(newLoc);
             			return newLoc;
             		}
             	}
@@ -536,7 +582,7 @@ public class GARNiDELiABot extends GlobalVars {
 	//----------------------------------[Distress]----------------------------------
 	public static void fixAccidentalDeathNotification() throws GameActionException {
 		// Reset belief in the robot dying this round....
-		believeHasDied = false;    	
+//    	believeHasDied = false;    	
 
 		// Get the current number of soldiers in service
         int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
@@ -545,24 +591,71 @@ public class GARNiDELiABot extends GlobalVars {
         rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners + 1);
 	}
 	
-	// Function to check if the scout will die if it moves to a certain location
+	public static boolean manageBeingAttacked(MapLocation loc) throws GameActionException{
+		boolean beingAttacked = iFeed.willBeAttacked(loc);
+		if (beingAttacked) {
+			RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+			BroadcastChannels.broadcastDistress(rc.getHealth(), enemyRobots, rc.getLocation(), unitNumber);
+			boolean willDie = iFeed.willFeed(loc);
+			if (willDie) {
+				
+				// Get the current number of soldiers in service
+		        int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+		        
+		        // Update soldier number for other units to see.....
+		        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners - 1);
+		        
+		        return true;
+
+			}
+			else {
+				return false;
+			}
+		}
+		return false;
+	}
 	
-    private static void checkDeath(MapLocation location) throws GameActionException{
-    			
-		// If the lumberjack will lose all of its health from moving to that location....
-		boolean willDie = iFeed.willFeed(location);
+	//-----------------------------------[Archon]-----------------------------------
+	public static void manageCorrespondingArchon() throws GameActionException {
 		
-		// If the lumberjack believes that it will die this turn....
-		if (willDie) {
-			
-			// Set the belief variable to true.....
-			believeHasDied = true;
-			
-			// Get the current number of gardeners in service
-	        int currentGardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
-	        
-	        // Update gardener number for other units to see.....
-	        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, currentGardenerNumber - 1);			
+		// Declare variables
+		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation myLocation = rc.getLocation();
+		float minDistance = Float.MAX_VALUE;
+		numArchons = archons.length;
+		
+		// Determine archon that hired this particular gardener 
+		for (MapLocation archon: archons) {
+			if (myLocation.distanceTo(archon) < minDistance) {
+				myArchon = archon;
+				minDistance = myLocation.distanceTo(archon);
+			} 
+		}
+		
+		System.out.print("My archon is: ");
+		System.out.println(myArchon);
+		oppositeEnemyArchon = EnemyArchonSearch.opposingEnemyArchon(myArchon);
+		
+		initDist = myLocation.distanceTo(oppositeEnemyArchon);
+		initDir = new Direction(myLocation, oppositeEnemyArchon);
+		
+		System.out.print("Opposite enemy archon is: ");
+		System.out.println(oppositeEnemyArchon);
+		rc.setIndicatorDot(oppositeEnemyArchon, 0, 0, 100);
+		
+		// Broadcast to channel
+		if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_1) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_1, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 2, oppositeEnemyArchon.y);
+		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_2) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_2, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 2, oppositeEnemyArchon.y);
+		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_3) == 0) {
+			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_3, 1);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 1, oppositeEnemyArchon.x);
+			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 2, oppositeEnemyArchon.y);
 		}
 	}
 	
@@ -647,7 +740,7 @@ public class GARNiDELiABot extends GlobalVars {
 				System.out.println("Try Scout");
 				
 				// Have scout in commission
-				if (scoutCount <= 0) {
+				if (scoutCount + progressScout <= 0) {
 //				if (soldierCount > 5*scoutCount) {
 					if (((scoutCount + progressScout) < Math.ceil(rc.getRoundNum()/500)) && (scoutCount < 2/*SCOUT_LIMIT*/)) {
 						if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild)) {
@@ -784,5 +877,34 @@ public class GARNiDELiABot extends GlobalVars {
 		}
 		
 		return build;		
+	}
+	
+	private static void getDatafromRem(int roundNum) throws GameActionException {
+		int rem = rc.readBroadcast(BroadcastChannels.REMBOT_INDICATOR_CHANNEL);
+		
+		if(Math.abs(roundNum - rem) <= 2) {
+			// Get enemy info:
+	        enemyArchons = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START);
+	        enemyGardeners = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 1);
+	        enemyLumberjacks = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 2);
+	        enemyScouts = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 3);
+	        enemySoldiers = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 4);
+	        enemyTanks = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 5);
+	        enemyTrees = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 6);
+	        neutralTrees = rc.readBroadcast(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 7);
+	        neutralTreeArea = rc.readBroadcastFloat(BroadcastChannels.REMBOT_INFORMATION_CHANNEL_START + 8);
+		}
+		else {
+			// Reset enemy info:
+	        enemyArchons = 0;
+	        enemyGardeners = 0;
+	        enemyLumberjacks = 0;
+	        enemyScouts = 0;
+	        enemySoldiers = 0;
+	        enemyTanks = 0;
+	        enemyTrees = 0;
+	        neutralTrees = 0;
+	        neutralTreeArea = 0;
+		}	
 	}
 }

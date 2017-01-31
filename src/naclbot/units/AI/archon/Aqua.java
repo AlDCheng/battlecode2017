@@ -20,7 +20,7 @@ public class Aqua extends GlobalVars {
 	public static boolean believeHasDied = false;
 	
 	public static float emptyDensity = 0;
-	private static float gardenerWeight = 2;
+	private static float gardenerWeight = 4;
 	private static float bulletWeight = 0;
 	private static float enemyWeight = 0;
 	
@@ -29,44 +29,49 @@ public class Aqua extends GlobalVars {
 	// Discreteness of  the initial search to find nearest walls...
     private static final float initialWallCheckGrain = 1;
 	
-	public static boolean manageBeingAttacked(MapLocation loc) throws GameActionException{
-		boolean beingAttacked = iFeed.willBeAttacked(loc);
-		float currentHealth = rc.getHealth();
-		float maxHealth = rc.getType().getStartingHealth();
-		if (beingAttacked && currentHealth < (0.5*maxHealth)) {
-			// BIT 0 - GIVES MY X
-			// BIT 1 - GIVES MY Y
-			int numArchonsBeingAttacked = rc.readBroadcast(BroadcastChannels.ARCHONS_UNDER_ATTACK);
-			int channelStartNum = BroadcastChannels.ARCHONS_UNDER_ATTACK + numArchonsBeingAttacked * 2;
-			
-			rc.broadcastFloat(channelStartNum + 1, loc.x);
-			rc.broadcastFloat(channelStartNum + 2, loc.y);
-			
-			boolean willDie = iFeed.willFeed(loc);
-			if (willDie) {
-				believeHasDied = true;
-				
-				// Get the current number of soldiers in service
-		        int numberOfAliveArchons = rc.readBroadcast(BroadcastChannels.ARCHONS_ALIVE_CHANNEL);
-		        
-		        // Update soldier number for other units to see.....
-		        rc.broadcast(BroadcastChannels.ARCHONS_ALIVE_CHANNEL, numberOfAliveArchons - 1);
-		        return true;
-				
-			}
-			else {
-				return false;
-			}
-		}
-		return false;
-	}
+  //----------------------------------[Distress]----------------------------------
+  	public static void fixAccidentalDeathNotification() throws GameActionException {
+  		// Reset belief in the robot dying this round....
+//      	believeHasDied = false;    	
+
+  		// Get the current number of soldiers in service
+          int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+          
+          // Update soldier number for other units to see.....
+          rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners + 1);
+  	}
+  	
+  	public static boolean manageBeingAttacked(MapLocation loc, int unitNumber) throws GameActionException{
+  		boolean beingAttacked = iFeed.willFeed(loc);
+  		if (beingAttacked) {
+  			RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+  			BroadcastChannels.broadcastDistress(rc.getHealth(), enemyRobots, rc.getLocation(), unitNumber);
+  			boolean willDie = iFeed.willFeed(loc);
+  			if (willDie) {
+  				
+  				// Get the current number of soldiers in service
+  		        int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+  		        
+  		        // Update soldier number for other units to see.....
+  		        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners - 1);
+  		        
+  		        return true;
+
+  			}
+  			else {
+  				return false;
+  			}
+  		}
+  		return false;
+  	}
+  	
         
-	public static void disperseFromGardeners(MapLocation myLocation, float strideRadius, float bodyRadius, Direction initDirection) throws GameActionException { 
+	public static void disperseFromGardeners(MapLocation myLocation, float strideRadius, float bodyRadius, Direction initDirection, int unitNumber) throws GameActionException { 
 		//initialize variables
     	MapLocation disperseLocation, correctedLocation;
     	MapLocation desiredMove = myLocation;
 		
-		// Find optimal space to move to 
+		// Find optimal space to move to
 		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees());
 //    	disperseLocation = findOptimalSpace(30, sensorRadius-3, sensorRadius-3, initDirection.getAngleDegrees());
 		if (disperseLocation != null){            		
@@ -77,6 +82,7 @@ public class Aqua extends GlobalVars {
 		correctedLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove);
 		if (correctedLocation != null) {
 			if (rc.canMove(correctedLocation)) {
+				believeHasDied = manageBeingAttacked(correctedLocation, unitNumber);
 				System.out.println("Valid movement in dispersion");
 					rc.move(correctedLocation);
 			}
@@ -304,20 +310,22 @@ public class Aqua extends GlobalVars {
 					
 					// Add penalty for cases on edge of map (equivalent to 3 trees)
 					if(!(rc.onTheMap(potLoc, 2))) {
+						empty++;
+						openness = (float)0.5;
 //						openness = (float)0.5;
 					} else {
 						openness = 0;
 						// Tree weighting; radius = 1 (body) + 2 (tree)
-						openness += rc.senseNearbyTrees(potLoc, radius, null).length;
+						openness += 2*rc.senseNearbyTrees(potLoc, radius, null).length;
 						// Unit weighting (for own Team)
 //						openness += rc.senseNearbyRobots(potLoc, radius, us).length;
 						RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
 						for (int i = 0; i < ourBots.length; i++) {
 							if (ourBots[i].type == battlecode.common.RobotType.GARDENER) {
-								openness += 2*gardenerWeight;
+								openness += gardenerWeight;
 							}
 							else if (ourBots[i].type == battlecode.common.RobotType.ARCHON) {
-								openness += 2;
+								openness += 1;
 							}
 							else {
 								//openness += 0.1;
@@ -327,8 +335,10 @@ public class Aqua extends GlobalVars {
 						openness += enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
 						openness += bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
 						
+						System.out.println("Angle: " + angle + ", openness: " + openness);
+						
 						// Check if every space is open
-						if(openness == 0) {
+						if(openness <= 1){
 							empty++;
 						}
 					}
