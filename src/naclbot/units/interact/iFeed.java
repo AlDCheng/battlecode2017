@@ -230,14 +230,23 @@ public class iFeed extends GlobalVars {
  			if(currentLocation.distanceTo(centre) <= distance || newLocation.distanceTo(centre) <= distance){
  			// Initialize the bullet line...
 				Line newLine;
-		
-				newLine = new Line(currentLocation, newLocation, bullet.getDamage());
-				
+				/*
+				// Due to red team issues, utilize a new location.....
+				if (rc.getTeam().equals(Team.A)){
+					
+					MapLocation redTeamNewLocation = newLocation.add(currentDirection, currentSpeed);	
+					newLine = new Line(newLocation, redTeamNewLocation, bullet.getDamage());
+					
+				}
+				else{
+					// Create the line corresponding to that bullet's path during this turn.....
+					newLine = new Line(currentLocation, newLocation, bullet.getDamage());
+				}
+				*/
+				newLine = new Line(currentLocation,newLocation,bullet.getDamage());				
 				// Add the line to the list of bullet lines....
 				bulletLines.add(newLine);
-				
-				// SYSTEM CHECK - Display all the bullet lines....
-				newLine.display();
+
  			}
  		}
  		return bulletLines;
