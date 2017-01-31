@@ -410,7 +410,7 @@ public class KazumaBot extends GlobalVars {
     }
 	
 	public static void broadcastBulletTreeCount() throws GameActionException {
-		nearbyBulletTreeCount = countNearbyShakeableTrees();
+		nearbyBulletTreeCount = countNearbyShakeableTreeBullets();
 		
 		// Count nearby bullet trees..
 		if (chosenBulletTreeChannel < 0) {
@@ -432,16 +432,16 @@ public class KazumaBot extends GlobalVars {
 	}
 	
 	//counts number of nearby neutral trees than can be shaken (for scout production)
-	public static int countNearbyShakeableTrees() throws GameActionException { 
+	public static int countNearbyShakeableTreeBullets() throws GameActionException { 
 		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
-		int count = 0;
+		int bulletCount = 0;
 		
 		for (TreeInfo tree: nearbyTrees) { 
 			if (tree.getTeam() == Team.NEUTRAL && tree.getContainedBullets() > 0) {
-				count++;
+				bulletCount = bulletCount + tree.getContainedBullets();
 			}
 		}
 		
-		return count; 
+		return bulletCount; 
 	}
 }
