@@ -185,7 +185,7 @@ public class WallFollowing extends GlobalVars{
 			rc.setIndicatorLine(curLoc, curLoc.add(startAngle,2), 255, 0, 0);
 //			rc.setIndicatorLine(curLoc, curLoc.add(destDir,2), 255, 0, 0);
 //			if (tryWallFollowReturn(startAngle, wfOffset, maxDist, maxDist/2, nextPoints, curLoc)) {
-			if (tryWallFollowReturnAlt(startAngle, wfOffset/3, maxDist, maxDist/2, nextPoints, curLoc)) {
+			if (tryWallFollowReturnAlt(startAngle, wfOffset/2, maxDist, maxDist/2, nextPoints, curLoc)) {
 				nextPoints.add(dest); // Append final destination to path
 				return nextPoints;
 			}
@@ -262,6 +262,8 @@ public class WallFollowing extends GlobalVars{
 						System.out.println("Checking if can move...");
 						
 						if(rc.canMove(dirMove,distanceCheck)) {
+							
+							System.out.println("Check bugging");
 							// Check if previously visited
 							if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
 								rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);

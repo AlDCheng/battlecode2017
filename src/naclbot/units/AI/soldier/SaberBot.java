@@ -255,7 +255,7 @@ public class SaberBot extends GlobalVars {
             	// ------------------------ MOVEMENT FUNCTIONS------------------------ //      
             	
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
-            	MapLocation desiredMove = decideAction(distressInfo, enemyRobots);
+            	MapLocation desiredMove = decideAction(distressInfo, enemyRobots, alliedRobots);
             	
 		       	if(desiredMove != null){
 			       	// SYSTEM CHECK - Print out where the desired move is.....
@@ -376,7 +376,7 @@ public class SaberBot extends GlobalVars {
 		    		// SYSTEM CHECK - Print out that the robot did not move
 		       		System.out.println("Soldier did not move this turn....");
 		       				       		
-		       		checkDeath(myLocation);
+		       		// checkDeath(myLocation);
 		       	} 
 		       	
 		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to shooting.......
@@ -462,7 +462,7 @@ public class SaberBot extends GlobalVars {
     
 	// Function to determine how the robot will act this turn....
 	
-	private static MapLocation decideAction(BroadcastChannels.BroadcastInfo distressInfo, RobotInfo[] enemyRobots) throws GameActionException{
+	private static MapLocation decideAction(BroadcastChannels.BroadcastInfo distressInfo, RobotInfo[] enemyRobots, RobotInfo nearbyAllies[]) throws GameActionException{
 		
 		// If the scout found some distress signal this turn...
     	if(distressInfo != null){
@@ -487,7 +487,7 @@ public class SaberBot extends GlobalVars {
     	if (defendLocation != null && roundsDefending <= giveUpDefending){    		
 
 			// Call the defend function to determine what to do.....
-    		return defend(enemyRobots);
+    		return defend(enemyRobots, nearbyAllies);
     	}
     	
     	// Otherwise just call the move function normally......
@@ -501,14 +501,14 @@ public class SaberBot extends GlobalVars {
     		}
     		
     		// Call the move function to determine where the robot will actually end up going.....
-    		return move(enemyRobots);
+    		return move(enemyRobots, nearbyAllies);
     	}
 	}
     
     
 	// Function for the robot to go back and defend if it has received a distress signal....
     
-	private static MapLocation defend(RobotInfo[] enemyRobots) throws GameActionException{		
+	private static MapLocation defend(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{		
 
 		// If it already nearby or can simply sense the offending unit, track it
 		if(rc.canSenseRobot(defendAgainstID)){
@@ -529,7 +529,7 @@ public class SaberBot extends GlobalVars {
 			System.out.println("Found the offending enemy....");
 			
 			// Track the enemy....            			
-			return engage(enemyRobots);           			
+			return engage(enemyRobots, nearbyAllies);           			
 		}
 		// If the robot has gotten close enough to the defend location and has not yet exited the defned loop, do so....
 		else if (myLocation.distanceTo(defendLocation) <= strideRadius){
@@ -542,7 +542,7 @@ public class SaberBot extends GlobalVars {
 			defendAgainstID = -1; 		
 			
 			// Decide a new action to go to the move loop......			
-			return decideAction(null, enemyRobots);
+			return decideAction(null, enemyRobots, nearbyAllies);
 		
 		}
 		
@@ -593,7 +593,7 @@ public class SaberBot extends GlobalVars {
 			if (normieEmiliaLover == null){
 				
 				// Call the move function
-				return moveTowardsGoalLocation(enemyRobots);	
+				return moveTowardsGoalLocation(enemyRobots, nearbyAllies);	
 			}
 			else{				
 				// Update the normieID
@@ -603,13 +603,13 @@ public class SaberBot extends GlobalVars {
 	    		System.out.println("The soldier has noticed the enemy Robot with ID: " + normieID);
 
 				// Call the engage function.........
-				return engage(enemyRobots);  
+				return engage(enemyRobots, nearbyAllies);  
 			
 			}
 		}            		         		
 	} 
 	
-    private static MapLocation move(RobotInfo[] enemyRobots) throws GameActionException{
+    private static MapLocation move(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{
 
 		// SYSTEM CHECK - Print out that the robot is searching for nearest enemy to engage
 		System.out.println("Searching for the next enemy to engage...."); 
@@ -672,7 +672,7 @@ public class SaberBot extends GlobalVars {
 			System.out.println("Attempting to move to the goal location at: " + goalLocation.toString());
 			
        		// Call the routing function to obtain a location to go to........
-			return moveTowardsGoalLocation(enemyRobots);
+			return moveTowardsGoalLocation(enemyRobots, nearbyAllies);
     	} 
 		
 		// If there is a robot to track....
@@ -688,7 +688,7 @@ public class SaberBot extends GlobalVars {
     		System.out.println("The soldier has noticed the enemy Robot with ID: " + normieID);
 
 			// Call move again with the updated information - so that the robot will pass into the second bloc of logic
-			return engage(enemyRobots);   	
+			return engage(enemyRobots, nearbyAllies);   	
 		
 		// If there is no robot to be tracked and the robot is not receiving any orders
 		} else{
@@ -730,7 +730,7 @@ public class SaberBot extends GlobalVars {
     			System.out.println("Attempting to move to last known location of the archon.....");
 
     			// Tell the robot to go towards the commanded location....		            			
-    			return moveTowardsGoalLocation(enemyRobots);
+    			return moveTowardsGoalLocation(enemyRobots, nearbyAllies);
     		}
     		else{
     			return myLocation;	            		
@@ -741,11 +741,10 @@ public class SaberBot extends GlobalVars {
     // Function to follow a unit and approach it..... Similar to scout code but a soldier will never stop following the robot..... 
     // A soldier bot's job in life is to hunt down and kill what it is tracking... especially if the thing it is tracking likes Emilia
     
-	private static MapLocation engage(RobotInfo[] enemyRobots) throws GameActionException{
+	private static MapLocation engage(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{
 		
 		// If the robot can currently sense the robot it was tracking in the previous turn
     	if (rc.canSenseRobot(normieID) && normieEmiliaLover != null){
-
     		
     		// SYSTEM CHECK - See if the robot identifies that it is actually tracking something
     		System.out.println("Engaging a normie lover with ID: " + normieID);
@@ -753,7 +752,18 @@ public class SaberBot extends GlobalVars {
     		// Update location of tracked robot 
     		normieEmiliaLover = rc.senseRobot(normieID);
     		
-    		if (normieEmiliaLover.type == RobotType.SOLDIER || normieEmiliaLover.type == RobotType.LUMBERJACK || normieEmiliaLover.type == RobotType.TANK){
+    		// If the enemy is a soldier - utilize the more complex engageSoldier function.....
+    		if (normieEmiliaLover.type == RobotType.SOLDIER){
+    			
+    			return Todoruno.engageSoldier(myLocation, normieEmiliaLover, strideRadius, sensorRadius, enemyRobots, nearbyAllies);
+    			
+    			
+    			
+    			
+    		}
+    		
+    		// Otherwise if the enemy is a lumberjack or a tank...
+    		else if (normieEmiliaLover.type == RobotType.LUMBERJACK || normieEmiliaLover.type == RobotType.TANK){
     		
 	    		// SYSTEM CHECK - Draw a VIOLET LINE between current position and position of robot
 	    		rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 150, 0, 200);
@@ -763,6 +773,8 @@ public class SaberBot extends GlobalVars {
 	        	
 	        	return desiredMove;
     		}
+    		
+    		// If the enemy is a scout.....
     		else if (normieEmiliaLover.type == RobotType.SCOUT){    			
     			
     	 		// SYSTEM CHECK - Draw a FUSCHIA LINE between current position and position of robot - 
@@ -772,6 +784,7 @@ public class SaberBot extends GlobalVars {
 	    		return Todoruno.engageCivilian(myLocation, normieEmiliaLover, strideRadius);
     			
     		}
+    		
     		// If the target is a gardener or archon.....
     		else{
     			
@@ -818,7 +831,7 @@ public class SaberBot extends GlobalVars {
 	
     // Function to use when moving towards a certain location with a certain target.....
     
-    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots) throws GameActionException{
+    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{
     	
     	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
     	if (myLocation.distanceTo(goalLocation) < 2 || roundsRouting >= giveUpOnRouting){
@@ -834,7 +847,7 @@ public class SaberBot extends GlobalVars {
     		isCommanded = false;
     		
     		// Call the move function again...
-    		return move(enemyRobots);
+    		return move(enemyRobots, nearbyAllies);
     	}
     	
     	else{

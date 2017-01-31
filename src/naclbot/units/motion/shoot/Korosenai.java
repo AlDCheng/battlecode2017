@@ -22,12 +22,12 @@ import java.util.Random;
 public class Korosenai extends GlobalVars {
 	
 	// Maximum distance away from current location that the functions will sweep in order to make sure that the robot will not hit the ally.....
-	public static final float maximumAllyCheckDistance = 3;
+	public static final float maximumAllyCheckDistance = (float) 3.5;
 	public static final float maximumAllyTreeCheckDistance = 0;
 	
 	// Firing line offsets...
-	public static final float triadOffset = 20;
-	public static final float pentadOffset = 15;
+	public static final float triadOffset = (float) (Math.PI/ 9);
+	public static final float pentadOffset = (float) (Math.PI/12);
 	
 	// Firing location finder constants;
 	public static final int firingLocationChecksPerSide = 8;
@@ -70,7 +70,47 @@ public class Korosenai extends GlobalVars {
     	// If by the end of the for loop nothing is there, then we return false, meaning that the line isn't blocked
     	}
     	return false;
-    }
+    }    
+    
+    // Function to detect if there is an ally in a straight line......
+    
+    public static boolean isLineBLockedByAlly(
+    		
+    		// Input Variables
+    		MapLocation start, // The start location of the line check
+    		MapLocation end, // The end location of the line....
+    		
+    		float spacing // How of ten to check for an obstacle...
+    		
+    		) throws GameActionException {
+        	
+        	// Find the direction from the starting point to the end
+        	Direction search = start.directionTo(end);
+        	
+        	// Iterate up through the length of the gap between the two selected points
+        	for(int i = 0; i * spacing < start.distanceTo(end); i++){
+        		
+        		if(rc.canSenseLocation(start.add(search, (float)  (i * spacing)))){
+    	    		
+    	    		// If there is a tree in the way, say so..,
+    	    		if (rc.isLocationOccupiedByRobot(start.add(search, (float)  (i * spacing)))){
+    	    			
+    	    			RobotInfo blockingRobot = rc.senseRobotAtLocation(start.add(search, (float) (i * spacing)));
+    	    			
+    	    			// Make sure that the blocking robot is on the team of the robot calling the function
+    	    			if(blockingRobot.team == rc.getTeam()){
+    	    				
+	    	    		   	// SYSTEM CHECK print Green dot at where the blocking tree is located...
+	    	    	    	rc.setIndicatorDot(blockingRobot.location, 0, 255, 0);
+	    	    			
+	    	    			return true;
+    	    			}
+    	    		}
+        		}
+        	// If by the end of the for loop nothing is there, then we return false, meaning that the line isn't blocked
+        	}
+        	return false;
+        }        
     
    
     // Function to ensure that no allied tree in in between the firing locatio nand the target location..
@@ -224,6 +264,14 @@ public class Korosenai extends GlobalVars {
     	// Obtain the direction is shooting at
     	Direction targetedDirection = currentLocation.directionTo(targetLocation);
     	
+    	// Get the distance to the enemy robot (important for shooting pentads, etc...)
+    	float distance = currentLocation.distanceTo(targetLocation);
+    	
+    	// If the distance is greater than the sight radius try something smaller....
+    	if (distance >= sightRadius - 0.5){
+    		distance = (float) (sightRadius - 0.5);
+    	}
+    	
     	// First check if the gap is small enough to check
     	if (targetLocation.distanceTo(currentLocation) < sightRadius){
     		
@@ -238,15 +286,19 @@ public class Korosenai extends GlobalVars {
     	}    	
     	
     	// If the robot wishes to fire a single shot....
-    	if (shotType == 0){
+    	if (shotType == 0){    		
+    		
+			// rc.setIndicatorLine(currentLocation, currentLocation.add(targetedDirection, 10), 0, 0, 0);
     		
     		// SYSTEM CHECK Print out that attempting to fire single shot
     		System.out.println("Attempting to fire single shot");
     		
     		// If no allies are going to be instantly hit by the bullets... 
     		if (!isDirectionOccupiedByAlly(currentLocation, targetedDirection, nearbyAllies, maximumAllyCheckDistance) && 
-    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance) &&
-    					!isLineBLockedByTree(currentLocation, targetedEnemy.location, 1)){
+    				!isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+    			
+    			// SYSTEM CHECK - Print out that there was as tree in the way....
+    			System.out.println("Did not fire because allied unit in the way of shooting");
     			
     			// If the opponent is a gardener, attempt to shoot through a tree....
     			if(targetedEnemy.type == RobotType.GARDENER){
@@ -267,7 +319,7 @@ public class Korosenai extends GlobalVars {
     			else{
     				
     				// Make sure your team is rich enough for you to fire something at them.....    			
-        			if(rc.canFireSingleShot() && !isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius - 1), 1)){
+        			if(rc.canFireSingleShot() && !isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, distance), 1)){
         				
     	    			// Fire!
     	    			rc.fireSingleShot(targetedDirection);	    			
@@ -289,22 +341,27 @@ public class Korosenai extends GlobalVars {
     		for (int j = -1; j <= 1; j++){
     			
     			// Get the direction that the bullet will be traveling at
-    			Direction fireDirection = new Direction (targetedDirection.radians + j * triadOffset);
+    			Direction fireDirection = new Direction (targetedDirection.radians + j * triadOffset);    			
+    			
+    			// rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 0, 0, 0);
     			
     			// If no allies are going to be instantly hit by the bullets... 
 	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) || 
-	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)
-	    				|| isLineBLockedByTree(currentLocation, targetedEnemy.location, 1)){
+	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+	    			
+	    			// SYSTEM CHECK - Print out that there was as tree in the way....
+	    			System.out.println("Did not fire because allied unit in the way of shooting");
 	    				
 	    			return false;	    			
 	    		}    
-	    		if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius - 1), 1)){
+	    		if((targetedEnemy.type == RobotType.SOLDIER ||targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT)
+	    				&& isLineBLockedByTree(currentLocation, currentLocation.add(fireDirection, distance), 1)){
 	    			
 	    			// SYSTEM CHECK - Print out that there was as tree in the way....
-	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack");
+	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack or soldier");
 	    			
-    				return false;	    			
-	    		}    		
+					return false;	    			
+		    	}
     		}   
    
 			if(rc.canFireTriadShot()){
@@ -329,17 +386,22 @@ public class Korosenai extends GlobalVars {
     			// Get the direction that the bullet will be traveling at
     			Direction fireDirection = new Direction (targetedDirection.radians + j * pentadOffset);
     			
+    			// rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 0, 0, 0);
+    			
     			// Check to see if no allies are going to be hit by bullets.....
 	    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
-	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)
-	    				|| isLineBLockedByTree(currentLocation, targetedEnemy.location, 1)){
+	    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+	    			
+	    			// SYSTEM CHECK - Print out that there was as tree in the way....
+	    			System.out.println("Did not fire because allied unit in the way of shooting");	    			
 	    			
 	    			return false;
 	    		}
-				if((targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT) && isLineBLockedByTree(currentLocation, currentLocation.add(targetedDirection, sightRadius - 1), 1)){
+				if((targetedEnemy.type == RobotType.SOLDIER ||targetedEnemy.type == RobotType.LUMBERJACK  || targetedEnemy.type == RobotType.SCOUT)
+						&& isLineBLockedByTree(currentLocation, currentLocation.add(fireDirection, distance), 1)){
 	    			
 	    			// SYSTEM CHECK - Print out that there was as tree in the way....
-	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack");
+	    			System.out.println("Did not fire because tree in the way of shooting at scout or lumberjack or soldier");
 	    			
 					return false;	    			
 		    	}

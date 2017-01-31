@@ -256,6 +256,9 @@ public class Todoruno extends GlobalVars {
 		return returnRobot;
 	}
 	
+	
+	// Function used primarily to fight lumberjacks - kites away..........
+	
 	public static MapLocation engageEnemy(
 		
 		// Input variables....
@@ -333,6 +336,8 @@ public class Todoruno extends GlobalVars {
 		return null;
 	}
 	
+	// Function utilized when engaging a civilian - runs up towards the enemy always...
+	
 	
 	public static MapLocation engageCivilian(
 			
@@ -379,6 +384,9 @@ public class Todoruno extends GlobalVars {
 		return startingLocation;		
 	}
 	
+	
+	// Function used specifically when engaging an enemy soldier..............
+	
 	public static MapLocation engageSoldier(
 			
 		// Input Variables
@@ -388,59 +396,56 @@ public class Todoruno extends GlobalVars {
 		
 		float strideRadius, // The stride radius of the robot.........
 		
+		float sensorRadius, // The sensor ardius of the robot
+		
 		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............	
 		
-		RobotInfo[] nearbyAllies // The RobotInfo of all nearby allies...		
-		){
+		RobotInfo[] nearbyAllies // The RobotInfo of all nearby allies...	
+		
+		) throws GameActionException{
 		
 		// SYSTEM CHECK - Make sure that the soldier knows that it is engaging a soldier........... Print out a crimson dot on the soldier.....
-		System.out.println("Engaging an enemy soldier with ID: " );
+		System.out.println("Engaging an enemy soldier with ID: " );		
 		rc.setIndicatorDot(startingLocation, 220, 20, 60);
 		
+		// Get array lists of all nearby allied and enemy soldiers..........		
 		ArrayList<RobotInfo> nearestEnemySoldiers = Chirasou.getNearestSoldiers(nearbyEnemies, startingLocation);
 		ArrayList<RobotInfo> nearestAlliedSoldiers = Chirasou.getNearestSoldiers(nearbyAllies, startingLocation);
 		
+		// Retrieve the location of the enemy soldier....
+		MapLocation enemyLocation = enemySoldier.location;
 		
+		System.out.println("Number of nearby enemy soldiers: " + nearestEnemySoldiers.size() + " allied soldiers: " + nearestAlliedSoldiers.size());
 		
-		
-		
-		
-		
-		
+		if (nearestEnemySoldiers.size() == 1 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1)){
+			
+			// SYSTEM CHECK - Draw a Yellow line to the target enemy...........
+			rc.setIndicatorLine(startingLocation, enemyLocation, 255, 255, 0);
+			
+			return startingLocation;
+		}	
+		else{
+			return engageEnemy(startingLocation, enemySoldier, strideRadius, sensorRadius -1);
+		}
+	}	
 	
+	
+	// Function to run at the soldier and fire pentads........... 
+	// Assumes that there are no trees in the way between the soldier and the enemy soldier being charged
+	
+	private static MapLocation chargeSoldier(MapLocation startingLocation, RobotInfo enemySoldier, float strideRadius){
 		
 		
 		
 		
 		
 		
+		return startingLocation;
 		
 		
 		
 		
-		
-		
-		
-		
-		return null;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	

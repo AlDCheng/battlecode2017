@@ -89,6 +89,9 @@ public class Yuurei extends GlobalVars {
 			// SYSTEM CHECK - Draw a blue dot on the location that the robot wishes to go to....
 			rc.setIndicatorDot(desiredLocation, 0, 0, 255);
 		}
+		else{
+			desiredLocation = startingLocation;
+		}
 	
 		// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
 		float scanRadius = strideRadius + bodyRadius;
@@ -220,14 +223,14 @@ public class Yuurei extends GlobalVars {
 						// If the robot would collide with a bullet in the location 
 						else{							
 							// SYSTEM CHECK - Show which location the robot decides as invalid - red
-							rc.setIndicatorDot(testLocation1, 255, 0, 0);	
+							// rc.setIndicatorDot(testLocation1, 255, 0, 0);	
 						}						
 					}
 					// If the test location isn't possible for the robot to move to
 					else{
 						
 					// SYSTEM CHECK - Show which location the robot decides as invalid - lavender
-					rc.setIndicatorDot(testLocation1, 230, 230, 250);
+					// rc.setIndicatorDot(testLocation1, 230, 230, 250);
 					
 					}
 					
@@ -251,14 +254,14 @@ public class Yuurei extends GlobalVars {
 						else{
 							
 							// SYSTEM CHECK - Show which location the robot decides as invalid - red
-							rc.setIndicatorDot(testLocation2, 255, 0, 0);
+							// rc.setIndicatorDot(testLocation2, 255, 0, 0);
 							break;
 						}						
 					}
 					// If the test location isn't possible for the robot to move to
 					else{
 					// SYSTEM CHECK - Show which location the robot decides as invalid - lavender
-					rc.setIndicatorDot(testLocation2, 230, 230, 250);
+					// rc.setIndicatorDot(testLocation2, 230, 230, 250);
 					}			
 				}		
 			} 
@@ -526,10 +529,9 @@ public class Yuurei extends GlobalVars {
 		for(Line bulletLine: bulletLines){
 			
 			// If either endpoint is within one body radius of the test location, return true...
-			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius){			
+			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius){
 				return true;
-			}
-			
+			}			
 			if(bulletLine.end.distanceTo(testLocation) <= bodyRadius){
 				return true;
 			}			
@@ -604,8 +606,9 @@ public class Yuurei extends GlobalVars {
 				// Due to red team issues, utilize a new location.....
 				if (team.equals(Team.A)){
 					
-					MapLocation redTeamNewLocation = newLocation.add(currentDirection, currentSpeed);	
-					newLine = new Line(newLocation, redTeamNewLocation);
+					// MapLocation redTeamNewLocation = newLocation.add(currentDirection, currentSpeed);	
+					newLine = new Line(currentLocation, newLocation);
+					// newLine = new Line(newLocation, redTeamNewLocation);
 					
 				}
 				else{

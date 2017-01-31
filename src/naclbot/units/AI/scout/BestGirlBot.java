@@ -1149,32 +1149,21 @@ public class BestGirlBot extends GlobalVars {
 	// Function to check if the scout will die if it moves to a certain location
 	
     private static void checkDeath(MapLocation location) throws GameActionException{
-    	
-    	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
-		boolean beingAttacked = iFeed.willBeAttacked(location);
+    			
+		// If the lumberjack will lose all of its health from moving to that location....
+		boolean willDie = iFeed.willFeed(location);
 		
-		// If it will get hit from that location....
-		if (beingAttacked) {
+		// If the lumberjack believes that it will die this turn....
+		if (willDie) {
 			
-			// SYSTEM CHECK - Print out that the robot thinks it will die this turn....
-			System.out.println("Moving to desired location will result in death........");
+			// Set the belief variable to true.....
+			believeHasDied = true;
 			
-			// If the lumberjack will lose all of its health from moving to that location....
-			boolean willDie = iFeed.willFeed(location);
-			
-			// If the lumberjack believes that it will die this turn....
-			if (willDie) {
-				
-				// Set the belief variable to true.....
-				believeHasDied = true;
-				
-				// Get the current number of lumberjacks in service
-		        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
-		        
-		        // Update lumberjack number for other units to see.....
-		        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber - 1);
-
-			}
+			// Get the current number of lumberjacks in service
+	        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
+	        
+	        // Update lumberjack number for other units to see.....
+	        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber - 1);			
 		}
 	}
     

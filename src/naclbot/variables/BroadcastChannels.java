@@ -125,6 +125,7 @@ public class BroadcastChannels extends GlobalVars {
 		// Bit 6 - Enemy trees seen thus far
 		// Bit 7 - Neutral trees seen this turn	
 		// Bit 8 - Neutral tree area seen this turn.....
+	
 	public final static int REMBOT_INFORMATION_CHANNEL_START = 8964;
 
 

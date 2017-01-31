@@ -760,37 +760,28 @@ public class RemBot extends BestGirlBot {
     
 	// Function to check if the scout will die if it moves to a certain location
 	
-    private static void checkRemDeath(MapLocation location) throws GameActionException{
-    	
-    	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
-		boolean beingAttacked = iFeed.willBeAttacked(location);
+    private static void checkRemDeath(MapLocation location) throws GameActionException{    	
+
+		// If the lumberjack will lose all of its health from moving to that location....
+		boolean willDie = iFeed.willFeed(location);
 		
-		// If it will get hit from that location....
-		if (beingAttacked) {
+		// If the lumberjack believes that it will die this turn....
+		if (willDie) {
 			
-			// SYSTEM CHECK - Print out that the robot thinks it will die this turn....
-			System.out.println("Moving to desired location will result in death........");
+			// Set the belief variable to true.....
+			believeHasDied = true;
 			
-			// If the lumberjack will lose all of its health from moving to that location....
-			boolean willDie = iFeed.willFeed(location);
-			
-			// If the lumberjack believes that it will die this turn....
-			if (willDie) {
-				
-				// Set the belief variable to true.....
-				believeHasDied = true;
-				
-				// Get the current number of scouts in service
-		        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
-		        
-		        // Update scout number for other units to see.....
-		        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber - 1);
-		        
-		        // Get the current number of RemBots in service
-		        int currentRemBotNumber = rc.readBroadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL);
-		        
-		        rc.broadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL, currentRemBotNumber - 1);
-			}
+			// Get the current number of scouts in service
+	        int currentScoutNumber = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);
+	        
+	        // Update scout number for other units to see.....
+	        rc.broadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL, currentScoutNumber - 1);
+	        
+	        // Get the current number of RemBots in service
+	        int currentRemBotNumber = rc.readBroadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL);
+	        
+	        rc.broadcast(BroadcastChannels.REMBOT_ALIVE_CHANNEL, currentRemBotNumber - 1);
+		
 		}
 	}
     
