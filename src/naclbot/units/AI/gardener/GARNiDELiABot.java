@@ -38,6 +38,7 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	// Gardener info
 	static int unitNumber;
+	public static boolean believeHasDied = false;
 	
 	// Timers and CDs
 	public static int buildingLumberjack = 0;
@@ -73,8 +74,8 @@ public class GARNiDELiABot extends GlobalVars {
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		
-		// Manage archons
-		manageCorrespondingArchon();
+		// NOT FOUND IN THIS FILE ANYMORE, LOOK IN ENEMYARCHONSEARCH
+		EnemyArchonSearch.getCorrespondingArchon();
 		
 		// Get own soldierNumber - important for broadcasting 
         int gardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
@@ -123,7 +124,7 @@ public class GARNiDELiABot extends GlobalVars {
 		Direction buildDir = initDir;
 		Direction buildVec = new Direction(0);
 		
-		boolean believeHasDied = false;
+		//boolean believeHasDied = false;
 		boolean override = false;
 		boolean canMove = true;
 		
@@ -148,13 +149,7 @@ public class GARNiDELiABot extends GlobalVars {
 //				initDir = new Direction(myLocation, oppositeEnemyArchon);
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				
-				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem); 
-				
-				// If the robot thought it died previously but didn't.... update information...
-            	if(believeHasDied){
-            		believeHasDied = false;
-            		fixAccidentalDeathNotification();
-            	}
+				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem);
 				
 				// Get distress location if applicable
 				System.out.println("Previous health: " + previousHealth);
@@ -200,10 +195,12 @@ public class GARNiDELiABot extends GlobalVars {
                 // Attempt movement     
                 MapLocation destPoint = movement(canMove, myLocation, ourTeam, sensorRadius, prevMoveDir);
                 if(destPoint != null) {
+                	checkDeath(myLocation);
                 	rc.move(destPoint);
+                	
                 }
                 else {
-                	believeHasDied = manageBeingAttacked(myLocation);
+                	checkDeath(myLocation);
                 }
             	
                 //--------------------------------------------------------------------------------
@@ -464,8 +461,8 @@ public class GARNiDELiABot extends GlobalVars {
         			// If can move to location...
         			if (newLoc != null) {
         				
-        				// Determine distress
-        				manageBeingAttacked(newLoc);
+        				// Determine death
+        				checkDeath(newLoc);
         				return newLoc;
         			}
         		}
@@ -491,8 +488,8 @@ public class GARNiDELiABot extends GlobalVars {
             		// If can move to location...
             		if (newLoc != null) {
             			
-            			// Determine distress
-            			manageBeingAttacked(newLoc);
+            			// Determine death
+            			checkDeath(newLoc);
             			return newLoc;
             		}
             	}
@@ -539,7 +536,7 @@ public class GARNiDELiABot extends GlobalVars {
 	//----------------------------------[Distress]----------------------------------
 	public static void fixAccidentalDeathNotification() throws GameActionException {
 		// Reset belief in the robot dying this round....
-//    	believeHasDied = false;    	
+		believeHasDied = false;    	
 
 		// Get the current number of soldiers in service
         int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
@@ -548,82 +545,24 @@ public class GARNiDELiABot extends GlobalVars {
         rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners + 1);
 	}
 	
-	public static boolean manageBeingAttacked(MapLocation loc) throws GameActionException{
-		boolean beingAttacked = iFeed.willBeAttacked(loc);
-		if (beingAttacked) {
-			// BIT 0 - GIVES MY ID
-			// BIT 1 - GIVES MY X
-			// BIT 2 - GIVES MY Y
-			// BIT 3 - GIVES NEAREST ENEMY
-			RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL, rc.getID());
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+1, (int) loc.x);
-			rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+2, (int) loc.y);
-			if (nearbyEnemies.length > 0) {
-				rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+3, nearbyEnemies[0].getID());
-			} else {
-				rc.broadcast(BroadcastChannels.GARDENER_DISTRESS_CHANNEL+3, -1);
-			}
-			boolean willDie = iFeed.willFeed(loc);
-			if (willDie) {
-				
-				// Get the current number of soldiers in service
-		        int numberOfAliveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
-		        
-		        // Update soldier number for other units to see.....
-		        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfAliveGardeners - 1);
-		        
-		        return true;
-
-			}
-			else {
-				return false;
-			}
-		}
-		return false;
-	}
+	// Function to check if the scout will die if it moves to a certain location
 	
-	//-----------------------------------[Archon]-----------------------------------
-	public static void manageCorrespondingArchon() throws GameActionException {
+    private static void checkDeath(MapLocation location) throws GameActionException{
+    			
+		// If the lumberjack will lose all of its health from moving to that location....
+		boolean willDie = iFeed.willFeed(location);
 		
-		// Declare variables
-		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
-		MapLocation myLocation = rc.getLocation();
-		float minDistance = Float.MAX_VALUE;
-		numArchons = archons.length;
-		
-		// Determine archon that hired this particular gardener 
-		for (MapLocation archon: archons) {
-			if (myLocation.distanceTo(archon) < minDistance) {
-				myArchon = archon;
-				minDistance = myLocation.distanceTo(archon);
-			} 
-		}
-		
-		System.out.print("My archon is: ");
-		System.out.println(myArchon);
-		oppositeEnemyArchon = EnemyArchonSearch.opposingEnemyArchon(myArchon);
-		
-		initDist = myLocation.distanceTo(oppositeEnemyArchon);
-		initDir = new Direction(myLocation, oppositeEnemyArchon);
-		
-		System.out.print("Opposite enemy archon is: ");
-		System.out.println(oppositeEnemyArchon);
-		rc.setIndicatorDot(oppositeEnemyArchon, 0, 0, 100);
-		
-		// Broadcast to channel
-		if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_1) == 0) {
-			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_1, 1);
-			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 1, oppositeEnemyArchon.x);
-			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_1 + 2, oppositeEnemyArchon.y);
-		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_2) == 0) {
-			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_2, 1);
-			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 1, oppositeEnemyArchon.x);
-			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_2 + 2, oppositeEnemyArchon.y);
-		} else if (rc.readBroadcast(BroadcastChannels.OPPOSING_ARCHON_3) == 0) {
-			rc.broadcast(BroadcastChannels.OPPOSING_ARCHON_3, 1);
-			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 1, oppositeEnemyArchon.x);
-			rc.broadcastFloat(BroadcastChannels.OPPOSING_ARCHON_3 + 2, oppositeEnemyArchon.y);
+		// If the lumberjack believes that it will die this turn....
+		if (willDie) {
+			
+			// Set the belief variable to true.....
+			believeHasDied = true;
+			
+			// Get the current number of gardeners in service
+	        int currentGardenerNumber = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
+	        
+	        // Update gardener number for other units to see.....
+	        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, currentGardenerNumber - 1);			
 		}
 	}
 	

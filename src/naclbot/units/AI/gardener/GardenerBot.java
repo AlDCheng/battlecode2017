@@ -97,7 +97,7 @@ public class GardenerBot extends GlobalVars {
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
 		
-		EnemyArchonSearch.manageCorrespondingArchon();
+		//EnemyArchonSearch.manageCorrespondingArchon();
 
 		//value of initial role, set to planting trees first
 		role = 1;
