@@ -43,16 +43,24 @@ public class iFeed extends GlobalVars {
     	
     	float currentHealth = rc.getHealth();
     	float remainingHealth = currentHealth;
-    	ArrayList<Float> bulletsThatWillHit = bulletsThatHit(optLocation);
-		
+    	
+    	System.out.print("Bytecodes before finding bullets:");
+    	System.out.println(Clock.getBytecodeNum());
+    	
+    	float bulletDmg = bulletsThatHit(optLocation);
+
+    	System.out.print("Bytecodes after finding bullets:");
+    	System.out.println(Clock.getBytecodeNum());
+    	
     	// If there are bullets that will hit then determine whether robot lives or dies from this
-    	if (bulletsThatWillHit.size() > 0) {
-    		remainingHealth = healthLeftBullets(bulletsThatWillHit,currentHealth);
+    	if (bulletDmg > 0) {
+    		remainingHealth = currentHealth - bulletDmg;
     		
     		System.out.println("Remaining Health: " + remainingHealth);
     		
-    		if (remainingHealth < 0.1*rc.getType().maxHealth) {
-    			System.out.println("will die plz");
+    		if (remainingHealth <= 0) {
+    			System.out.print("Bytecodes after detecting bullet death:");
+    			System.out.println(Clock.getBytecodeNum());
     			return true;
     		}
     	}
@@ -64,14 +72,19 @@ public class iFeed extends GlobalVars {
     	if (nearbyRobots.length > 0) {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
     		
-    		if (remainingHealth < 0.1*rc.getType().maxHealth) {
-    			System.out.println("will die plz");
+    		if (remainingHealth == 0) {
+    			System.out.print("Bytecodes after detecting lumberjack death:");
+    			System.out.println(Clock.getBytecodeNum());
     			return true;
     		} else {
+    			System.out.print("Bytecodes after not dying by lumberjack");
+    			System.out.println(Clock.getBytecodeNum());
     			return false;
     		}
     		
     	} else {
+    		System.out.print("Bytecodes after no lumberjacks");
+			System.out.println(Clock.getBytecodeNum());
     		return false;
     	}
     }
@@ -80,10 +93,10 @@ public class iFeed extends GlobalVars {
     	
     	float currentHealth = rc.getHealth();
     	float remainingHealth = currentHealth;
-    	ArrayList<Float> bulletsThatWillHit = bulletsThatHit(optLocation);
+    	float bulletDmg = bulletsThatHit(optLocation);
 		
     	// Determine if bullets will hit it
-    	if (bulletsThatWillHit.size() > 0) {
+    	if (bulletDmg > 0) {
     		return true;
     	}
     	
@@ -122,6 +135,7 @@ public class iFeed extends GlobalVars {
     	}
     }
     
+    /*
     public static float healthLeftBullets(ArrayList<Float> bullets, float currHealth) {
     	// This function determines how much health left after bullets hit
     	float totalBulletDamage = 0;
@@ -143,9 +157,10 @@ public class iFeed extends GlobalVars {
 			return currHealth;
 		}
     }
+    */
 
     // Determines the bullets that will hit current unit
-    public static ArrayList<Float> bulletsThatHit(MapLocation optimalLocation) {
+    public static float bulletsThatHit(MapLocation optimalLocation) {
     	
     	// Find the maximal distance away from the startingLocation that we must scan to determine the optimal location....
 		float scanRadius = rc.getType().strideRadius + rc.getType().bodyRadius + (float) (0.5);	
@@ -156,35 +171,40 @@ public class iFeed extends GlobalVars {
 		// Gets the starting location of the unit 
 		MapLocation startingLocation = rc.getLocation();
 		
+		System.out.print("Before bullet lines:");
+		System.out.println(Clock.getBytecodeNum());
 		// Get the bullet lines for the current scenario....
 		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation);
+		
+		System.out.print("After bullet lines:");
+		System.out.println(Clock.getBytecodeNum());
     	
 		// Find lines that intersect and then store the damage that the bullet does 
-		ArrayList<Float> intersectBulletDamage = bulletLinesWillIntersect(bulletLines,optimalLocation,rc.getType().bodyRadius);
+		float intersectBulletDamage = bulletLinesWillIntersect(bulletLines,optimalLocation,rc.getType().bodyRadius);
+		
+		System.out.print("After finding which intersect: ");
+		System.out.println(Clock.getBytecodeNum());
 		
 		return intersectBulletDamage;
     }
     
     
     // Technically not correct, just tests the start and end points of the line...
- 	public static ArrayList <Float> bulletLinesWillIntersect(ArrayList<Line> bulletLines, MapLocation testLocation, float bodyRadius){
+ 	public static float bulletLinesWillIntersect(ArrayList<Line> bulletLines, MapLocation testLocation, float bodyRadius){
  		
- 		ArrayList <Float> intersectBulletDamage = new ArrayList<Float>();
+ 		float totaldmg = 0;
  		
  		for(Line bulletLine: bulletLines){
  			// If either endpoint is within one body radius of the test location, return true...
 // 			System.out.println(bulletLine.start + "; " + bulletLine.end);
  			rc.setIndicatorLine(bulletLine.start, bulletLine.end, 255, 0, 0);
  			
- 			MapLocation start = bulletLine.start;
- 			MapLocation end = bulletLine.end;
- 			
  			if(bulletLine.start.distanceTo(testLocation) <= bodyRadius || bulletLine.end.distanceTo(testLocation) <= bodyRadius || bulletLine.middle.distanceTo(testLocation) <= bodyRadius){			
- 				intersectBulletDamage.add(bulletLine.damage);
+ 				totaldmg += bulletLine.damage;
  			}
  		}
- 		// If no intersecting lines have been found...  return false - no collisions will occur...
- 		return intersectBulletDamage;	
+ 		// If no intersecting lines have been found...  return empty arraylist
+ 		return totaldmg;	
  	}
     
     // Function to obtain the lines of all the bullets in this turn....
@@ -208,42 +228,20 @@ public class iFeed extends GlobalVars {
  			
  			// If either endpoint of the bullet's trajectory is within the search bounds....
  			if(currentLocation.distanceTo(centre) <= distance || newLocation.distanceTo(centre) <= distance){
- 				
- 				// Create the line corresponding to that bullet's path during this turn.....
- 				Line newLine = new Line(currentLocation, newLocation, bullet.getDamage());
- 				
- 				// Add the line to the list of bullet lines....
- 				bulletLines.add(newLine);
- 				
- 				// SYSTEM CHECK - Display all the bullet lines....
- 				newLine.display();
+ 			// Initialize the bullet line...
+				Line newLine;
+		
+				newLine = new Line(currentLocation, newLocation, bullet.getDamage());
+				
+				// Add the line to the list of bullet lines....
+				bulletLines.add(newLine);
+				
+				// SYSTEM CHECK - Display all the bullet lines....
+				newLine.display();
  			}
  		}
  		return bulletLines;
  	}
     
-    // Determines if a single bullet will hit the current unit
-    public static boolean willBulletHit(MapLocation bulletLoc, MapLocation optimalLoc, float radius) {
-    	float distBulletUnit = bulletLoc.distanceTo(optimalLoc);
-    	if (distBulletUnit <= radius) {
-    		return true;
-    	} else {
-    		return false;
-    	}
-    }
-    
-    public static ArrayList<MapLocation> whereWillBulletsBe(BulletInfo[] nearbyBullets) {
-		// This function assumes that the list nearbyBullets is not empty
-		ArrayList<MapLocation> newBulletLocations = new ArrayList<MapLocation>();
-		// Says the location of where the bullets will be one turn from now
-		for (BulletInfo bullet: nearbyBullets) {
-			MapLocation currLoc = bullet.getLocation();
-			Direction currDir = bullet.getDir();
-			float currSpeed = bullet.getSpeed();
-			MapLocation newLoc = currLoc.add(currDir,currSpeed);
-			newBulletLocations.add(newLoc);
-		}
-		return newBulletLocations;
-	}
     
 }

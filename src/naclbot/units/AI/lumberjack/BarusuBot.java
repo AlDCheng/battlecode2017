@@ -299,13 +299,13 @@ public class BarusuBot extends GlobalVars {
 		       	// If the robot can move to the location it wishes to go to.....
 		       	if(rc.canMove(desiredMove)){
 		       		// Check to see if the robot will die there
-//		       		checkDeath(desiredMove);
+		       		checkDeath(desiredMove);
 		       		// Move to the target location
 		       		rc.move(desiredMove);
 		       	}
 		       	// If the robot didn't move along, check if it would die from staying in its current location....
 		       	else{
-//		       		checkDeath(myLocation);
+		       		checkDeath(myLocation);
 		       	}
 		       	
 		    	// ------------------------ UNIT/TREE INTERACTION ---------------------- //		       	
@@ -1173,31 +1173,24 @@ public class BarusuBot extends GlobalVars {
 	
     public static void checkDeath(MapLocation location) throws GameActionException{
     	
-    	// Boollean to store if the robot believes it will be hit if it moves to a certain location......
-		boolean beingAttacked = iFeed.willBeAttacked(location);
+		// If the lumberjack will lose all of its health from moving to that location....
+		boolean willDie = iFeed.willFeed(location);
 		
-		// If it will get hit from that location....
-		if (beingAttacked) {
+		// If the lumberjack believes that it will die this turn....
+		if (willDie) {
 			
 			// SYSTEM CHECK - Print out that the robot thinks it will die this turn....
 			System.out.println("Moving to desired location will result in death........");
 			
-			// If the lumberjack will lose all of its health from moving to that location....
-			boolean willDie = iFeed.willFeed(location);
+			// Set the belief variable to true.....
+			believeHasDied = true;
 			
-			// If the lumberjack believes that it will die this turn....
-			if (willDie) {
-				
-				// Set the belief variable to true.....
-				believeHasDied = true;
-				
-				// Get the current number of lumberjacks in service
-		        int currentLumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL);
-		        
-		        // Update lumberjack number for other units to see.....
-		        rc.broadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL, currentLumberjackNumber - 1);
+			// Get the current number of lumberjacks in service
+	        int currentLumberjackNumber = rc.readBroadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL);
+	        
+	        // Update lumberjack number for other units to see.....
+	        rc.broadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL, currentLumberjackNumber - 1);
 
-			}
 		}
 	}
     
