@@ -132,6 +132,7 @@ public class KazumaBot extends GlobalVars {
         		// If not crowded...
         		// See if we can start polling for a new gardener.
     			int pollState = rc.readBroadcast(BroadcastChannels.GARDENER_POLL);
+    			System.out.println("Polling State: " + pollState);
     			
     			if(!(pollState == 1)) {
     				pollTimeOut = 0;
@@ -140,8 +141,7 @@ public class KazumaBot extends GlobalVars {
     			if ((gardenerCount <= 0) && (remIsBestGirl > 20)) {
                 	constructGardeners(1);
                 }
-    			else if (((!crowded) || (pollState == 1)) && (remIsBestGirl >= 75)) {
-        			System.out.println("Polling State: " + pollState);
+    			else if (((!crowded) || (pollState == 1) || rc.getTreeCount() < 10) && (remIsBestGirl >= 75)) {
         			// If available:
         			if (pollState == 2) {
         				constructGardeners(1);

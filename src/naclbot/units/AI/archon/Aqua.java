@@ -75,7 +75,7 @@ public class Aqua extends GlobalVars {
 //		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees(), (float)4);
 //    	disperseLocation = findOptimalSpaceNew(30, strideRadius+bodyRadius, strideRadius+bodyRadius, 
 //    											initDirection.getAngleDegrees(), (float)4, (float)2);
-    	disperseLocation = findOptimalSpaceSweep(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees(), (float)4);
+    	disperseLocation = findOptimalSpaceSweep(15, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees(), (float)4);
 //    	disperseLocation = findOptimalSpace(30, sensorRadius-3, sensorRadius-3, initDirection.getAngleDegrees());
 		if (disperseLocation != null){            		
     		desiredMove = disperseLocation;
@@ -576,7 +576,7 @@ public class Aqua extends GlobalVars {
 					
 					for(int k = 0; k <= 1; k++) {
 						totalchecks++;
-						System.out.println("k: " + k);
+//						System.out.println("k: " + k);
 						// Get potential location
 						potLoc = curLoc.add((float)Math.toRadians(rotSwitch*angle + 180*k), length);
 						
@@ -720,7 +720,7 @@ public class Aqua extends GlobalVars {
 				
 				for(int k = 1; k >= 0; k--) {
 					totalchecks++;
-					System.out.println("k: " + k);
+//					System.out.println("k: " + k);
 					// Get potential location
 					potLoc = curLoc.add((float)Math.toRadians(angle + 180*k), length);
 					
@@ -767,7 +767,7 @@ public class Aqua extends GlobalVars {
 							openness[k] += 3*enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
 							openness[k] += 3*bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
 							
-							System.out.println("loc: " + potLoc + ", angle: " + (angle + 180*k) + ", openness: " + (float)openness[k]);
+//							System.out.println("loc: " + potLoc + ", angle: " + (angle + 180*k) + ", openness: " + (float)openness[k]);
 //							System.out.println("Angle: " + angle + ", openness: " + openness);
 							
 							// Check if every space is open
@@ -798,12 +798,12 @@ public class Aqua extends GlobalVars {
 					}
 				}
 				
-				System.out.println("Low Open: " + lowOpen + ", Angle: " + angle + 180*index);
+//				System.out.println("Low Open: " + lowOpen + ", Angle: " + angle + 180*index);
 				
 				if (lowOpen < minOpenness) {
 					minOpenness = lowOpen;
 					finalLoc = curLoc.add((float)Math.toRadians(angle + 180*index), length);
-					System.out.println("Adding degree: " + angle + 180*index + ", with value: " + minOpenness);
+//					System.out.println("Adding degree: " + angle + 180*index + ", with value: " + minOpenness);
 				}
 				angle += angleInterval;
 				totalAngle += angleInterval;
