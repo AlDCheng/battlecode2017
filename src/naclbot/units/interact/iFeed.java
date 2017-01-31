@@ -44,23 +44,23 @@ public class iFeed extends GlobalVars {
     	float currentHealth = rc.getHealth();
     	float remainingHealth = currentHealth;
     	
-    	System.out.print("Bytecodes before finding bullets:");
-    	System.out.println(Clock.getBytecodeNum());
+    	//System.out.print("Bytecodes before finding bullets:");
+    	//System.out.println(Clock.getBytecodeNum());
     	
     	float bulletDmg = bulletsThatHit(optLocation);
 
-    	System.out.print("Bytecodes after finding bullets:");
-    	System.out.println(Clock.getBytecodeNum());
+    	//System.out.print("Bytecodes after finding bullets:");
+    	//System.out.println(Clock.getBytecodeNum());
     	
     	// If there are bullets that will hit then determine whether robot lives or dies from this
     	if (bulletDmg > 0) {
     		remainingHealth = currentHealth - bulletDmg;
     		
-    		System.out.println("Remaining Health: " + remainingHealth);
+    		//System.out.println("Remaining Health: " + remainingHealth);
     		
     		if (remainingHealth <= 0) {
-    			System.out.print("Bytecodes after detecting bullet death:");
-    			System.out.println(Clock.getBytecodeNum());
+    			//System.out.print("Bytecodes after detecting bullet death:");
+    			//System.out.println(Clock.getBytecodeNum());
     			return true;
     		}
     	}
@@ -73,18 +73,18 @@ public class iFeed extends GlobalVars {
     		remainingHealth = healthLeftLumberjacks(nearbyRobots,remainingHealth);
     		
     		if (remainingHealth == 0) {
-    			System.out.print("Bytecodes after detecting lumberjack death:");
-    			System.out.println(Clock.getBytecodeNum());
+    			//System.out.print("Bytecodes after detecting lumberjack death:");
+    			//System.out.println(Clock.getBytecodeNum());
     			return true;
     		} else {
-    			System.out.print("Bytecodes after not dying by lumberjack");
-    			System.out.println(Clock.getBytecodeNum());
+    			//System.out.print("Bytecodes after not dying by lumberjack");
+    			//System.out.println(Clock.getBytecodeNum());
     			return false;
     		}
     		
     	} else {
-    		System.out.print("Bytecodes after no lumberjacks");
-			System.out.println(Clock.getBytecodeNum());
+    		//System.out.print("Bytecodes after no lumberjacks");
+			//System.out.println(Clock.getBytecodeNum());
     		return false;
     	}
     }
@@ -171,19 +171,20 @@ public class iFeed extends GlobalVars {
 		// Gets the starting location of the unit 
 		MapLocation startingLocation = rc.getLocation();
 		
-		System.out.print("Before bullet lines:");
-		System.out.println(Clock.getBytecodeNum());
+		//System.out.print("Before bullet lines:");
+		//System.out.println(Clock.getBytecodeNum());
+		
 		// Get the bullet lines for the current scenario....
 		ArrayList<Line> bulletLines = getBulletLines(nearbyBullets, scanRadius, startingLocation);
 		
-		System.out.print("After bullet lines:");
-		System.out.println(Clock.getBytecodeNum());
+		//System.out.print("After bullet lines:");
+		//System.out.println(Clock.getBytecodeNum());
     	
 		// Find lines that intersect and then store the damage that the bullet does 
 		float intersectBulletDamage = bulletLinesWillIntersect(bulletLines,optimalLocation,rc.getType().bodyRadius);
 		
-		System.out.print("After finding which intersect: ");
-		System.out.println(Clock.getBytecodeNum());
+		//System.out.print("After finding which intersect: ");
+		//System.out.println(Clock.getBytecodeNum());
 		
 		return intersectBulletDamage;
     }

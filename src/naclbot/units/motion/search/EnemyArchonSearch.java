@@ -9,7 +9,7 @@ import java.util.Random;
 public class EnemyArchonSearch extends GlobalVars {
 	
 	public static MapLocation myArchon;
-	public static MapLocation oppositeEnemyArchon;
+	public static MapLocation oppositeEnemyArchon = null;
 	
 	public static MapLocation getCorrespondingArchon(){
 		
@@ -27,6 +27,24 @@ public class EnemyArchonSearch extends GlobalVars {
 		}
 		
 		return opposingEnemyArchon(myArchon);	
+	}
+	
+	public static MapLocation[] getEnemyArchons(){
+		
+		// Declare variables
+		MapLocation[] archons = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation myLocation = rc.getLocation();
+		float minDistance = 100000;
+		
+		// Determine archon that hired this particular gardener 
+		for (MapLocation archon: archons) {
+			if (myLocation.distanceTo(archon) < minDistance) {
+				myArchon = archon;
+				minDistance = myLocation.distanceTo(archon);
+			} 
+		}
+		
+		return opposingEnemyArchon2(myArchon);	
 	}
 	
 	public static void manageCorrespondingArchon() throws GameActionException {
@@ -176,13 +194,137 @@ public class EnemyArchonSearch extends GlobalVars {
 				return takeDistances(enemyArchons, alliedArchons, realArchon);
 			}
 		}
+		return enemyArchons[0];
+	}
+	
+	public static MapLocation[] opposingEnemyArchon2(MapLocation myArchon) {
 		
-		// HOTFIX: PLEASE REPLACE
-		if (enemyArchons.length >= 0) {
-			return enemyArchons[0];
+		// Initialize variables
+		MapLocation realArchon;
+		
+		// Initialize arrays
+		ArrayList<ArchonPairs> pairs = new ArrayList<ArchonPairs>();
+		
+		// The enemy team's archon positions sorted by increasing x, ties broken by increasing y
+		MapLocation[] enemyArchons = rc.getInitialArchonLocations(rc.getTeam().opponent());
+		
+		// The allied team's archon positions sorted by increasing x, ties broken by increasing y
+		MapLocation[] alliedArchons = rc.getInitialArchonLocations(rc.getTeam());
+		
+		// If there is just one for each team then we know where the enemy one is
+		if (enemyArchons.length == 1) {
+			return enemyArchons;
+		// If there is more than one for each team then go through a more thorough analysis of positioning
+		} else if (enemyArchons.length > 1){
+			
+			realArchon = findRealArchon(myArchon, alliedArchons);
+			System.out.print("archon");
+			System.out.println(realArchon);
+			
+			// Determine the x midpoint 
+			float midpointX = Math.abs(determineXMidpoint(alliedArchons,enemyArchons));
+			
+			// Determine the y midpoint
+			float midpointY = Math.abs(determineYMidpoint(alliedArchons,enemyArchons));
+			
+			// Run through the enemy archons and try to see who their pair is
+			for (MapLocation enemyArchon: enemyArchons) {
+				
+				// Enemy archon variables
+				float enemyX = enemyArchon.x;
+				float enemyY = enemyArchon.y;
+				
+				ArrayList<ArchonPairs> miniPairsX = new ArrayList<ArchonPairs>();
+				ArrayList<ArchonPairs> miniPairsY = new ArrayList<ArchonPairs>();
+				
+				for (MapLocation allyArchon: alliedArchons) {
+					
+					// Allied archon variables
+					float allyX = allyArchon.x;
+					float allyY = allyArchon.y;
+					
+					// If they have same x or same y then there is a pair 
+					if (enemyX == allyX) {
+						ArchonPairs pair = new ArchonPairs(allyArchon, enemyArchon);
+						miniPairsX.add(pair);
+					} else if (enemyY == allyY) {
+						ArchonPairs pair = new ArchonPairs(allyArchon, enemyArchon);
+						miniPairsY.add(pair);
+					}
+					
+				}
+				
+				// If there is only one pair then add that to pairs
+				if (miniPairsX.size() == 1 && miniPairsY.size() == 0) {
+					pairs.add(miniPairsX.get(0));
+				} else if (miniPairsX.size() == 0 && miniPairsY.size() == 1) {
+					pairs.add(miniPairsY.get(0));
+					
+				// If there is one pair in each then ALWAYS CHOOSE THE ONE WITH SAME Y
+				} else if (miniPairsX.size() == 1 && miniPairsY.size() == 1) {
+					pairs.add(miniPairsY.get(0));
+					
+				// If there are two or more pairs in X then choose the accurate one using midpoint
+				} else if (miniPairsX.size() > 1) {
+					int i;
+					for (i = 0; i < miniPairsX.size(); i++) {
+						float allyDistFromMidpoint = Math.abs(miniPairsX.get(i).getAlly().x - midpointX);
+						float enemyDistFromMidpoint = Math.abs(miniPairsX.get(i).getAlly().x - midpointX);
+						if (allyDistFromMidpoint == enemyDistFromMidpoint) {
+							pairs.add(miniPairsX.get(i));
+							break;
+						}
+					}
+					
+				// If there are two or more pairs in Y then choose the accurate one using midpoint
+				} else if (miniPairsY.size() > 1) {
+					int i;
+					for (i = 0; i < miniPairsY.size(); i++) {
+						float allyDistFromMidpoint = Math.abs(miniPairsY.get(i).getAlly().x - midpointY);
+						float enemyDistFromMidpoint = Math.abs(miniPairsY.get(i).getAlly().x - midpointY);
+						if (allyDistFromMidpoint == enemyDistFromMidpoint) {
+							pairs.add(miniPairsY.get(i));
+							break;
+						}
+					}
+				}
+				
+			}
+			
+			if (pairs.size() > 0) {
+				// Check if given archon already has a pair
+				int i;
+				for (i=0 ; i < pairs.size() ; i++) {
+					if (pairs.get(i).getAlly() == realArchon) {
+						oppositeEnemyArchon = pairs.get(i).getEnemy();
+					}
+				}
+			} else {
+			
+				// If there are no pairs then take distances 
+				oppositeEnemyArchon = takeDistances(enemyArchons, alliedArchons, realArchon);
+			}
 		}
 		
-		return null;
+		// If we find an opposite then make the array and return it 
+		if (oppositeEnemyArchon != null) {
+			MapLocation[] locs = new MapLocation[enemyArchons.length];
+			locs[0] = oppositeEnemyArchon;
+			
+			int i = 1;
+			for (MapLocation e: enemyArchons) {
+				if (e != oppositeEnemyArchon) {
+					locs[i] = e;
+					i += 1;
+				}
+			}
+			return locs;
+			
+		// If we do not find an opposite then just return original array
+		} else {
+			return enemyArchons;
+		}
+		
 	}
 	
 	public static MapLocation takeDistances(MapLocation[] enemyArchons, MapLocation[] alliedArchons, MapLocation archon) {
