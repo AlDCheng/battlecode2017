@@ -103,6 +103,9 @@ public class ArchonBot extends GlobalVars {
 	public static BulletInfo[] nearbyBullets;
 	
 	public static MapLocation desiredMove;
+	
+	public static int nearbyBulletTreeCount;
+	public static int chosenBulletTreeChannel = 0;
     
     // GENNERAL LIMITS FOR GARDENER PRODUCTION OVER A GAME CYCLE
     public static int getGardenerLimit(int roundNumber) throws GameActionException{
@@ -164,11 +167,15 @@ public class ArchonBot extends GlobalVars {
 //       	routingPath = new ArrayList<MapLocation>();    	
 //       	Routing.setRouting(routingPath);
 
-        rc.broadcastFloat(SPARCITY_CHANNEL, calculateTreeDensity());
-
-        System.out.println(calculateTreeDensity());
+        broadcastBulletTreeCount();
+        
+        System.out.println("broadcasts: " + rc.readBroadcast(20) + rc.readBroadcast(21));
+        System.out.println(rc.readBroadcast(22) + rc.readBroadcast(23));
+        System.out.println(rc.readBroadcast(24) + rc.readBroadcast(25));
+        
+        
         rc.broadcastFloat(BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL, calculateTreeDensity());
-        System.out.println(rc.readBroadcastFloat(BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL));
+        
 		constructGardeners(treeNum);
 	}
 	
@@ -850,5 +857,40 @@ public class ArchonBot extends GlobalVars {
 		//returns this ratio as an integer by multiplying by 100
 		return scaledValue;
 		
+	}
+	
+	public static void broadcastBulletTreeCount() throws GameActionException {
+		nearbyBulletTreeCount = countNearbyShakeableTrees();
+		
+		// Count nearby bullet trees..
+		if (chosenBulletTreeChannel == 0) {
+			//if hasn't initialized it's own unique channel
+			for (int i=0; i<3; i++) {
+	    		//asserts that channel is currently empty
+	    		if (rc.readBroadcast(BroadcastChannels.ARCHONS_BULLET_TREE_CHANNEL + 2*i) != myID) {
+	    			// sets a unique channel for this archon
+	    			rc.broadcast(BroadcastChannels.ARCHONS_BULLET_TREE_CHANNEL + 2*i, myID);
+	    			chosenBulletTreeChannel = BroadcastChannels.ARCHONS_BULLET_TREE_CHANNEL + 2*i + 1;
+	    			
+	    		}
+			}
+		}
+	
+		rc.broadcast(chosenBulletTreeChannel, nearbyBulletTreeCount);
+	
+	}
+	
+	//counts number of nearby neutral trees than can be shaken (for scout production)
+	public static int countNearbyShakeableTrees() throws GameActionException { 
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+		int count = 0;
+		
+		for (TreeInfo tree: nearbyTrees) { 
+			if (tree.getTeam() == Team.NEUTRAL && tree.getContainedBullets() > 0) {
+				count++;
+			}
+		}
+		
+		return count; 
 	}
 }
