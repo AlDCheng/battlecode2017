@@ -191,7 +191,12 @@ public class SaberBot extends GlobalVars {
 		// Retrieve the correct corresponding archon...
 		archonLocation = EnemyArchonSearch.getCorrespondingArchon();
 		
-		archonLocationFactor = (float) (archonLocation.distanceTo(myLocation) / 40 + 1.2);
+		if(archonLocation == null){
+			archonLocationFactor = 2;
+		}
+		else{
+			archonLocationFactor = (float) (archonLocation.distanceTo(myLocation) / 40 + 1.2);
+		}
 		
 		// SYSTEM CHECK - Draw a line to the target enemy archon location...
 		rc.setIndicatorLine(myLocation, archonLocation, 255, 0, 0);

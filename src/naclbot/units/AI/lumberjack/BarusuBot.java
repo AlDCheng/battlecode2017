@@ -110,7 +110,7 @@ public class BarusuBot extends GlobalVars {
     // Constants for movement....
     private static final int initialDispersionRounds = 2; // Number of rounds for which the lumberjack will be forced to move away from its initial location
     private static final int distanceDefend = 5; // The maximum distance at which the lumberjack will sincerely attempt to defend its allies...
-    private static final float maxDistanceToTargetTree = (float) 5; // The maximum distance at which a lumberjack a tree to chop down......
+    private static final float maxDistanceToTargetTree = (float) 6; // The maximum distance at which a lumberjack a tree to chop down......
     
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
@@ -241,7 +241,7 @@ public class BarusuBot extends GlobalVars {
 		       	}		       	
 		      
 		       	// SYSTEM CHECK - Show where the lumberjack believes its nearest civilian is using a WHITE LINE
-		       	rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);
+		       	// rc.setIndicatorLine(myLocation, nearestCivilianLocation, 255, 255, 255);
 		       	
 		       	// ------------------------ BROADCAST UPDATES ------------------------ //
 		    	
@@ -1106,7 +1106,7 @@ public class BarusuBot extends GlobalVars {
 	    				// Add the tree to the list of tree distances
 	    				distancesToTrees[i] = j;
 	    				// SYSTEM CHECK - Place a YELLOW DOT on any potential trees sensed
-	    				rc.setIndicatorDot(locationToCheck, 255, 255, 0);
+	    				// rc.setIndicatorDot(locationToCheck, 255, 255, 0);
     				}
     				// Otherwise the trees were allied
     				else{
@@ -1114,7 +1114,7 @@ public class BarusuBot extends GlobalVars {
     					distancesToTrees[i] = 0;
     					
     					// SYSTEM CHECK - Place a MAGENTA on any nearby allied trees sensed
-    					rc.setIndicatorDot(locationToCheck, 255, 0, 255);
+    					// rc.setIndicatorDot(locationToCheck, 255, 0, 255);
     				}
     			}
     			// Otherwise if there is an ally in the way....
@@ -1125,13 +1125,13 @@ public class BarusuBot extends GlobalVars {
 						distancesToTrees[i] = 0;
 						
 						// SYSTEM CHECK - Place a GREEN on any nearby allied trees sensed
-						rc.setIndicatorDot(locationToCheck, 0, 255, 0);
+						// rc.setIndicatorDot(locationToCheck, 0, 255, 0);
     				}
     			}
     			// Otherwise no trees were discovered at that location/the angle had already been invalidated
     			else{
     				// SYSTEM CHECK - Place a RED DOT on any invalid location
-    				rc.setIndicatorDot(locationToCheck, 255, 0, 0);
+    				// rc.setIndicatorDot(locationToCheck, 255, 0, 0);
     			}    			
     		}    		
     	}
@@ -1466,12 +1466,13 @@ public class BarusuBot extends GlobalVars {
 		//set initial variables
 		MapLocation myLocation = rc.getLocation();
 		
+		// Location of the tree to actually go to
 		MapLocation finalTreeLocation = null;
 		
 		int index = -1;
 		
 		//scan through broadcast channels for x and y coordinates of target tree
-		for (int i=0; i<6; i++) {
+		for (int i =0 ; i < 10; i++) {
 			
 			float possibleXCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i);
 			float possibleYCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1);
@@ -1486,27 +1487,35 @@ public class BarusuBot extends GlobalVars {
 			//will only accept as target if within 5 units away
 			if (myLocation.distanceTo(possibleTreeLocation) < maxDistanceToTargetTree && myLocation.distanceTo(possibleTreeLocation) < minimumDistance) {
 				
+				// Update the minimum distance
 				minimumDistance = myLocation.distanceTo(possibleTreeLocation);
 				
+				// Set the new final tree location as the possible tree
 				finalTreeLocation = possibleTreeLocation;
 				
+				// Get the index
 				index = i;
 			}
 		}
 		
+		//If some target tree exists
 		if (index != -1){
 			rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*index, -1);
 			rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*index + 1, -1);
-			//if there is no target tree satisfying above requirements
+		
 		}
+		// If no target tree exists
 		return finalTreeLocation;
 	}
 	
 	//generates closest tree that is in between itself and targetTree
 	public static TreeInfo getBlockingTree(MapLocation targetTree) throws GameActionException { 
-		//initialization
+		
+		// Initialize the distance to the target tree and the direction to it
 		float distanceToTarget = myLocation.distanceTo(targetTree);
 		Direction directionToTarget = myLocation.directionTo(targetTree); 
+		
+		// Possible blocking tree initialization....
 		MapLocation possibleTreeLocation;
 		TreeInfo possibleTree;
 		
@@ -1519,7 +1528,7 @@ public class BarusuBot extends GlobalVars {
 			possibleTree = rc.senseTreeAtLocation(possibleTreeLocation);
 			
 			//asserts that tree at this location exists
-			if (possibleTree != null) {
+			if (possibleTree != null && possibleTree.team != allies) {
 				return possibleTree;
 			}
 		}
