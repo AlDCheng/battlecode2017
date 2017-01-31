@@ -32,6 +32,7 @@ public class KazumaBot extends GlobalVars {
 	public static Team us = rc.getTeam();
 	private static final float strideRadius = battlecode.common.RobotType.ARCHON.strideRadius;
 	private static final float bodyRadius = battlecode.common.RobotType.ARCHON.bodyRadius;
+	private static MapLocation lastBuilt = null;
 	
 	private static int remIsBestGirl = 0;
 	private static int unitNumber;
@@ -243,7 +244,7 @@ public class KazumaBot extends GlobalVars {
 		// Variable to store the number of gardeners hired in this phase....
 		int hiredGardeners = 0;
 		
-		MapLocation lastBuilt = null;
+		
 		
         // Starting phase loop
         while ((hiredGardeners < maxGardeners)) {
@@ -311,8 +312,14 @@ public class KazumaBot extends GlobalVars {
 //            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
 //            		}
                 	
-            		
-            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		if (lastBuilt == null) {
+            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		}
+            		else {
+            			if(lastBuilt.distanceTo(myLocation) > 0.5) {
+            				testDirection = new Direction(myLocation, lastBuilt);
+            			}
+            		}
             		
             		rc.setIndicatorLine(myLocation,myLocation.add(testDirection,3),255,0,172);
             		

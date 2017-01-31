@@ -22,7 +22,7 @@ public class Aqua extends GlobalVars {
 	public static float emptyDensity = 0;
 	private static float gardenerWeight = 1;
 	private static float bulletWeight = 0;
-	private static float enemyWeight = 0;
+	private static float enemyWeight = 20;
 	
 	private static final float sensorRadius = battlecode.common.RobotType.ARCHON.sensorRadius;	
 	
@@ -718,7 +718,7 @@ public class Aqua extends GlobalVars {
 				
 				float[] openness = {Float.MAX_VALUE,Float.MAX_VALUE};
 				
-				for(int k = 0; k <= 1; k++) {
+				for(int k = 1; k >= 0; k--) {
 					totalchecks++;
 					System.out.println("k: " + k);
 					// Get potential location
@@ -731,7 +731,7 @@ public class Aqua extends GlobalVars {
 					if(rc.onTheMap(potLoc)) {
 						
 						// Add penalty for cases on edge of map (equivalent to 3 trees)
-						if(!(rc.onTheMap(potLoc, 2))) {
+						if(!(rc.onTheMap(potLoc, radius))) {
 							empty++;
 							openness[k] = (float)10;
 //							openness = (float)0.5;
@@ -744,7 +744,7 @@ public class Aqua extends GlobalVars {
 									openness[k] += 5;
 								}
 								else {
-									openness[k] += 1;
+									openness[k] += 0.1;
 								}
 							}
 							
@@ -764,10 +764,10 @@ public class Aqua extends GlobalVars {
 								}
 							}
 							// Unit weighting (for enemy Team)
-							openness[k] += enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
-							openness[k] += bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
+							openness[k] += 3*enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
+							openness[k] += 3*bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
 							
-							System.out.println("loc: " + potLoc + ", angle: " + (angle + 180*k) + ", openness: " + openness[k]);
+							System.out.println("loc: " + potLoc + ", angle: " + (angle + 180*k) + ", openness: " + (float)openness[k]);
 //							System.out.println("Angle: " + angle + ", openness: " + openness);
 							
 							// Check if every space is open
@@ -777,7 +777,7 @@ public class Aqua extends GlobalVars {
 						}
 						
 //						System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);
-					}
+					}	
 					
 				}
 				// Compare with existing, and replace if lower
@@ -798,7 +798,7 @@ public class Aqua extends GlobalVars {
 					}
 				}
 				
-				System.out.println("Low Open: " + lowOpen);
+				System.out.println("Low Open: " + lowOpen + ", Angle: " + angle + 180*index);
 				
 				if (lowOpen < minOpenness) {
 					minOpenness = lowOpen;
