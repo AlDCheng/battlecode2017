@@ -340,12 +340,16 @@ public class GlobalVars {
     	} else if (rc.getTeamBullets() > 2000) {
     		//if we have excess of bullets
     		rc.donate(rc.getTeamBullets() - 1000);
-    	} else if (rc.getTreeCount() > 50 && rc.getTeamBullets() >= (VP_COST+100) && rc.getType() == RobotType.GARDENER) {
+    	} else if (rc.getTreeCount() >= 50 && rc.getTeamBullets() >= (VP_COST+100) && rc.getType() == RobotType.GARDENER) {
     		//if we have a booming economy (50 trees) then slowly exchange bullets
     		rc.donate(VP_COST);
-    	} else if (rc.getTreeCount() > 75 && rc.getTeamBullets() >= (2*VP_COST+100) && rc.getType() == RobotType.GARDENER) {
+    	} else if (rc.getTreeCount() >= 75 && rc.getTeamBullets() >= (2*VP_COST+100) && rc.getType() == RobotType.GARDENER) {
     		//if we have crazy economy
     		rc.donate(2*VP_COST);
+    	} else if (rc.getTeamBullets() >= 800 && rc.getTeamBullets() >= (2*VP_COST + 100)) {
+    		rc.donate(2*VP_COST);
+    	} else if (rc.getTeamBullets() >= 950 && rc.getTeamBullets() >= 10*VP_COST) {
+    		rc.donate(10*VP_COST);
     	}
     	
 	}
