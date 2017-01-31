@@ -178,6 +178,15 @@ public class KazumaBot extends GlobalVars {
             	}
 	            System.out.println("current round number: " + remIsBestGirl);
 	            
+	            if (Clock.getBytecodesLeft() > 4000) {
+	            	float density = Aqua.checkEmptySpace(myLocation);
+	            	System.out.println("New Empty Density: " + density);
+	            	
+	            	int broadcastStart = BroadcastChannels.ARCHONS_TREE_DENSITY_CHANNEL + 2*archonNumber;
+                    rc.broadcastFloat(broadcastStart+1, density);
+	            	
+	            }
+	            
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 

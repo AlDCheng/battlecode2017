@@ -75,9 +75,11 @@ public class Aqua extends GlobalVars {
 		
 		// Get corrected movement
 		correctedLocation = Yuurei.correctAllMove(strideRadius, bodyRadius, false, rc.getTeam(), rc.getLocation(), desiredMove);
-		if (rc.canMove(correctedLocation)) {
-			System.out.println("Valid movement in dispersion");
-				rc.move(correctedLocation);
+		if (correctedLocation != null) {
+			if (rc.canMove(correctedLocation)) {
+				System.out.println("Valid movement in dispersion");
+					rc.move(correctedLocation);
+			}
 		}
 	}
 	
@@ -384,5 +386,62 @@ public class Aqua extends GlobalVars {
 		//returns this ratio as an integer by multiplying by 100
 		return scaledValue;
 		
+	}
+	
+	public static float checkEmptySpace(MapLocation myLocation) throws GameActionException{
+		
+		// Initialize an array to store the  distances to any walls (obstacles to building)
+		float[] wallDistances = new float[16];
+		boolean[] hitWall = new boolean[16];
+		Arrays.fill(wallDistances, 0);
+		
+		float emptyArea = 0;
+		float emptyAreaWall = 0;
+		
+		// Check up to a distance of 9 away... and 16 different angles
+		for(int i = 1; i <= 9 / initialWallCheckGrain; i++){			
+			for(int j = 0; j < 16; j++){
+				
+				// Get the locations to check for the obstacles
+				Direction directionToCheck = new Direction((float)(j * Math.PI/8));
+				float distanceToCheck = i * initialWallCheckGrain;
+				MapLocation locationToCheck = myLocation.add(directionToCheck, distanceToCheck);
+				
+				// Check to see if the considered point is off the map or has a tree
+				if(!rc.isLocationOccupiedByTree(locationToCheck) && rc.onTheMap(locationToCheck)){
+					
+					// SYSTEM CHECK If the location is free print a BLUE DOT
+					//rc.setIndicatorDot(locationToCheck, 0, 0, 128);
+					
+					if ((i == 9) && !(hitWall[j])) {
+						emptyArea += (float)(1.0/16.0)*(Math.PI*(float)9*(float)9);
+					}
+					
+				}
+				else{
+					
+					// SYSTEM CHECK - If the location isn't free print a RED DOT
+					//rc.setIndicatorDot(locationToCheck, 128, 0, 0);
+					
+					if (wallDistances[j] >= 0){
+						wallDistances[j] *= -1;
+					}
+					
+					if(!hitWall[j] && rc.isLocationOccupiedByTree(locationToCheck)) {
+						hitWall[j] = true;
+//						System.out.println((float)(1.0/16.0)*(Math.PI*(float)i*(float)i));
+						emptyArea += (float)(1.0/16.0)*(Math.PI*(float)i*(float)i);
+					}
+					else if(!hitWall[j]) {
+						hitWall[j] = true;
+						emptyAreaWall += (float)(1.0/16.0)*(Math.PI*(float)9*(float)9);
+					}
+				}
+			}
+		}
+		
+		System.out.println("Empty Area: " + emptyArea);
+		float density = (float)(emptyArea/(Math.PI*81.0 - emptyAreaWall));
+		return density;
 	}
 }
