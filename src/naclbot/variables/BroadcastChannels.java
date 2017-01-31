@@ -125,6 +125,14 @@ public class BroadcastChannels extends GlobalVars {
 			// Bit 9 - Tree #5 y coord.
 			// Bit 10 - Tree #6 y coord.
 			// Bit 11 - Tree #6 y coord.
+			// Bit 12 - Tree #7 y coord.
+			// Bit 13 - Tree #7 y coord.
+			// Bit 14 - Tree #8 y coord.
+			// Bit 15 - Tree #8 y coord.
+			// Bit 16 - Tree #9 y coord.
+			// Bit 17 - Tree #9 y coord.
+			// Bit 18 - Tree #10 y coord.
+			// Bit 19 - Tree #10 y coord.
 	
 	
 	// ----------------------- REMBOT INFORMATION -------------------------//
