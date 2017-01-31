@@ -196,7 +196,7 @@ public class BarusuBot extends GlobalVars {
 	
 	private static void main() throws GameActionException{
 		
-		// While loop to keep the lumberrjack going......
+		// While loop to keep the lumberjack going......
 		while (true){
 			
 			// Main actions of the lumberjack........
@@ -1290,5 +1290,34 @@ public class BarusuBot extends GlobalVars {
        		lastCommanded = 0;
    		
     	}
+	}
+	
+	public static MapLocation getTargetTree() throws GameActionException {
+		
+		//set initial variables
+		MapLocation myLocation = rc.getLocation();
+		
+		//scan through broadcast channels for x and y coordinates of target tree
+		for (int i=0; i<3; i++) {
+			possibleXCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i);
+			possibleYCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1);
+			
+			//will be -1 if nothing to read 
+			if (possibleXCoord < 0) {
+				break;
+			}
+			
+			MapLocation possibleTreeLocation = new MapLocation(possibleXCoord, possibleYCoord);
+			
+			//will only accept as target if within 15 units away
+			if (myLocation.distanceTo(possibleTreeLocation) < 15) { 
+				rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i, -1);
+				rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1, -1);
+				return possibleTreeLocation; 
+			}
+		}
+		
+		//if there is no target tree satisfying above requirements
+		return null;
 	}
 }
