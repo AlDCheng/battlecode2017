@@ -503,13 +503,19 @@ public class Todoruno extends GlobalVars {
 		MapLocation enemyLocation = enemySoldier.location;		
 		
 		// Value to add some randomized to inject randomness into firing...
-		float randomize = (float) ((Math.random() * Math.PI / 9) - Math.PI/18); 
+		float randomize = (float) ((Math.random() * Math.PI / 6) - Math.PI/12); 
+		 
+		// SYSTEM CHECK - Print out the randomized value.....
+		System.out.println("Randomized value: " + randomize);
 		
 		// Direction to..........
 		Direction directionTo = startingLocation.directionTo(enemyLocation);
 		Direction directionToSoldier = new Direction(directionTo.radians + randomize);		
 		
 		MapLocation desiredMove = null;
+		
+		// SYSTEM CHECK - Print out that the soldier will attempt to charge.....
+		System.out.println("Will attempt to charge");
 		
 		for(int i = 1; i <= 10; i ++){
 			
@@ -534,7 +540,7 @@ public class Todoruno extends GlobalVars {
 			else{
 				
 				// Check to see if the robot can fire a triad.....
-				if(Korosenai.canFireTriad(directionToSoldier, startingLocation, nearbyAllies, alliedTrees) && desiredMove.distanceTo(enemyLocation) <= 6){
+				if(Korosenai.canFireTriad(directionToSoldier, startingLocation, nearbyAllies, alliedTrees) && desiredMove.distanceTo(enemyLocation) <= 7){
 					
 					// Fire the triad
 					rc.fireTriadShot(directionToSoldier);
@@ -564,7 +570,10 @@ public class Todoruno extends GlobalVars {
 		MapLocation enemyLocation = enemySoldier.location;		
 		
 		// Value to add randomness to retreat direction and the firing pattern....
-		float randomize = (float) ((Math.random() * Math.PI / 9) - Math.PI/18); 
+		float randomize = (float) ((Math.random() * Math.PI / 6) - Math.PI/12); 
+		
+		// SYSTEM CHECK - Print out the randomized value.....
+		System.out.println("Randomized value: " + randomize);
 		
 		// Get the direction away from the enemy...
 		Direction directionFrom = enemyLocation.directionTo(startingLocation);
@@ -576,6 +585,9 @@ public class Todoruno extends GlobalVars {
 		Direction directionToSoldier = new Direction(directionTo.radians + randomize);				
 		
 		MapLocation desiredMove = null;
+		
+		// SYSTEM CHECK - Print out that the soldier will attempt to track back after shooting...
+		System.out.println("Will attempt to track back");
 		
 		for(int i = 1; i <= 10; i ++){
 			
@@ -611,7 +623,7 @@ public class Todoruno extends GlobalVars {
 			else{
 				
 				// Check to see if the robot can fire a triad.....
-				if(Korosenai.canFireTriad(directionToSoldier, startingLocation, nearbyAllies, alliedTrees) && desiredMove.distanceTo(enemyLocation) <= 6){
+				if(Korosenai.canFireTriad(directionToSoldier, startingLocation, nearbyAllies, alliedTrees) && desiredMove.distanceTo(enemyLocation) <= 7){
 					
 					// Fire the triad
 					rc.fireTriadShot(directionToSoldier);
@@ -640,11 +652,17 @@ public class Todoruno extends GlobalVars {
 	public static MapLocation shootWithCover(MapLocation startingLocation, RobotInfo enemySoldier, 
 			float strideRadius, float bodyRadius, RobotInfo[] nearbyAllies, TreeInfo[] alliedTrees) throws GameActionException{
 		
+		// SYSTEM CHECK - Print out that the soldier will attempt to find cover after shooting...
+		System.out.println("Will attempt to find cover.....");
+		
 		// Retrieve the location of the enemy soldier....
 		MapLocation enemyLocation = enemySoldier.location;		
 		
 		// Value to add some randomized to inject randomness into firing...
-		float randomize = (float) ((Math.random() * Math.PI / 9) - Math.PI/18); 
+		float randomize = (float) ((Math.random() * Math.PI / 6) - Math.PI/12); 
+		
+		// SYSTEM CHECK - Print out the randomized value.....
+		System.out.println("Randomized value: " + randomize);
 		
 		// Direction to..........
 		Direction directionTo = startingLocation.directionTo(enemyLocation);
