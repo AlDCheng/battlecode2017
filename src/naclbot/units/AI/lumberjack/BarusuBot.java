@@ -904,6 +904,9 @@ public class BarusuBot extends GlobalVars {
     	// Angle difference of each sweep...
     	float searchAngle = (float) Math.PI / (treeSearchAngleNumber/2);
     	
+    	// Tree with units
+    	TreeInfo unitTree = null;
+    	
     	// Iterate through all the different angles
     	for(int i = 0; i < treeSearchAngleNumber; i++){
     		
@@ -931,7 +934,11 @@ public class BarusuBot extends GlobalVars {
     				TreeInfo treeX = rc.senseTreeAtLocation(locationToCheck);
     				
     				// Make sure that the tree is not a friendly tree
-    				if (treeX.team != allies){    					
+    				if (treeX.team != allies){    
+    					if (treeX.getContainedRobot() != null) {
+    						System.out.println("FREELO");
+    						unitTree = treeX;
+    					}
 	    				// Add the tree to the list of tree distances
 	    				distancesToTrees[i] = j;
 	    				// SYSTEM CHECK - Place a YELLOW DOT on any potential trees sensed
@@ -967,6 +974,12 @@ public class BarusuBot extends GlobalVars {
     	// Placeholders to later retrieve the data for the tree....
     	float minimum = Integer.MAX_VALUE;
     	int directionIndex = -1;
+    	
+    	// If there is a possibility for reaching tree with a unit then do that 
+    	if (unitTree != null) {
+    		
+    		return unitTree;
+    	}
     	
     	// Iterate through the array and pick the minimal positive value.....
     	for (int i = 0; i < 20; i++){
