@@ -87,7 +87,7 @@ public class Yuurei extends GlobalVars {
 		if(desiredLocation != null){
 			
 			// SYSTEM CHECK - Draw a blue dot on the location that the robot wishes to go to....
-			rc.setIndicatorDot(desiredLocation, 0, 0, 255);
+			// rc.setIndicatorDot(desiredLocation, 0, 0, 255);
 		}
 		else{
 			desiredLocation = startingLocation;
@@ -132,7 +132,7 @@ public class Yuurei extends GlobalVars {
 			boolean willCollide = false;
 			
 			// Iterate through each bullet line - if the desired location would intersect with any of them.... attempt to find a new point to go to..
-			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius + (float) 0.3)){
+			if(ifBulletLinesWillIntersect(bulletLines, desiredLocation, bodyRadius + (float) 0.1)){
 				
 				willCollide = true;
 			}
@@ -148,8 +148,17 @@ public class Yuurei extends GlobalVars {
 			
 			// If bullets will collide with the desired location
 			else{
+				
+				// If the robot can merely remain in the same location......
+				if(!ifBulletLinesWillIntersect(bulletLines, startingLocation, bodyRadius + (float) 0.01)){
+					
+					return startingLocation;
+				}
+				else{
+					
 				// Return the result of the dodge function...					
-				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius, directionAway);				
+				return findDodgeLocation(bulletLines, startingLocation, strideRadius, bodyRadius, directionAway);		
+				}
 			}
 		}
 		// If there are no bullets nearby, just return the original desired location....
@@ -511,7 +520,7 @@ public class Yuurei extends GlobalVars {
 			// If the location is within the radius distance of the object at the desired location, return false
 			
 			// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright red
-			rc.setIndicatorDot(bulletLocation, 255, 0, 0);
+			// rc.setIndicatorDot(bulletLocation, 255, 0, 0);
 			
 			if(desiredLocation.distanceTo(bulletLocation) < bodyRadius){
 				return true;
@@ -571,7 +580,7 @@ public class Yuurei extends GlobalVars {
 				newBulletLocations.add(newLocation);
 				
 				// SYSTEM CHECK place indicator dots at the predicted locations of each of the bullets - bright pink
-				rc.setIndicatorDot(newLocation, 255, 20, 147);
+				// rc.setIndicatorDot(newLocation, 255, 20, 147);
 			}
 		}
 		return newBulletLocations;

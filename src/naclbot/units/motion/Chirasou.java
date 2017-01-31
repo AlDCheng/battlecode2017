@@ -7,7 +7,7 @@ import naclbot.variables.GlobalVars;
 
 /* ------------------   Overview ----------------------
  * 
- * Functions for controlling Robot dispersion from allies
+ * Functions for controlling info of nearby units....
  *
  * ~~ Coded by Illiyia (akimn@#mit.edu)
  * 
@@ -205,5 +205,39 @@ public class Chirasou extends GlobalVars {
     			}
     		}    		
     	}    	
+    }
+    
+    
+    // Function to see if there are any trees in the general direction of movement of the robot......
+    
+    public static TreeInfo treesInDirection(MapLocation startingLocation, Direction targetDirection, TreeInfo[] nearbyTrees, float bodyRadius, float strideRadius) throws GameActionException{
+    	    	
+    	for (int i = -4; i <= 4; i ++){
+    		
+    		// Get the direction to be sweeped
+    		Direction testDirection = new Direction((float) (targetDirection.radians + i * Math.PI / 12));
+    		
+    		// Retrieve the location to be sweeped
+    		MapLocation testLocation = startingLocation.add(testDirection, bodyRadius + strideRadius);
+    		
+    		// Get information on any potential tree in the vicinity, if there is one.......    		
+    		TreeInfo tree = rc.senseTreeAtLocation(testLocation);
+    		
+    		if(tree != null){
+    			
+    			// SYSTEM CHECK - Draw a red dot on any trees found in this manner....
+    			rc.setIndicatorDot(testLocation, 130, 0, 0);
+    			
+    			return tree;
+    		}
+    		
+    		// If there are no trees in the location to be sweeped......
+    		else{
+    			
+    			// SYSTEM CHECK - Draw a red dot on any trees found in this manner....
+    			rc.setIndicatorDot(testLocation, 0, 130, 0);    			
+    		}
+    	}
+    	return null;
     }
 }

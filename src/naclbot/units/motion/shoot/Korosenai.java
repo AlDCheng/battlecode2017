@@ -636,4 +636,110 @@ public class Korosenai extends GlobalVars {
     	}
     	return null;
     } 
+    
+    // Operates on the basis that it returns true but does not fire......
+    
+    public static boolean canFirePentad(Direction targetedDirection, MapLocation currentLocation, RobotInfo[] nearbyAllies, TreeInfo[] alliedTrees) throws GameActionException{
+    	
+    	// SYSTEM CHECK Print out that attempting to fire single shot
+		System.out.println("Attempting to fire a PENTAD SHOT");
+				    		
+		// Iterate over the five bullets to be fired
+		for (int j = -2; j <= 2; j++){
+
+			// Get the direction that the bullet will be traveling at
+			Direction fireDirection = new Direction (targetedDirection.radians + j * pentadOffset);
+			
+			rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 212, 175, 55);
+			
+			// Check to see if no allies are going to be hit by bullets.....
+    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
+    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+    			
+    			// SYSTEM CHECK - Print out that there was as tree in the way....
+    			System.out.println("Did not fire because allied unit in the way of shooting");	    			
+    			
+    			return false;
+    		}
+		}
+	    			
+		// Make sure your team is rich enough for you to fire something at them......
+		if(rc.canFirePentadShot()){
+			
+			// SYSTEM CHECK Print out that the unit has fired a pentad shot
+    		System.out.println("Can fire pentad shot");
+    		
+    		return true;
+		} 
+	    return false;
+    }
+    
+    // Operates on the basis that it returns true but does not fire......
+    
+    public static boolean canFireTriad(Direction targetedDirection, MapLocation currentLocation, RobotInfo[] nearbyAllies, TreeInfo[] alliedTrees) throws GameActionException{
+    	
+    	// SYSTEM CHECK Print out that attempting to fire single shot
+		System.out.println("Attempting to fire a TRIAD SHOT");
+				    		
+		// Iterate over the five bullets to be fired
+		for (int j = -1; j <= 1; j++){
+
+			// Get the direction that the bullet will be traveling at
+			Direction fireDirection = new Direction (targetedDirection.radians + j * triadOffset);
+			
+			rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 212, 175, 55);
+			
+			// Check to see if no allies are going to be hit by bullets.....
+    		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
+    				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+    			
+    			// SYSTEM CHECK - Print out that there was as tree in the way....
+    			System.out.println("Did not fire because allied unit in the way of shooting");	    			
+    			
+    			return false;
+    		}
+		}
+	    			
+		// Make sure your team is rich enough for you to fire something at them......
+		if(rc.canFireTriadShot()){
+			
+			// SYSTEM CHECK Print out that the unit has fired a pentad shot
+    		System.out.println("Can fire triad shot");
+    		
+    		return true;
+		} 
+	    return false;
+    }
+    
+    // Operates on the basis that it returns true but does not fire......
+    
+    public static boolean canFireSingle(Direction targetedDirection, MapLocation currentLocation, RobotInfo[] nearbyAllies, TreeInfo[] alliedTrees) throws GameActionException{
+    	
+    	// SYSTEM CHECK Print out that attempting to fire single shot
+		System.out.println("Attempting to fire a SINGLE SHOT");	
+			
+		rc.setIndicatorLine(currentLocation, currentLocation.add(targetedDirection, 10), 212, 175, 55);
+		
+		// Check to see if no allies are going to be hit by bullets.....
+		if (isDirectionOccupiedByAlly(currentLocation, targetedDirection, nearbyAllies, maximumAllyCheckDistance) ||
+				isDirectionOccupiedByAllyTree(currentLocation, targetedDirection, alliedTrees, maximumAllyTreeCheckDistance)){
+			
+			// SYSTEM CHECK - Print out that there was as tree in the way....
+			System.out.println("Did not fire because allied unit in the way of shooting");	    			
+			
+			return false;
+		}
+ 			
+		// Make sure your team is rich enough for you to fire something at them......
+		if(rc.canFireTriadShot()){
+			
+			// SYSTEM CHECK Print out that the unit has fired a pentad shot
+    		System.out.println("Can fire triad shot");
+    		
+    		return true;
+		} 
+	    return false;
+    }
+    
+    
 }

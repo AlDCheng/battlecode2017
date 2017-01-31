@@ -107,7 +107,8 @@ public class BarusuBot extends GlobalVars {
     // Constants for movement....
     private static final int initialDispersionRounds = 2; // Number of rounds for which the lumberjack will be forced to move away from its initial location
     private static final int distanceDefend = 5; // The maximum distance at which the lumberjack will sincerely attempt to defend its allies...
- 
+    private static final float maxDistanceToTargetTree = 10; // The maximum distance at which a lumberjack a tree to chop down......
+    
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
 	private static boolean nearbyAllyCheckOverride; // Stores whether or not the lumberjack will attempt to avoid hitting nearby allies.....
@@ -1292,6 +1293,8 @@ public class BarusuBot extends GlobalVars {
     	}
 	}
 	
+	// Function to get the location of a new target tree...........
+	
 	public static MapLocation getTargetTree() throws GameActionException {
 		
 		//set initial variables
@@ -1299,8 +1302,9 @@ public class BarusuBot extends GlobalVars {
 		
 		//scan through broadcast channels for x and y coordinates of target tree
 		for (int i=0; i<3; i++) {
-			possibleXCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i);
-			possibleYCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1);
+			
+			float possibleXCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i);
+			float possibleYCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1);
 			
 			//will be -1 if nothing to read 
 			if (possibleXCoord < 0) {
@@ -1310,13 +1314,14 @@ public class BarusuBot extends GlobalVars {
 			MapLocation possibleTreeLocation = new MapLocation(possibleXCoord, possibleYCoord);
 			
 			//will only accept as target if within 15 units away
-			if (myLocation.distanceTo(possibleTreeLocation) < 15) { 
+			if (myLocation.distanceTo(possibleTreeLocation) < maxDistanceToTargetTree) {
+				
+				
 				rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i, -1);
 				rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1, -1);
 				return possibleTreeLocation; 
 			}
-		}
-		
+		}		
 		//if there is no target tree satisfying above requirements
 		return null;
 	}

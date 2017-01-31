@@ -105,8 +105,7 @@ public class SaberBot extends GlobalVars {
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
 	private static final float separationDistance = sensorRadius - 1; // stores how large of a distance soldiers will attempt to keep from nearby units when they engage them...
-	private static MapLocation archonLocation; // Stores the location of the archon that the soldier is by default sent to attack....
-	
+	private static MapLocation archonLocation; // Stores the location of the archon that the soldier is by default sent to attack....	
     // Miscellaneous variables.....
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
  	private static boolean checkArchons = false; // Stores whether or not the robot will attempt to look for archons or not....
@@ -205,6 +204,7 @@ public class SaberBot extends GlobalVars {
             	RobotInfo[] enemyRobots = NearbyUnits(enemies, sensorRadius);
             	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
+            	TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
     			
             	// Update global variables.....
             	myWaifuIsOnodera = rc.getRoundNum();
@@ -255,168 +255,179 @@ public class SaberBot extends GlobalVars {
             	// ------------------------ MOVEMENT FUNCTIONS------------------------ //      
             	
             	// Placeholder for the location where the robot desires to move - can be modified by dodge
-            	MapLocation desiredMove = decideAction(distressInfo, enemyRobots, alliedRobots);
+            	MapLocation desiredMove = decideAction(distressInfo, enemyRobots, alliedRobots, nearbyTrees);
             	
-		       	if(desiredMove != null){
-			       	// SYSTEM CHECK - Print out where the desired move is.....
-			       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());
-		       	}        	
-            	
-            	// --------------------------- DODGING ------------------------ //
-
-            	// Call the dodge function
-		       	MapLocation dodgeLocation = null;
-		       	
-		       	if (normieEmiliaLover != null){
-		       		
-		       		// SYSTEM CHECK - Print out that the dodge function has been called with an enemy nearby....
-		       		System.out.println("Calling dodge with a nearby enemy....");
-		       		
-		       		dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, normieEmiliaLover.location, nearbyBullets, strideRadius, bodyRadius); 
-		       	}
-		       	else{		
-		       		
-		       		// SYSTEM CHECK - Print out that the dodge function has been called with an enemy nearby....
-		       		System.out.println("Calling dodge without a nearby enemy....");
-		       		
-		       		dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, null, nearbyBullets, strideRadius, bodyRadius); 
-				    
-		       	}
-            	// If there is a location that the unit can dodge to..
-            	if (dodgeLocation != null){
+            	// New change - sometimes the decideACtion will move the soldier.... If this happens do not run following code as desiredMOve has no effect...
+            	if(!rc.hasMoved()){
             		
-            		if(!dodgeLocation.equals(desiredMove)){
-            			
-	            		desiredMove = dodgeLocation;
-	            	   	// SYSTEM CHECK - Show desired move after path planning
-	        	    	System.out.println("desiredMove altered by dodge to: " + desiredMove.toString());
-            		}            		
-            		else{
-            			// And there is an enemy being shot at.....
-                		if(normieID != -1 && normieEmiliaLover != null){
-                			
-                			// Check to see if the current line of fire is blocked by a tree....
-                			if(Korosenai.isLineBLockedByTree(desiredMove, normieEmiliaLover.location, 1)){
-                				
-	                			// SYSTEM CHECK - Print out that the robot will attempt to find a different firing location..
-	                			System.out.println("Attempting to find another firing location");
-	                			
-	                			MapLocation newFiringLocation = Korosenai.findLocationToFireFrom(myLocation, normieEmiliaLover.location, desiredMove, strideRadius);
-	                			
-	                			if(newFiringLocation != null){
-	    	            			// SYSTEM CHECK - Print out that another firing location had been found...
-	    	            			System.out.println("New firing Location found.....");
-	    	            			desiredMove = newFiringLocation;
-	                			}
-                			}            		
-                		} 
-            		}            		
-            	}  
-            	
-               	// SYSTEM CHECK- Print out the amount of bytecode used prior to movecorrect
-		       	System.out.println("Bytecode used before move correct: " + Clock.getBytecodeNum());
-            	
-                
-            	// -------------------- MOVE CORRECTION ---------------------//
-            	
-		       	// Get the correction from the wrapping correct all move function....
-            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, allies, myLocation, desiredMove);            	
-		       	
-		       	if(correctedMove != null){
-		       		
-	    	       	// SYSTEM CHECK - Print out where the desired move is.....
-			       	System.out.println("Corrected move is: " + correctedMove.toString());	
+            		// SYSTEM CHECK - Print out that the soldier has not yet moved this turn...
+            		System.out.println("Soldier passed through decideAction without actually moving");
+            		
+			       	if(desiredMove != null){
+				       	// SYSTEM CHECK - Print out where the desired move is.....
+				       	System.out.println("Currently attempting to move to location: " + desiredMove.toString());
+			       	}        	
+	            	
+	            	// --------------------------- DODGING ------------------------ //
+	
+	            	// Call the dodge function
+			       	MapLocation dodgeLocation = null;
 			       	
-			       	// Set the desired location to be the corrected location
-			       	desiredMove = correctedMove;
-		       	}
-		       	// If the robot could not find a location to go to even with the corrected location.....
-		       	else{	       		
-		       		// SYSTEM CHECK - Print out that the scout never had a place to go to...
-		       		System.out.println("No move possible..... will simply remain in place");
-		       		
-		       		desiredMove = myLocation;		       		
-		       	}
-		       	
-		       	if(desiredMove.equals(myLocation)){
-		       		
-		       		// Check to see if the robot is in a corner...
-		       		int corner = Yuurei.checkIfNearCorner(bodyRadius, strideRadius, desiredMove);
-		       		
-		       		// If the above function returns a positive integer, the robot is near a corner....
-		       		if (corner != 0){
-		       			
-		       			// SYSTEM CHECK - Print out that the robot is near a corner....
-		       			System.out.println("Currently near a corner, will attempt to rectify....");
-		       			
-		       			desiredMove = Yuurei.moveOutOfCorner(strideRadius, corner, desiredMove);		       	
-		       		}		       		
-		       	}
-		       	          	
-		       	// SYSTEM CHECK- Print out the amount of bytecode used after move correct
-		       	System.out.println("Bytecode used after move correct: " + Clock.getBytecodeNum());
-		       	
-		     // ------------------------ Movement Execution  ------------------------//
-
-    	       	// If the robot can move to the location it wishes to go to.....
-		       	if(rc.canMove(desiredMove) && desiredMove != myLocation){
-		       		
-		       		// SYSTEM CHECK - Print out that the robot successfully moved....
-		       		System.out.println("Soldier succesfully moved to desired location");
-		       		
-		       		// Check to see if the robot will die there
-		       		// checkDeath(desiredMove);
-		       		// Move to the target location
-		       		rc.move(desiredMove);
-		       	}
-		       	
-		       	// If the robot didn't move along, check if it would die from staying in its current location....
-		       	else{
-		       		
-		    		// SYSTEM CHECK - Print out that the robot did not move
-		       		System.out.println("Soldier did not move this turn....");
-		       				       		
-		       		// checkDeath(myLocation);
-		       	} 
-		       	
-		       	// SYSTEM CHECK- Print out the amount of bytecode used prior to shooting.......
-		       	System.out.println("Bytecode used prior to shooting: " + Clock.getBytecodeNum());		       	
-		       	
-		       	// Update the position for the end of the round...
-                lastPosition =  rc.getLocation();
-
-            	// ------------------------ Shooting ------------------------//
-            
-            	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
-            	// System.out.println("Moving on to shooting phase...................");
-            	
-            	boolean hasShot = false;
-            	
-            	if (normieID != -1){
-            		
-            		// SYSTEM CHECK - Show who the robot is aiming at...
-            		System.out.println("Currently shooting at a robot with ID: " + normieID);
-            		
-            		// Get a list of allied trees to avoid shooting..
-            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
-            		
-            		if(rc.canSenseRobot(normieID)){
-            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
-            		}
-            		else{
-            			normieID= -1;
-            			normieEmiliaLover = null;
-            		}
-            	}
-            	
-            	if(hasShot){            		
-            		// SYSTEM CHECK - Inform that the robot has shot something this round....
-            		System.out.println("The robot has fired a shot this round....");
+			       	if (normieEmiliaLover != null){
+			       		
+			       		// SYSTEM CHECK - Print out that the dodge function has been called with an enemy nearby....
+			       		System.out.println("Calling dodge with a nearby enemy....");
+			       		
+			       		dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, normieEmiliaLover.location, nearbyBullets, strideRadius, bodyRadius); 
+			       	}
+			       	else{		
+			       		
+			       		// SYSTEM CHECK - Print out that the dodge function has been called with an enemy nearby....
+			       		System.out.println("Calling dodge without a nearby enemy....");
+			       		
+			       		dodgeLocation = Yuurei.tryDodge(desiredMove, myLocation, null, nearbyBullets, strideRadius, bodyRadius); 
+					    
+			       	}
+	            	// If there is a location that the unit can dodge to..
+	            	if (dodgeLocation != null){
+	            		
+	            		if(!dodgeLocation.equals(desiredMove)){
+	            			
+		            		desiredMove = dodgeLocation;
+		            	   	// SYSTEM CHECK - Show desired move after path planning
+		        	    	System.out.println("desiredMove altered by dodge to: " + desiredMove.toString());
+	            		}            		
+	            		else{
+	            			// And there is an enemy being shot at.....
+	                		if(normieID != -1 && normieEmiliaLover != null){
+	                			
+	                			// Check to see if the current line of fire is blocked by a tree....
+	                			if(Korosenai.isLineBLockedByTree(desiredMove, normieEmiliaLover.location, 1)){
+	                				
+		                			// SYSTEM CHECK - Print out that the robot will attempt to find a different firing location..
+		                			System.out.println("Attempting to find another firing location");
+		                			
+		                			MapLocation newFiringLocation = Korosenai.findLocationToFireFrom(myLocation, normieEmiliaLover.location, desiredMove, strideRadius);
+		                			
+		                			if(newFiringLocation != null){
+		    	            			// SYSTEM CHECK - Print out that another firing location had been found...
+		    	            			System.out.println("New firing Location found.....");
+		    	            			desiredMove = newFiringLocation;
+		                			}
+	                			}            		
+	                		} 
+	            		}            		
+	            	}  
+	            	
+	               	// SYSTEM CHECK- Print out the amount of bytecode used prior to movecorrect
+			       	System.out.println("Bytecode used before move correct: " + Clock.getBytecodeNum());
+	            	
+	                
+	            	// -------------------- MOVE CORRECTION ---------------------//
+	            	
+			       	// Get the correction from the wrapping correct all move function....
+	            	MapLocation correctedMove = Yuurei.correctAllMove(strideRadius, bodyRadius, false, allies, myLocation, desiredMove);            	
+			       	
+			       	if(correctedMove != null){
+			       		
+		    	       	// SYSTEM CHECK - Print out where the desired move is.....
+				       	System.out.println("Corrected move is: " + correctedMove.toString());	
+				       	
+				       	// Set the desired location to be the corrected location
+				       	desiredMove = correctedMove;
+			       	}
+			       	// If the robot could not find a location to go to even with the corrected location.....
+			       	else{	       		
+			       		// SYSTEM CHECK - Print out that the scout never had a place to go to...
+			       		System.out.println("No move possible..... will simply remain in place");
+			       		
+			       		desiredMove = myLocation;		       		
+			       	}
+			       	
+			       	if(desiredMove.equals(myLocation)){
+			       		
+			       		// Check to see if the robot is in a corner...
+			       		int corner = Yuurei.checkIfNearCorner(bodyRadius, strideRadius, desiredMove);
+			       		
+			       		// If the above function returns a positive integer, the robot is near a corner....
+			       		if (corner != 0){
+			       			
+			       			// SYSTEM CHECK - Print out that the robot is near a corner....
+			       			System.out.println("Currently near a corner, will attempt to rectify....");
+			       			
+			       			desiredMove = Yuurei.moveOutOfCorner(strideRadius, corner, desiredMove);		       	
+			       		}		       		
+			       	}
+			       	          	
+			       	// SYSTEM CHECK- Print out the amount of bytecode used after move correct
+			       	System.out.println("Bytecode used after move correct: " + Clock.getBytecodeNum());
+			       	
+			     // ------------------------ Movement Execution  ------------------------//
+	
+	    	       	// If the robot can move to the location it wishes to go to.....
+			       	if(rc.canMove(desiredMove) && desiredMove != myLocation){
+			       		
+			       		// SYSTEM CHECK - Print out that the robot successfully moved....
+			       		System.out.println("Soldier succesfully moved to desired location");
+			       		
+			       		// Check to see if the robot will die there
+			       		// checkDeath(desiredMove);
+			       		// Move to the target location
+			       		rc.move(desiredMove);
+			       	}
+			       	
+			       	// If the robot didn't move along, check if it would die from staying in its current location....
+			       	else{
+			       		
+			    		// SYSTEM CHECK - Print out that the robot did not move
+			       		System.out.println("Soldier did not move this turn....");
+			       				       		
+			       		// checkDeath(myLocation);
+			       	} 
+			       	
+			       	// SYSTEM CHECK- Print out the amount of bytecode used prior to shooting.......
+			       	System.out.println("Bytecode used prior to shooting: " + Clock.getBytecodeNum());		       	
+			       	
+			       	// Update the position for the end of the round...
+	                lastPosition =  rc.getLocation();
+	
+	            	// ------------------------ Shooting ------------------------//
+	            
+	            	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
+	            	// System.out.println("Moving on to shooting phase...................");
+	            	
+	            	boolean hasShot = false;
+	            	
+	            	if (normieID != -1){
+	            		
+	            		// SYSTEM CHECK - Show who the robot is aiming at...
+	            		System.out.println("Currently shooting at a robot with ID: " + normieID);
+	            		
+	            		// Get a list of allied trees to avoid shooting..
+	            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
+	            		
+	            		if(rc.canSenseRobot(normieID)){
+	            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+	            		}
+	            		else{
+	            			normieID= -1;
+	            			normieEmiliaLover = null;
+	            		}
+	            	}
+	            	
+	            	if(hasShot){            		
+	            		// SYSTEM CHECK - Inform that the robot has shot something this round....
+	            		System.out.println("The robot has fired a shot this round....");
+	            	}
+	            	else{
+	              		// SYSTEM CHECK - Inform that the robot has not shot something this round.......
+	            		System.out.println("The robot has not fired a shot this round....");            		
+	            	}
             	}
             	else{
-              		// SYSTEM CHECK - Inform that the robot has not shot something this round.......
-            		System.out.println("The robot has not fired a shot this round....");            		
-            	}            	
+            		// SYSTEM CHECK - Print out that the robot has already attempted to move....
+            		System.out.println("Robot has already moved, no dodging or move correction will occur......");
+            	}
 				
 				// Check to see if the unit can shake a tree....
 				Chirasou.attemptInteractWithTree(myLocation, bodyRadius);
@@ -444,7 +455,12 @@ public class SaberBot extends GlobalVars {
                 // The robot was in routing phase, so increment that counter
                 else{
                 	roundsRouting += 1;
-                }    
+                }   
+                // If the robot still has a defend location increment it by one...
+                if (defendLocation != null){
+                	roundsDefending += 1;                	
+                }
+                
 
                 Clock.yield();    	
             	
@@ -462,7 +478,7 @@ public class SaberBot extends GlobalVars {
     
 	// Function to determine how the robot will act this turn....
 	
-	private static MapLocation decideAction(BroadcastChannels.BroadcastInfo distressInfo, RobotInfo[] enemyRobots, RobotInfo nearbyAllies[]) throws GameActionException{
+	private static MapLocation decideAction(BroadcastChannels.BroadcastInfo distressInfo, RobotInfo[] enemyRobots, RobotInfo nearbyAllies[], TreeInfo[] nearbyTrees) throws GameActionException{
 		
 		// If the scout found some distress signal this turn...
     	if(distressInfo != null){
@@ -487,11 +503,11 @@ public class SaberBot extends GlobalVars {
     	if (defendLocation != null && roundsDefending <= giveUpDefending){    		
 
 			// Call the defend function to determine what to do.....
-    		return defend(enemyRobots, nearbyAllies);
+    		return defend(enemyRobots, nearbyAllies, nearbyTrees);
     	}
     	
     	// Otherwise just call the move function normally......
-    	else {
+    	else{
     		
     		defendLocation = null;
     		
@@ -501,14 +517,14 @@ public class SaberBot extends GlobalVars {
     		}
     		
     		// Call the move function to determine where the robot will actually end up going.....
-    		return move(enemyRobots, nearbyAllies);
+    		return move(enemyRobots, nearbyAllies, nearbyTrees);
     	}
 	}
     
     
 	// Function for the robot to go back and defend if it has received a distress signal....
     
-	private static MapLocation defend(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{		
+	private static MapLocation defend(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies, TreeInfo[] nearbyTrees) throws GameActionException{		
 
 		// If it already nearby or can simply sense the offending unit, track it
 		if(rc.canSenseRobot(defendAgainstID)){
@@ -529,7 +545,7 @@ public class SaberBot extends GlobalVars {
 			System.out.println("Found the offending enemy....");
 			
 			// Track the enemy....            			
-			return engage(enemyRobots, nearbyAllies);           			
+			return engage(enemyRobots, nearbyAllies, nearbyTrees);           			
 		}
 		// If the robot has gotten close enough to the defend location and has not yet exited the defned loop, do so....
 		else if (myLocation.distanceTo(defendLocation) <= strideRadius){
@@ -542,7 +558,7 @@ public class SaberBot extends GlobalVars {
 			defendAgainstID = -1; 		
 			
 			// Decide a new action to go to the move loop......			
-			return decideAction(null, enemyRobots, nearbyAllies);
+			return decideAction(null, enemyRobots, nearbyAllies, nearbyTrees);
 		
 		}
 		
@@ -589,11 +605,20 @@ public class SaberBot extends GlobalVars {
 				}
 			}
 			
+			if((myWaifuIsOnodera >= 500 && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
+				
+				// SYSTEM CHECK - Print out that the robot will now attempt to fire at archons...
+				System.out.println("Will now attempt to shoot archons....");
+				
+				// Search again for enemies......
+				normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, true);			
+			}
+			
 			// If there was no nearby enemy on the way back to defend...			
 			if (normieEmiliaLover == null){
 				
 				// Call the move function
-				return moveTowardsGoalLocation(enemyRobots, nearbyAllies);	
+				return moveTowardsGoalLocation(enemyRobots, nearbyAllies, nearbyTrees);	
 			}
 			else{				
 				// Update the normieID
@@ -603,13 +628,13 @@ public class SaberBot extends GlobalVars {
 	    		System.out.println("The soldier has noticed the enemy Robot with ID: " + normieID);
 
 				// Call the engage function.........
-				return engage(enemyRobots, nearbyAllies);  
+				return engage(enemyRobots, nearbyAllies, nearbyTrees);  
 			
 			}
 		}            		         		
 	} 
 	
-    private static MapLocation move(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{
+    private static MapLocation move(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies, TreeInfo[] nearbyTrees) throws GameActionException{
 
 		// SYSTEM CHECK - Print out that the robot is searching for nearest enemy to engage
 		System.out.println("Searching for the next enemy to engage...."); 
@@ -672,7 +697,7 @@ public class SaberBot extends GlobalVars {
 			System.out.println("Attempting to move to the goal location at: " + goalLocation.toString());
 			
        		// Call the routing function to obtain a location to go to........
-			return moveTowardsGoalLocation(enemyRobots, nearbyAllies);
+			return moveTowardsGoalLocation(enemyRobots, nearbyAllies, nearbyTrees);
     	} 
 		
 		// If there is a robot to track....
@@ -688,7 +713,7 @@ public class SaberBot extends GlobalVars {
     		System.out.println("The soldier has noticed the enemy Robot with ID: " + normieID);
 
 			// Call move again with the updated information - so that the robot will pass into the second bloc of logic
-			return engage(enemyRobots, nearbyAllies);   	
+			return engage(enemyRobots, nearbyAllies, nearbyTrees);   	
 		
 		// If there is no robot to be tracked and the robot is not receiving any orders
 		} else{
@@ -730,7 +755,7 @@ public class SaberBot extends GlobalVars {
     			System.out.println("Attempting to move to last known location of the archon.....");
 
     			// Tell the robot to go towards the commanded location....		            			
-    			return moveTowardsGoalLocation(enemyRobots, nearbyAllies);
+    			return moveTowardsGoalLocation(enemyRobots, nearbyAllies, nearbyTrees);
     		}
     		else{
     			return myLocation;	            		
@@ -741,7 +766,7 @@ public class SaberBot extends GlobalVars {
     // Function to follow a unit and approach it..... Similar to scout code but a soldier will never stop following the robot..... 
     // A soldier bot's job in life is to hunt down and kill what it is tracking... especially if the thing it is tracking likes Emilia
     
-	private static MapLocation engage(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{
+	private static MapLocation engage(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies, TreeInfo[] nearbyTrees) throws GameActionException{
 		
 		// If the robot can currently sense the robot it was tracking in the previous turn
     	if (rc.canSenseRobot(normieID) && normieEmiliaLover != null){
@@ -755,11 +780,7 @@ public class SaberBot extends GlobalVars {
     		// If the enemy is a soldier - utilize the more complex engageSoldier function.....
     		if (normieEmiliaLover.type == RobotType.SOLDIER){
     			
-    			return Todoruno.engageSoldier(myLocation, normieEmiliaLover, strideRadius, sensorRadius, enemyRobots, nearbyAllies);
-    			
-    			
-    			
-    			
+    			return Todoruno.engageSoldier(myLocation, normieEmiliaLover, strideRadius, bodyRadius, sensorRadius, enemyRobots, nearbyAllies, nearbyTrees);
     		}
     		
     		// Otherwise if the enemy is a lumberjack or a tank...
@@ -831,7 +852,7 @@ public class SaberBot extends GlobalVars {
 	
     // Function to use when moving towards a certain location with a certain target.....
     
-    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies) throws GameActionException{
+    private static MapLocation moveTowardsGoalLocation(RobotInfo[] enemyRobots, RobotInfo[] nearbyAllies, TreeInfo[] nearbyTrees) throws GameActionException{
     	
     	// If the robot has gotten close enough to the goal location, exit the command phase and do something else
     	if (myLocation.distanceTo(goalLocation) < 2 || roundsRouting >= giveUpOnRouting){
@@ -847,7 +868,7 @@ public class SaberBot extends GlobalVars {
     		isCommanded = false;
     		
     		// Call the move function again...
-    		return move(enemyRobots, nearbyAllies);
+    		return move(enemyRobots, nearbyAllies, nearbyTrees);
     	}
     	
     	else{

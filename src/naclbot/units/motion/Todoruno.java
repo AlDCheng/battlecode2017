@@ -394,36 +394,49 @@ public class Todoruno extends GlobalVars {
 		
 		RobotInfo enemySoldier, // The RobotInfo of the enemy soldier....
 		
-		float strideRadius, // The stride radius of the robot.........
-		
+		float strideRadius, // The stride radius of the robot.........		
+		float bodyRadius, // The body radius of the robot...................		
 		float sensorRadius, // The sensor ardius of the robot
 		
-		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............	
-		
-		RobotInfo[] nearbyAllies // The RobotInfo of all nearby allies...	
+		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............			
+		RobotInfo[] nearbyAllies, // The RobotInfo of all nearby allies...		
+		TreeInfo[] nearbyTrees // The location of any nearby trees....
 		
 		) throws GameActionException{
 		
 		// SYSTEM CHECK - Make sure that the soldier knows that it is engaging a soldier........... Print out a crimson dot on the soldier.....
-		System.out.println("Engaging an enemy soldier with ID: " );		
+		System.out.println("Engaging an enemy soldier with ID: " + enemySoldier.ID);		
 		rc.setIndicatorDot(startingLocation, 220, 20, 60);
 		
 		// Get array lists of all nearby allied and enemy soldiers..........		
 		ArrayList<RobotInfo> nearestEnemySoldiers = Chirasou.getNearestSoldiers(nearbyEnemies, startingLocation);
 		ArrayList<RobotInfo> nearestAlliedSoldiers = Chirasou.getNearestSoldiers(nearbyAllies, startingLocation);
 		
-		// Retrieve the location of the enemy soldier....
+		// Retrieve the location of the enemy soldier.... and the direction to it
 		MapLocation enemyLocation = enemySoldier.location;
+		Direction enemyDirection = startingLocation.directionTo(enemyLocation);
 		
+		// Retrieve whether or not there are trees in the way.....
+		TreeInfo treesInWay = Chirasou.treesInDirection(startingLocation, enemyDirection, nearbyTrees, bodyRadius, strideRadius);
+		
+		// SYSTEM CHECK - Print out the number of nearby enemy soldiers and allied soldiers.....
 		System.out.println("Number of nearby enemy soldiers: " + nearestEnemySoldiers.size() + " allied soldiers: " + nearestAlliedSoldiers.size());
 		
-		if (nearestEnemySoldiers.size() == 1 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1)){
+		// If there is only one enemy soldier and the line to shoot is free (and there are no trees within the vicinity and the robot is fairly healthy...
+		if (nearestEnemySoldiers.size() == 1 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1)
+				&& rc.getHealth() >= 10 && treesInWay == null){
 			
 			// SYSTEM CHECK - Draw a Yellow line to the target enemy...........
 			rc.setIndicatorLine(startingLocation, enemyLocation, 255, 255, 0);
 			
-			return startingLocation;
-		}	
+			return chargeSoldier(startingLocation, enemySoldier, strideRadius, nearbyAllies);
+		}
+		// If there is a tree in the way and there are one or two soldiers nearby and there is a tree in the way, that the soldier can hide behind......
+		//else if (nearestEnemySoldiers.size() <= 2 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) && treesInWay != null){
+			
+			//return null;			
+		//}
+		
 		else{
 			return engageEnemy(startingLocation, enemySoldier, strideRadius, sensorRadius -1);
 		}
@@ -433,18 +446,61 @@ public class Todoruno extends GlobalVars {
 	// Function to run at the soldier and fire pentads........... 
 	// Assumes that there are no trees in the way between the soldier and the enemy soldier being charged
 	
-	private static MapLocation chargeSoldier(MapLocation startingLocation, RobotInfo enemySoldier, float strideRadius){
+	private static MapLocation chargeSoldier(MapLocation startingLocation, RobotInfo enemySoldier, float strideRadius, RobotInfo[] nearbyAllies) throws GameActionException{
 		
+		// Get a list of allied trees to avoid shooting..
+		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, rc.getTeam());
 		
+		// Retrieve the location of the enemy soldier....
+		MapLocation enemyLocation = enemySoldier.location;
 		
+		// Direction to..........
+		Direction directionToSoldier = startingLocation.directionTo(enemyLocation);
 		
+		MapLocation desiredMove = null;
 		
+		for(int i = 1; i <= 10; i ++){
+			
+			if (rc.canMove(startingLocation.add(directionToSoldier, strideRadius * i / 10))){
+				desiredMove = startingLocation.add(directionToSoldier, strideRadius * i / 10);
+			}			
+		}
 		
+		if(desiredMove != null){
+			
+			// If the soldier can move in the target direction......
+			rc.move(desiredMove);
+			
+			// Check to see if the robot can fire the pentad......
+				// Only fires pentad if no other allies will get hit and that the robot is sufficiently close to the enemy........
+			if(Korosenai.canFirePentad(directionToSoldier, startingLocation, nearbyAllies, alliedTrees) && startingLocation.distanceTo(enemyLocation) <= 5){
+				
+				// Fire the pentad!
+				rc.firePentadShot(directionToSoldier);
+			}
+			// If the robot cannot fire the pentad.....
+			else{
+				
+				// Check to see if the robot can fire a triad.....
+				if(Korosenai.canFireTriad(directionToSoldier, startingLocation, nearbyAllies, alliedTrees)){
+					
+					// Fire the triad
+					rc.fireTriadShot(directionToSoldier);
+				}
+				// If the robot cannot fire a triad shot for some rason....
+				else{					
+					// Check to see if the robot can fire a single...
+					if(Korosenai.canFireSingle(directionToSoldier, startingLocation, nearbyAllies, alliedTrees)){
+						
+						// Fire the triad
+						rc.fireSingleShot(directionToSoldier);
+					}				
+				}
+			}
+			return desiredMove;
+		}			
+		// If the robot was unable to move towards the enemy soldier..........
 		return startingLocation;
-		
-		
-		
-		
 	}
 	
 	
