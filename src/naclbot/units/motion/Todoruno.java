@@ -71,7 +71,8 @@ public class Todoruno extends GlobalVars {
 	
 	public final static float maximumPairDirectionSeparation = (float) (Math.PI/4);
 	public final static float minimumPairPentadSeparation = (float) (Math.PI/6);
-	public final static float maximumPairDistanceSeparation = 2;
+	public final static float maximumPairDistanceSeparation = (float) 2.5;
+	public final static float maximalNearPairDistance = (float) 4.5;
 	
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- OLD FUNCTIONS --- -------------------------------//
@@ -817,7 +818,7 @@ public class Todoruno extends GlobalVars {
 		
 		// If the angular distance between the two units is small enough so that the soldier could reliably shoot both....
 		if(Math.abs(direction1.radians - direction2.radians) <= maximumPairDirectionSeparation
-				&& diffDistance <= maximumPairDistanceSeparation && minimumDistance >= 4.5 && treesInWay == null){
+				&& diffDistance <= maximumPairDistanceSeparation && minimumDistance >= maximalNearPairDistance && treesInWay == null){
 			
 			if(Math.abs(direction1.radians - direction2.radians) <= minimumPairPentadSeparation){
 				
@@ -960,10 +961,8 @@ public class Todoruno extends GlobalVars {
 			
 			return engageEnemy(startingLocation, enemySoldier, strideRadius, sensorRadius -1);
 		}
-	}
-	
-	
-	
+	}	
+
  	
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- SCOUTING FUNCTIONS -------------------------------//
