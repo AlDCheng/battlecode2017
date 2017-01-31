@@ -340,7 +340,7 @@ public class GlobalVars {
     	} else if (rc.getTeamBullets() > 3000) {
     		//if we have excess of bullets
     		rc.donate(rc.getTeamBullets() - 1000);
-    	} else if (rc.getTreeCount() > 50 && rc.getTeamBullets() >= (VP_COST+100)) {
+    	} else if (rc.getTreeCount() > 50 && rc.getTeamBullets() >= (VP_COST+100) && rc.getType() == RobotType.ARCHON) {
     		//if we have a booming economy (50 trees) then slowly exchange bullets
     		rc.donate(VP_COST);
     	}
