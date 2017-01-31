@@ -110,7 +110,7 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int LUMBERJACKS_ALIVE_CHANNEL = 9951;
 	
 	// Stores coordinates of trees that lumberjacks should cut down 
-	public final static int LUMBERJACK_TREE_CHANNEL = 9952;
+	public final static int LUMBERJACK_TREE_CHANNEL = 3000;
 	// Stores the beginning of the information that BarusuBot will use this turn.....
 			// BarusuBot Information
 			// Bit 0 - Tree #1 x coord.
@@ -119,6 +119,13 @@ public class BroadcastChannels extends GlobalVars {
 			// Bit 3 - Tree #2 y coord.
 			// Bit 4 - Tree #3 x coord.
 			// Bit 5 - Tree #3 y coord.
+			// Bit 6 - Tree #4 y coord.
+			// Bit 7 - Tree #4 y coord.
+			// Bit 8 - Tree #5 y coord.
+			// Bit 9 - Tree #5 y coord.
+			// Bit 10 - Tree #6 y coord.
+			// Bit 11 - Tree #6 y coord.
+	
 	
 	// ----------------------- REMBOT INFORMATION -------------------------//
 	
