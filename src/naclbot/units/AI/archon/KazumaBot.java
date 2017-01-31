@@ -50,6 +50,9 @@ public class KazumaBot extends GlobalVars {
 	public static int nearbyBulletTreeCount;
 	public static int chosenBulletTreeChannel = -1;
 	
+	public static int nearbyUnitTreeCount;
+	public static int chosenUnitTreeChannel = -1;
+	
 	// Starting game phase
 	public static void init() throws GameActionException {
 		
@@ -83,10 +86,11 @@ public class KazumaBot extends GlobalVars {
         }
         
         broadcastBulletTreeCount();
+        broadcastUnitTreeCount();
         
-        System.out.println(rc.readBroadcast(20) + " " +  rc.readBroadcast(21));
-        System.out.println(rc.readBroadcast(22) + " " +  rc.readBroadcast(23));
-        System.out.println(rc.readBroadcast(24) + " " + rc.readBroadcast(25));
+        System.out.println(rc.readBroadcast(30) + " " +  rc.readBroadcast(31));
+        System.out.println(rc.readBroadcast(32) + " " +  rc.readBroadcast(33));
+        System.out.println(rc.readBroadcast(34) + " " + rc.readBroadcast(35));
         
         // Build gardeners
 		constructGardeners(treeNum);
@@ -446,5 +450,41 @@ public class KazumaBot extends GlobalVars {
 		}
 		
 		return bulletCount; 
+	}
+	
+	public static void broadcastUnitTreeCount() throws GameActionException {
+		nearbyUnitTreeCount = countNearbyUnitTrees();
+		
+		// Count nearby bullet trees..
+		if (chosenUnitTreeChannel < 0) {
+			//if hasn't initialized it's own unique channel
+			for (int i=0; i<3; i++) {
+	    		//asserts that channel is currently empty
+	    		if (rc.readBroadcast(BroadcastChannels.ARCHONS_UNIT_TREE_CHANNEL + 2*i) == 0) {
+	    			// sets a unique channel for this archon
+	    			rc.broadcast(BroadcastChannels.ARCHONS_UNIT_TREE_CHANNEL + 2*i, myID);
+	    			chosenUnitTreeChannel = BroadcastChannels.ARCHONS_UNIT_TREE_CHANNEL + 2*i + 1;
+	    			break;
+	    		}
+	    		
+			}
+		}
+	
+		rc.broadcast(chosenUnitTreeChannel, nearbyUnitTreeCount);
+	
+	}
+	
+	//counts number of nearby neutral trees than can be shaken (for scout production)
+	public static int countNearbyUnitTrees() throws GameActionException { 
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+		int unitTreeCount = 0;
+		
+		for (TreeInfo tree: nearbyTrees) { 
+			if (tree.getTeam() == Team.NEUTRAL && tree.containedRobot != null) {
+				unitTreeCount++;
+			}
+		}
+		
+		return unitTreeCount; 
 	}
 }
