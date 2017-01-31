@@ -344,7 +344,7 @@ public class GARNiDELiABot extends GlobalVars {
                 			}
                 		}
                 		// Else add lumberjack order
-                		else if (!((String)buildOrder.get(0)[0]).equals("LUMBERJACK")){
+                		else {
                 			Object newOrder[] = new Object[2];
                         	newOrder[0] = new String("LUMBERJACK");
                         	newOrder[1] = 1;
@@ -532,7 +532,7 @@ public class GARNiDELiABot extends GlobalVars {
         			if (newLoc != null) {
         				
         				// Determine death
-        				checkDeath(newLoc);
+//        				checkDeath(newLoc);
         				return newLoc;
         			}
         		}
@@ -559,7 +559,7 @@ public class GARNiDELiABot extends GlobalVars {
             		if (newLoc != null) {
             			
             			// Determine death
-            			checkDeath(newLoc);
+//            			checkDeath(newLoc);
             			return newLoc;
             		}
             	}
@@ -617,6 +617,8 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	private static void checkDeath(MapLocation location) throws GameActionException{
 		
+		System.out.println("Bytecode Start: " + Clock.getBytecodeNum());
+		
 		// If the lumberjack will lose all of its health from moving to that location....
 		boolean willDie = iFeed.willFeed(location);
 		
@@ -632,6 +634,8 @@ public class GARNiDELiABot extends GlobalVars {
 	        // Update gardener number for other units to see.....
 	        rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, currentGardenerNumber - 1);			
 		}
+		
+		System.out.println("Bytecode End: " + Clock.getBytecodeNum());
 	}
 	
 	//-------------------------------[Unit Building]-------------------------------

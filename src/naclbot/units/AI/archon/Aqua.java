@@ -20,7 +20,7 @@ public class Aqua extends GlobalVars {
 	public static boolean believeHasDied = false;
 	
 	public static float emptyDensity = 0;
-	private static float gardenerWeight = 20;
+	private static float gardenerWeight = 1;
 	private static float bulletWeight = 0;
 	private static float enemyWeight = 0;
 	
@@ -72,7 +72,10 @@ public class Aqua extends GlobalVars {
     	MapLocation desiredMove = myLocation;
 		
 		// Find optimal space to move to
-		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees());
+//		disperseLocation = findOptimalSpace(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees(), (float)4);
+//    	disperseLocation = findOptimalSpaceNew(30, strideRadius+bodyRadius, strideRadius+bodyRadius, 
+//    											initDirection.getAngleDegrees(), (float)4, (float)2);
+    	disperseLocation = findOptimalSpaceSweep(30, strideRadius+bodyRadius, strideRadius+bodyRadius, initDirection.getAngleDegrees(), (float)4);
 //    	disperseLocation = findOptimalSpace(30, sensorRadius-3, sensorRadius-3, initDirection.getAngleDegrees());
 		if (disperseLocation != null){            		
     		desiredMove = disperseLocation;
@@ -122,7 +125,7 @@ public class Aqua extends GlobalVars {
 	// Function to obtain the initial direction that the archon will attempt to build something - checks all nearby walls 
 	// so that it gets the most open space to move forward and construct additional gardeners
 	
-	public static Direction getInitialWalls(MapLocation myLocation) throws GameActionException{
+	public static Direction getInitialWalls(MapLocation myLocation, Direction start) throws GameActionException{
 		
 		// Initialize an array to store the  distances to any walls (obstacles to building)
 		float[] wallDistances = new float[16];
@@ -137,7 +140,7 @@ public class Aqua extends GlobalVars {
 			for(int j = 0; j < 16; j++){
 				
 				// Get the locations to check for the obstacles
-				Direction directionToCheck = new Direction((float)(j * Math.PI/8));
+				Direction directionToCheck = new Direction((float)(start.radians + j * Math.PI/8));
 				float distanceToCheck = i * initialWallCheckGrain;
 				MapLocation locationToCheck = myLocation.add(directionToCheck, distanceToCheck);
 				
@@ -199,7 +202,7 @@ public class Aqua extends GlobalVars {
 		}
 		
 		// Calculate the direction to go to...
-		Direction newDirection = new Direction(index * (float) (Math.PI/8));
+		Direction newDirection = new Direction(start.radians + index * (float) (Math.PI/8));
 		
 		// SYSTEM CHECK - Put a green line to show which direction the arcon will attempt to move...
 		rc.setIndicatorLine(myLocation, myLocation.add(newDirection,10), 0, 125, 0);
@@ -256,7 +259,7 @@ public class Aqua extends GlobalVars {
 		return crowdedFactor;
 	}
 	
-	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength, float start) throws GameActionException {
+	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength, float start, float radius) throws GameActionException {
 		
 //		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
 		
@@ -274,7 +277,6 @@ public class Aqua extends GlobalVars {
 		
 		// Find openness of current space:
 		float minOpenness = Float.MAX_VALUE;
-		float radius = 2;
 		
 		// Tree weighting; radius = 1 (body) + 2 (tree)
 		minOpenness += rc.senseNearbyTrees(radius).length;
@@ -311,12 +313,22 @@ public class Aqua extends GlobalVars {
 					// Add penalty for cases on edge of map (equivalent to 3 trees)
 					if(!(rc.onTheMap(potLoc, 2))) {
 						empty++;
-						openness = (float)0.5;
+						openness = (float)10;
 //						openness = (float)0.5;
 					} else {
 						openness = 0;
 						// Tree weighting; radius = 1 (body) + 2 (tree)
-						openness += 2*rc.senseNearbyTrees(potLoc, radius, null).length;
+						TreeInfo[] trees = rc.senseNearbyTrees(potLoc, radius, null);
+						for (int i = 0; i < trees.length; i++) {
+							if (trees[i].team == us) {
+								openness += 4;
+							}
+							else {
+								openness += 1;
+							}
+						}
+						
+//						openness += 2*rc.senseNearbyTrees(potLoc, radius, null).length;
 						// Unit weighting (for own Team)
 //						openness += rc.senseNearbyRobots(potLoc, radius, us).length;
 						RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
@@ -458,7 +470,7 @@ public class Aqua extends GlobalVars {
 	//---------------------------------------------------------------------------------------------
 	// Scans immediate radius of gardener (in degrees)
 	// Output Format: [0]last availible tree plant space; [1]reserved unit building space
-	public static Direction scanBuildRadius(float angleInterval, float start, float dist, float extend) throws GameActionException {
+	public static Direction scanBuildRadius(float angleInterval, float start, float dist, float extend, float totalSweep) throws GameActionException {
 		// Storage output
 		Direction finalDir = new Direction(start + (float)Math.PI);
 		
@@ -471,8 +483,10 @@ public class Aqua extends GlobalVars {
 		// Make sure only one revolution is checked
 		float totalAngle = 0;
 		
+		System.out.println("Sweep rad: " + (totalSweep/2)+1);
+		
 		// Scan for 1 revolution
-		while (totalAngle <= 181) {
+		while (totalAngle <= (totalSweep/2)+1) {
 			
 			// Scan both sides around
 			for (int rotSwitch = -1; rotSwitch < 2; rotSwitch+=2) {
@@ -487,15 +501,18 @@ public class Aqua extends GlobalVars {
 				// Get location to search
 				MapLocation newLoc = curLoc.add(dirCheck,dist);
 				
-				// Check if tree can be planted
-				if(rc.canPlantTree(dirCheck)) {
-//						System.out.println("Can be planted");
-					rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
-					
-					if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist),(float)0.5))) {
-						if (rc.onTheMap(newLoc.add(dirCheck, extend), (float)0.5)) {
-							finalDir = dirCheck;
-						}
+				rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
+				
+//				System.out.println("New Loc: " + newLoc);
+			
+				rc.setIndicatorLine(curLoc, newLoc, 0, 255, 255);
+				
+				if(!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist),(float)0.6)) &&
+						!(rc.isCircleOccupiedExceptByThisRobot(curLoc.add(dirCheck, dist+extend),(float)0.6))) {
+					if (rc.onTheMap(newLoc.add(dirCheck, extend), (float)0.5)) {
+						rc.setIndicatorLine(curLoc, newLoc, 255, 128, 0);
+						finalDir = dirCheck;
+						return finalDir;
 					}
 				}
 			}
@@ -503,5 +520,294 @@ public class Aqua extends GlobalVars {
 		}
 		
 		return finalDir;
+	}
+	
+	public static MapLocation findOptimalSpaceNew(float angleInterval, float lengthInterval, float maxLength, float start, 
+													float radius, float radiusTrees) throws GameActionException {
+		
+//		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
+		
+		// Get robot type
+		RobotType thisBot = rc.getType();
+		Team us = rc.getTeam();
+		Team them = us.opponent();
+		
+		// Get current location
+		MapLocation curLoc = rc.getLocation();
+		
+		// Declare potential and final location
+		MapLocation potLoc = curLoc;
+		MapLocation finalLoc = curLoc;
+		
+		// Find openness of current space:
+		float minOpenness = Float.MAX_VALUE;
+		
+		/*
+		// Tree weighting; radius = 1 (body) + 2 (tree)
+		minOpenness += rc.senseNearbyTrees(radius).length;
+		// Unit weighting (for own Team)
+		minOpenness += rc.senseNearbyRobots(radius, us).length;
+		// Unit weighting (for enemy Team)
+		minOpenness += enemyWeight*rc.senseNearbyRobots(radius, them).length;
+		*/
+		
+		int empty = 0;
+		int totalchecks = 0;
+		
+//		System.out.println("Max Length: " + maxLength);
+		float length = lengthInterval;
+		// Declare angle/length modifiers
+		// Check
+		while(length <= maxLength) {
+			float angle = start;
+			float totalAngle = 0;
+			
+			while(totalAngle <= 180) {
+				
+				// Scan both sides around
+				for (int rotSwitch = -1; rotSwitch < 1; rotSwitch+=2) {
+				
+					float[] openness = {Float.MAX_VALUE,Float.MAX_VALUE};
+					
+					for(int k = 0; k <= 1; k++) {
+						totalchecks++;
+						System.out.println("k: " + k);
+						// Get potential location
+						potLoc = curLoc.add((float)Math.toRadians(rotSwitch*angle + 180*k), length);
+						
+						rc.setIndicatorDot(potLoc, 178, 102, 255);
+						
+						
+						// Check if on Map
+						if(rc.onTheMap(potLoc)) {
+							
+							// Add penalty for cases on edge of map (equivalent to 3 trees)
+							if(!(rc.onTheMap(potLoc, 2))) {
+								empty++;
+								openness[k] = (float)10;
+	//							openness = (float)0.5;
+							} else {
+								openness[k] = 0;
+								// Tree weighting; radius = 1 (body) + 2 (tree)
+								TreeInfo[] trees = rc.senseNearbyTrees(potLoc, radius, null);
+								for (int i = 0; i < trees.length; i++) {
+									if (trees[i].team == us) {
+										openness[k] += 5;
+									}
+									else if (trees[i].location.distanceTo(curLoc) <= radiusTrees){
+										openness[k] += 1;
+									}
+								}
+								
+	//							openness += 2*rc.senseNearbyTrees(potLoc, radius, null).length;
+								// Unit weighting (for own Team)
+	//							openness += rc.senseNearbyRobots(potLoc, radius, us).length;
+								RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
+								for (int i = 0; i < ourBots.length; i++) {
+									if (ourBots[i].type == battlecode.common.RobotType.GARDENER) {
+										openness[k] += 2*gardenerWeight;
+									}
+									else if (ourBots[i].type == battlecode.common.RobotType.ARCHON) {
+										openness[k] += 1;
+									}
+									else {
+										//openness += 0.1;
+									}
+								}
+								// Unit weighting (for enemy Team)
+								openness[k] += enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
+								openness[k] += bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
+								
+								System.out.println("loc: " + potLoc + ", angle: " + (angle + 180*k) + ", openness: " + openness[k]);
+	//							System.out.println("Angle: " + angle + ", openness: " + openness);
+								
+								// Check if every space is open
+								if(openness[k] <= 1){
+									empty++;
+								}
+							}
+							
+	//						System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);
+						}
+						
+					}
+					// Compare with existing, and replace if lower
+					int index = 0;
+					float lowOpen = openness[0];
+					if ((openness[1] - openness[0]) > 4) {
+						index = 0;
+						lowOpen = openness[0] - (float)0.75*openness[1];
+					}
+					else if ((openness[0] - openness[1]) > 4) {
+						index = 1;
+						lowOpen = openness[1] - (float)0.75*openness[0];
+					}
+					else {
+						if (openness[1] < openness[0]) {
+							lowOpen = 1;
+							index = 1;
+						}
+					}
+					
+					System.out.println("0: " + openness[0] + ", 1: " + openness[1]);
+					
+					if (lowOpen < minOpenness) {
+						minOpenness = lowOpen;
+						finalLoc = curLoc.add((float)Math.toRadians(angle + 180*index), length);
+					}
+					angle += angleInterval;
+					totalAngle += angleInterval;
+				}
+			}
+			length += lengthInterval;
+		}
+		
+//		System.out.println("Final: " + finalLoc[0] + ", " + finalLoc[1]);
+		
+		if(empty == totalchecks) {
+			return curLoc;
+		}
+		return finalLoc;
+	}
+	
+	public static MapLocation findOptimalSpaceSweep(float angleInterval, float lengthInterval, float maxLength, float start, float radius) throws GameActionException {
+		
+//		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);
+		
+		// Get robot type
+		RobotType thisBot = rc.getType();
+		Team us = rc.getTeam();
+		Team them = us.opponent();
+		
+		// Get current location
+		MapLocation curLoc = rc.getLocation();
+		
+		// Declare potential and final location
+		MapLocation potLoc = curLoc;
+		MapLocation finalLoc = curLoc;
+		
+		// Find openness of current space:
+		float minOpenness = Float.MAX_VALUE;
+		
+		/*
+		// Tree weighting; radius = 1 (body) + 2 (tree)
+		minOpenness += rc.senseNearbyTrees(radius).length;
+		// Unit weighting (for own Team)
+		minOpenness += rc.senseNearbyRobots(radius, us).length;
+		// Unit weighting (for enemy Team)
+		minOpenness += enemyWeight*rc.senseNearbyRobots(radius, them).length;
+		*/
+		
+		int empty = 0;
+		int totalchecks = 0;
+		
+//		System.out.println("Max Length: " + maxLength);
+		float length = lengthInterval;
+		// Declare angle/length modifiers
+		// Check
+		while(length <= maxLength) {
+			float angle = start;
+			float totalAngle = 0;
+			
+			while(totalAngle < 181) {
+				
+				float[] openness = {Float.MAX_VALUE,Float.MAX_VALUE};
+				
+				for(int k = 0; k <= 1; k++) {
+					totalchecks++;
+					System.out.println("k: " + k);
+					// Get potential location
+					potLoc = curLoc.add((float)Math.toRadians(angle + 180*k), length);
+					
+					rc.setIndicatorDot(potLoc, 178, 102, 255);
+					
+					
+					// Check if on Map
+					if(rc.onTheMap(potLoc)) {
+						
+						// Add penalty for cases on edge of map (equivalent to 3 trees)
+						if(!(rc.onTheMap(potLoc, 2))) {
+							empty++;
+							openness[k] = (float)10;
+//							openness = (float)0.5;
+						} else {
+							openness[k] = 0;
+							// Tree weighting; radius = 1 (body) + 2 (tree)
+							TreeInfo[] trees = rc.senseNearbyTrees(potLoc, radius, null);
+							for (int i = 0; i < trees.length; i++) {
+								if (trees[i].team == us) {
+									openness[k] += 5;
+								}
+								else {
+									openness[k] += 1;
+								}
+							}
+							
+//							openness += 2*rc.senseNearbyTrees(potLoc, radius, null).length;
+							// Unit weighting (for own Team)
+//							openness += rc.senseNearbyRobots(potLoc, radius, us).length;
+							RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
+							for (int i = 0; i < ourBots.length; i++) {
+								if (ourBots[i].type == battlecode.common.RobotType.GARDENER) {
+									openness[k] += 2*gardenerWeight;
+								}
+								else if (ourBots[i].type == battlecode.common.RobotType.ARCHON) {
+									openness[k] += 1;
+								}
+								else {
+									//openness += 0.1;
+								}
+							}
+							// Unit weighting (for enemy Team)
+							openness[k] += enemyWeight*rc.senseNearbyRobots(potLoc, radius, them).length;
+							openness[k] += bulletWeight*rc.senseNearbyBullets(potLoc, radius).length;
+							
+							System.out.println("loc: " + potLoc + ", angle: " + (angle + 180*k) + ", openness: " + openness[k]);
+//							System.out.println("Angle: " + angle + ", openness: " + openness);
+							
+							// Check if every space is open
+							if(openness[k] <= 1){
+								empty++;
+							}
+						}
+						
+//						System.out.println("Angle: " + angle + ", length: " + length + ", Open: " + openness);
+					}
+					
+				}
+				// Compare with existing, and replace if lower
+				int index = 0;
+				float lowOpen = openness[0];
+				if ((openness[1] - openness[0]) > 4) {
+					index = 0;
+					lowOpen = openness[0] - (float)0.75*openness[1];
+				}
+				else if ((openness[0] - openness[1]) > 4) {
+					index = 1;
+					lowOpen = openness[1] - (float)0.75*openness[0];
+				}
+				else {
+					if (openness[1] < openness[0]) {
+						lowOpen = 1;
+						index = 1;
+					}
+				}
+				
+				if (lowOpen < minOpenness) {
+					minOpenness = lowOpen;
+					finalLoc = curLoc.add((float)Math.toRadians(angle + 180*index), length);
+				}
+				angle += angleInterval;
+				totalAngle += angleInterval;
+			}
+			length += lengthInterval;
+		}
+		
+//		System.out.println("Final: " + finalLoc[0] + ", " + finalLoc[1]);
+		
+		if(empty == totalchecks) {
+			return curLoc;
+		}
+		return finalLoc;
 	}
 }

@@ -11,6 +11,7 @@ import naclbot.units.interact.iFeed;
 import naclbot.units.motion.*;
 import naclbot.units.motion.routing.Routing;
 import naclbot.units.motion.search.TreeSearch;
+import naclbot.units.motion.search.EnemyArchonSearch;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,7 @@ public class KazumaBot extends GlobalVars {
 	
 	private static int remIsBestGirl = 0;
 	private static int unitNumber;
-	private static final int initMove = 30;
+	private static final int initMove = 15;
 	private static MapLocation initialGoal, lastPosition;
 	private static Direction lastDirection = new Direction(0);
 	
@@ -61,6 +62,9 @@ public class KazumaBot extends GlobalVars {
 		
 		// Only have one gardener in play
 		int numberofGardenersConstructed = rc.readBroadcast(BroadcastChannels.GARDENERS_CONSTRUCTED_CHANNELS);
+		
+		MapLocation oppositeEnemyArchon = EnemyArchonSearch.getCorrespondingArchon();
+		lastDirection = new Direction(oppositeEnemyArchon, rc.getLocation());
 		
 		// Def not Aqua
         remIsBestGirl = rc.getRoundNum();
@@ -90,6 +94,8 @@ public class KazumaBot extends GlobalVars {
 
             	// Update own location
             	MapLocation myLocation = rc.getLocation();
+            	
+            	lastPosition = myLocation;
             	
             	RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
             	BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), remIsBestGirl);
@@ -124,7 +130,7 @@ public class KazumaBot extends GlobalVars {
         			if (pollState == 2) {
         				constructGardeners(1);
         			}
-        			else if ((pollState == 0) && (rc.getTeamBullets() >= 150)) {
+        			else if ((pollState == 0) && (rc.getTeamBullets() >= 100)) {
         				rc.broadcast(BroadcastChannels.GARDENER_BUILD_FILL, 0);
         				rc.broadcast(BroadcastChannels.GARDENER_POLL, 1);
         				startPoll = true;
@@ -198,8 +204,11 @@ public class KazumaBot extends GlobalVars {
             		if (lastPosition.distanceTo(rc.getLocation()) > 0.1) {
                 		lastPosition =  rc.getLocation();
         	            lastDirection = new Direction(myLocation, lastPosition);
+        	            
+        	            rc.setIndicatorLine(myLocation,myLocation.add(testDirection,3),0,255,0);
                 	}
             	}
+            	
 	            System.out.println("current round number: " + remIsBestGirl);
 	            
 	            if (Clock.getBytecodesLeft() > 4000) {
@@ -248,6 +257,8 @@ public class KazumaBot extends GlobalVars {
             	// Update own location
             	MapLocation myLocation = rc.getLocation();
             	
+            	lastPosition = myLocation;
+            	
             	// Store the location that archon wants to go to....
             	MapLocation desiredMove = myLocation;
             	
@@ -262,7 +273,7 @@ public class KazumaBot extends GlobalVars {
             	
             	// On turn 1
             	if (remIsBestGirl == 1){
-            		lastDirection = Aqua.getInitialWalls(myLocation);
+            		lastDirection = Aqua.getInitialWalls(myLocation, lastDirection);
             		initialGoal = rc.getLocation().add(lastDirection, 10);
             		
             		// Broadcast density for gardeners
@@ -293,14 +304,22 @@ public class KazumaBot extends GlobalVars {
             	// Build if not crowded
             	if (!crowded || (remIsBestGirl <= initMove)) {
 //            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
-            		if (lastBuilt != null) {
-            			testDirection = new Direction(rc.getLocation(), lastBuilt); 
+//            		if (lastBuilt != null) {
+//            			testDirection = new Direction(rc.getLocation(), lastBuilt); 
+//            		}
+//            		else {
+//            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+//            		}
+                	
+            		
+            		testDirection = new Direction(lastDirection.radians + (float) Math.PI);
+            		
+            		rc.setIndicatorLine(myLocation,myLocation.add(testDirection,3),255,0,172);
+            		
+            		gardenerDirection = Aqua.scanBuildRadius(2, testDirection.getAngleDegrees(), (float)3, (float)1, (float)360);
+            		if (!rc.canHireGardener(gardenerDirection)) {
+            			gardenerDirection = Aqua.tryHireGardener(testDirection);
             		}
-            		else {
-            			testDirection = new Direction(lastDirection.radians + (float) Math.PI);
-            		}
-//                	gardenerDirection = Aqua.tryHireGardener(testDirection);
-            		gardenerDirection = Aqua.scanBuildRadius(2, testDirection.opposite().getAngleDegrees(), (float)1.5, (float)1);
             	}
   
             	// If the archon can hire a gardener in a certain direction...
@@ -350,6 +369,8 @@ public class KazumaBot extends GlobalVars {
             		if (lastPosition.distanceTo(rc.getLocation()) > 0.1) {
                 		lastPosition =  rc.getLocation();
         	            lastDirection = new Direction(myLocation, lastPosition);
+        	            
+        	            rc.setIndicatorLine(myLocation,myLocation.add(testDirection,3),0,255,0);
                 	}
             	}
 	            
