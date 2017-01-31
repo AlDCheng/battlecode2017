@@ -58,6 +58,12 @@ public class BroadcastChannels extends GlobalVars {
 	// Archon3: 24 - ID, 25 - count
 	public final static int ARCHONS_BULLET_TREE_CHANNEL = 20;
 	
+	// Stores number of unit trees seen around each archon 
+		// Archon1: 30 - ID, 31 - count
+		// Archon2: 32 - ID, 33 - count
+		// Archon3: 34 - ID, 35 - count
+	public final static int ARCHONS_UNIT_TREE_CHANNEL = 30;
+	
 	// Signals if gardener avaibility polling has started
 		// 0: Poll can be started
 		// 1: Poll is in progress
