@@ -7,10 +7,13 @@ import java.util.ArrayList;
 public class ReLife extends GlobalVars {
 	
 	public static float congestion = 0;
+	public static float congestionOptimal = 0;
 	
 	// Find largest nearby empty space for tree planting
 	// Also finds an empty space for unit/tree production
 	public static MapLocation findOptimalSpace(float angleInterval, float lengthInterval, float maxLength, float start, float radius) throws GameActionException {
+		
+		congestionOptimal = 0;
 		
 //		System.out.println("Angle Interval: " + angleInterval + ", Length Interval: " + lengthInterval);		
 		// Get robot type
@@ -44,6 +47,8 @@ public class ReLife extends GlobalVars {
 			float totalAngle = 0;
 			
 			while(totalAngle < 360) {
+				float angleCongestion = 0;
+				
 				// Get potential location
 				potLoc = curLoc.add((float)Math.toRadians(angle), length);
 				rc.setIndicatorDot(potLoc, 178, 102, 255);
@@ -65,10 +70,15 @@ public class ReLife extends GlobalVars {
 							if (trees[i].team == us) {
 								openness += 5;							
 							}
+							else if(trees[i].team == Team.NEUTRAL) {
+								angleCongestion = (float)angleInterval/(float)360.0;
+							}
 							else {
 								openness += 1;
 							}
 						}
+						
+						congestionOptimal += angleCongestion;
 						
 						// Unit weighting (for own Team)
 						RobotInfo[] ourBots = rc.senseNearbyRobots(potLoc, radius, us);
@@ -85,8 +95,8 @@ public class ReLife extends GlobalVars {
 						}
 						// Unit weighting (for enemy Team)
 //						openness += 3*rc.senseNearbyRobots(potLoc, radius, them).length;
-						RobotInfo[] themBots = rc.senseNearbyRobots(potLoc, radius, them);
-						openness += 0.1*themBots.length;
+//						RobotInfo[] themBots = rc.senseNearbyRobots(potLoc, radius, them);
+//						openness += 0.1*themBots.length;
 						/*for (int i = 0; i < themBots.length; i++) {
 							if (themBots[i].type == battlecode.common.RobotType.ARCHON) {
 								openness += 3;
@@ -181,7 +191,7 @@ public class ReLife extends GlobalVars {
 				}
 				else {
 //					if (rc.senseTreeAtLocation(newLoc) != null) {
-					if (selectiveSample >= 3) {
+					if (selectiveSample >= sampleInterval) {
 						if (rc.senseNearbyTrees(newLoc,(float)0.5,Team.NEUTRAL).length > 0) {
 							congestion += (sampleInterval+1)*(float)angleInterval/(float)360.0;
 							rc.setIndicatorLine(curLoc, newLoc, 173, 255, 47);
@@ -193,7 +203,7 @@ public class ReLife extends GlobalVars {
 				}
 			}
 			selectiveSample++;
-			if (selectiveSample > 3) {
+			if (selectiveSample > sampleInterval) {
 				selectiveSample = 0;
 			}
 			totalAngle += angleInterval;

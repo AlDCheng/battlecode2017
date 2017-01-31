@@ -157,7 +157,10 @@ public class KazumaBot extends GlobalVars {
         				
         				System.out.println("Build Fill: " + fillState);
         				
-        				if (fillState >= 1) {
+        				if (fillState == 0) {
+        					rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, 0);
+        				}
+        				else if (fillState >= 1) {
         					constructGardeners(1);
         					rc.broadcast(BroadcastChannels.GARDENER_POLL, 2);
         				}

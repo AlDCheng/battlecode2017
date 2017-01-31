@@ -64,11 +64,16 @@ public class GARNiDELiABot extends GlobalVars {
 	public static int progressSoldier = 0;
 	public static int progressTank = 0;
 	
+	public static int progressLumberjackCD = 0;
+	public static int progressScoutCD = 0;
+	public static int progressSoldierCD = 0;
+	public static int progressTankCD = 0;
+	
 	public static int unfreeze = 0;
 	
 	// Build
 	public static ArrayList<Object[]> buildOrder = new ArrayList<Object[]>();
-	private static int scanInt = 5;
+	private static float scanInt = (float)5;
 	private static int buildRadius = 1;
 	private static float scanRad = (float)1;
 	
@@ -78,7 +83,7 @@ public class GARNiDELiABot extends GlobalVars {
 	private static float congThresh = (float)0.5;
 	
 	private static float emptyDensity = 1;
-	private static final float emptyDensityThresh = (float)0.5;
+	private static final float emptyDensityThresh = (float)0.65;
 	private static final float initDistThresh = (float)40;
 	private static final float farDistThresh = (float)60;
 	
@@ -105,17 +110,21 @@ public class GARNiDELiABot extends GlobalVars {
         
         // Retrieve the number of active gardeners and increment......
        	int numberOfActiveGardeners = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
-       	rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfActiveGardeners + 1);    
+       	rc.broadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL, numberOfActiveGardeners + 1);
         
         scoutCount = rc.readBroadcast(BroadcastChannels.SCOUTS_ALIVE_CHANNEL);                
         soldierCount = rc.readBroadcast(BroadcastChannels.SOLDIERS_ALIVE_CHANNEL);
         lumberjackCount = rc.readBroadcast(BroadcastChannels.LUMBERJACKS_ALIVE_CHANNEL);
         tankCount = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
         
-        progressScout = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT);                
-        progressSoldier = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER);
-        progressLumberjack = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK);
-        progressTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
+        buildingScout = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT);
+        progressScout = (int)Math.ceil(buildingScout / 22.0);
+        buildingSoldier = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER);
+        progressSoldier = (int)Math.ceil(buildingSoldier / 22.0);
+        buildingLumberjack = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK);
+        progressLumberjack = (int)Math.ceil(buildingLumberjack / 22.0);
+        buildingTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
+        progressTank = (int)Math.ceil(buildingTank / 22.0);
         
         // Get enemy info:
         
@@ -156,11 +165,19 @@ public class GARNiDELiABot extends GlobalVars {
 		
 		boolean holdBuild = false;
 		
+		boolean voted = false;
+		
 		while (true) {
 			try {
+				System.out.println("Clock: " + Clock.getBytecodeNum());
+				
 				Win();
 				
+				// Get build timers
+				propagateBuild();
+				
 				updateTargetTrees();
+				System.out.println("Update Target Trees: " + Clock.getBytecodeNum());
 				
 				float x1 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL);
 				float y1 = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL+1);
@@ -181,8 +198,6 @@ public class GARNiDELiABot extends GlobalVars {
 				int rem = rc.getRoundNum();
 				
 				boolean hold = false;
-				// Get build timers
-				propagateBuild();
 				
 				// Get current location
 				MapLocation myLocation = rc.getLocation();
@@ -193,6 +208,7 @@ public class GARNiDELiABot extends GlobalVars {
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				
 				BroadcastChannels.broadcastNearestEnemyLocation(enemyRobots, myLocation, unitNumber, myLocation.add(Move.randomDirection(), (float)0.5), rem); 
+				System.out.println("Broadcast Enemy Location: " + Clock.getBytecodeNum());
 				
 				// If the robot thought it died previously but didn't.... update information...
             	if(believeHasDied){
@@ -210,11 +226,38 @@ public class GARNiDELiABot extends GlobalVars {
                 tankCount = rc.readBroadcast(BroadcastChannels.TANKS_ALIVE_CHANNEL);
                 gardenerCount = rc.readBroadcast(BroadcastChannels.GARDENERS_ALIVE_CHANNEL);
                 
-                progressScout = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT);                
-                progressSoldier = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER);
-                progressLumberjack = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK);
-                progressTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
+                buildingScout = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT);
+                progressScout = (int)Math.ceil(buildingScout / 22.0);
+                buildingSoldier = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER);
+                progressSoldier = (int)Math.ceil(buildingSoldier / 22.0);
+                buildingLumberjack = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK);
+                progressLumberjack = (int)Math.ceil(buildingLumberjack / 22.0);
+                buildingTank = rc.readBroadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK);
+                progressTank = (int)Math.ceil(buildingTank / 22.0);
                 
+                int nearScouts = 0;
+                int nearSoldiers = 0;
+                int nearLumberjacks = 0;
+                int nearTanks = 0;
+                
+                RobotInfo[] nearAllies = rc.senseNearbyRobots(-1, ourTeam);
+                for (int i = 0; i < nearAllies.length; i++) {
+                	if (nearAllies[i].type == RobotType.SCOUT) {
+                		nearScouts++;
+                	}
+                	else if (nearAllies[i].type == RobotType.SOLDIER) {
+                		nearSoldiers++;
+                	}
+                	else if (nearAllies[i].type == RobotType.LUMBERJACK) {
+                		nearLumberjacks++;
+                	}
+                	else if (nearAllies[i].type == RobotType.TANK) {
+                		nearTanks++;
+                	}                	
+                }
+                
+                
+                System.out.println("Broadcasts: " + Clock.getBytecodeNum());
             	// Get enemy info:
                 getDatafromRem(rem);
                 
@@ -223,8 +266,8 @@ public class GARNiDELiABot extends GlobalVars {
                 					", Lumberjacks: " + lumberjackCount + ", Tanks: " + tankCount);
                 System.out.println();
                 System.out.println("In Construction: ");
-                System.out.println("Scouts: " + progressScout + ", Soldiers: " + progressSoldier + 
-    					", Lumberjacks: " + progressLumberjack + ", Tanks: " + progressTank);
+                System.out.println("Scouts: " + progressScout + ":" + buildingScout + ", Soldiers: " + progressSoldier + ":" + buildingSoldier +
+    					", Lumberjacks: " + progressLumberjack + ":" + buildingLumberjack + ", Tanks: " + progressTank + ":" + buildingTank);
                 System.out.println();                
                 
 //                System.out.println("Unit Start: " + unitStart);
@@ -232,14 +275,21 @@ public class GARNiDELiABot extends GlobalVars {
             	//--------------------------------------------------------------------------------
             	prevMoveDir = prevMoveVec.opposite();
             	
+            	System.out.println("Data from Rem: " + Clock.getBytecodeNum());
+            	
             	RobotInfo[] ourBots = rc.senseNearbyRobots(sensorRadius, ourTeam);
             	System.out.println("BuildDir: " + buildDir);
             	if(canMove) {
             		buildDir = dirAway(myLocation, ourBots, initDir, sensorRadius);
             	}
                 
+            	System.out.println("Dir Away: " + Clock.getBytecodeNum());
+            	
                 // Attempt movement     
                 MapLocation destPoint = movement(canMove, myLocation, ourTeam, sensorRadius, prevMoveDir);
+                
+                System.out.println("Movement: " + Clock.getBytecodeNum());
+                
                 if(destPoint != null) {
                 	checkDeath(destPoint);
                 	rc.move(destPoint);
@@ -247,6 +297,8 @@ public class GARNiDELiABot extends GlobalVars {
                 else {
                 	checkDeath(myLocation);
                 }
+                
+                System.out.println("Check Death: " + Clock.getBytecodeNum());
             	
                 //--------------------------------------------------------------------------------
                 // Override
@@ -264,7 +316,7 @@ public class GARNiDELiABot extends GlobalVars {
                 
                 // Check for scout count
                 if (!override && (scoutCount+progressScout <= 0) && (rem > 200)) {
-                	
+                	System.out.println("Override Scout");
                 	// If present override next build order with scout
                 	Object order[] = new Object[2];
                 	order[0] = new String("SCOUT");
@@ -274,7 +326,7 @@ public class GARNiDELiABot extends GlobalVars {
                 }
 
                 // Check for surrounding enemies
-                if ((!override && rc.senseNearbyRobots(myLocation, sensorRadius, enemyTeam).length > 0) ||
+                if (((!override && rc.senseNearbyRobots(myLocation, sensorRadius, enemyTeam).length > 0) && (nearSoldiers < 1)) ||
                 	(!override && (enemySoldiers > 5) && (rc.getTreeCount() > soldierCount))){
                 	
                 	// If present override next build order with soldier
@@ -300,13 +352,21 @@ public class GARNiDELiABot extends GlobalVars {
                 //--------------------------------------------------------------------------------
                 // Unit Building
                 
+                System.out.println("Build: " + Clock.getBytecodeNum());
+                
                 // Need build rotations
                 // Check if enough bullets
                 float bulletNum = rc.getTeamBullets();
+                System.out.println("Bullets: " + bulletNum + ", Ready: " + rc.isBuildReady());
+                
                 if ((bulletNum > GameConstants.BULLET_TREE_COST) && (rc.isBuildReady())) {
                 	
                 	// Finds availible spots to build units/plant trees
+                	System.out.println("Before: " + Clock.getBytecodeNum());
+                	
                 	Direction buildDirs[] = ReLife.scanBuildRadius(scanInt, buildDir.opposite().getAngleDegrees(), buildRadius, scanRad);
+                	
+                	System.out.println("After: " + Clock.getBytecodeNum());
                 	
                 	if(buildDirs[0] == null) {
                 		saturated = true;
@@ -316,11 +376,15 @@ public class GARNiDELiABot extends GlobalVars {
                 	}
                 	
                 	System.out.println("Congestion: " + ReLife.congestion);
+                	System.out.println("Congestion (movement): " + ReLife.congestionOptimal);
                 	System.out.println("Neutral Trees: " + neutralTrees);
                 	
                 	//----------------------------------------------------------------------------
                 	// Congestion override
-                	if(ReLife.congestion > congThresh) {
+                	if((ReLife.congestion >= congThresh) || 
+                			(ReLife.congestionOptimal >= congThresh) && (nearLumberjacks < 1)) {
+                		ReLife.congestionOptimal = 0;
+                		
                 		if(buildOrder.size() > 0) {
                 			System.out.println("Need lumberjack");
                 			
@@ -356,6 +420,8 @@ public class GARNiDELiABot extends GlobalVars {
                 		}
                 	}
                 	//----------------------------------------------------------------------------
+                	
+                	System.out.println("Size: " + buildOrder.size());
                 	
                 	// Override trumps
                 	if (buildOrder.size() > 0) {
@@ -452,11 +518,20 @@ public class GARNiDELiABot extends GlobalVars {
 		                		canMove = false;
 		                	}
 		                	else if (buildDirs[1] != null) {
-		                		buildNextUnit(buildDirs[1], bulletNum, (float)(.7)*(1-emptyDensity));
+		                		buildNextUnit(buildDirs[1], bulletNum, (float)(.8)*(1-emptyDensity));
 		                	}
                 		}
                 	}
                 }
+                
+                System.out.println();
+                System.out.println("Hold: " + hold);           
+                System.out.println("In Construction: ");
+                System.out.println("Scouts: " + progressScout + ":" + buildingScout + ", Soldiers: " + progressSoldier + ":" + buildingSoldier +
+    					", Lumberjacks: " + progressLumberjack + ":" + buildingLumberjack + ", Tanks: " + progressTank + ":" + buildingTank);
+                System.out.println();                
+                
+                System.out.println("Poll: " + Clock.getBytecodeNum());
                 
                 //--------------------------------------------------------------------------------
                 // Generate list of trees that are not full health
@@ -472,9 +547,9 @@ public class GARNiDELiABot extends GlobalVars {
             	int pollState = rc.readBroadcast(BroadcastChannels.GARDENER_POLL);
             	System.out.println("Poll State: " + pollState);
             	
+            	System.out.println("Saturated State: " + saturated);
+            	
             	if (pollState == 1) {
-            		
-            		System.out.println("Saturated State: " + saturated);
             		
             		if (saturated) {
             			int fillState = rc.readBroadcast(BroadcastChannels.GARDENER_BUILD_FILL);
@@ -485,6 +560,21 @@ public class GARNiDELiABot extends GlobalVars {
             			rc.broadcast(BroadcastChannels.GARDENER_BUILD_FILL, fillState -= 1000);
             		}
             	}
+            	
+//            	// Poll 2
+//            	int pollNumState = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_POLL_STATE);
+//            	int pollNumGard = rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_POLL);
+//            	
+//            	System.out.println("Poll State 2: " + pollNumState);
+//            	
+//            	if (pollNumState == 1) {
+//            		rc.readBroadcast(BroadcastChannels.GARDENER_NUMBER_POLL_STATE);
+//            		rc.broadcast(BroadcastChannels.GARDENER_NUMBER_POLL, pollNumGard+1);
+////            		voted = true;
+//            	}
+//            	else {
+////            		voted = false;
+//            	}
 				
             	// End turn
 				Clock.yield();
@@ -643,31 +733,24 @@ public class GARNiDELiABot extends GlobalVars {
 	}
 	
 	//-------------------------------[Unit Building]-------------------------------
-	private static void propagateBuild() throws GameActionException {
-		if(buildingLumberjack == 1) {
-			rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK, Math.max(0, progressLumberjack-1));
-		}
-		if(buildingScout == 1) {
-			rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT, Math.max(0, progressScout-1));
-		}
-		if(buildingSoldier == 1) {
-			rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER, Math.max(0, progressSoldier-1));
-		}
-		if(buildingTank == 1) {
-			rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK, Math.max(0, progressTank-1));
-		}
-		
+	private static void propagateBuild() throws GameActionException {		
 		buildingLumberjack = Math.max(0, buildingLumberjack - 1);
 		buildingScout = Math.max(0, buildingScout - 1);
 		buildingSoldier = Math.max(0, buildingSoldier - 1);
 		buildingTank = Math.max(0, buildingTank - 1);
 		buildingTree = Math.max(0,  buildingTree - 1);
 		
+		rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK, buildingLumberjack);
+		rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT, buildingScout);
+		rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER, buildingSoldier);
+		rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK, buildingTank);
+		
 		unfreeze = Math.max(0, unfreeze - 1);
 	}
 	
 	public static void buildNextUnit(Direction dirToBuild, float bullets, float lumberRatio) throws GameActionException {
 		// Check if ready to build
+		System.out.println("Normal Build");
 		if (rc.isBuildReady()) {
 			// Prioritize by bullets; Tanks -> infantry -> scouts
 			// Try Tank
@@ -677,8 +760,8 @@ public class GARNiDELiABot extends GlobalVars {
 				Direction dir = ReLife.scanBuildRadiusTank(scanInt, dirToBuild.getAngleDegrees());
 				if (dir != null) {
 					rc.buildRobot(RobotType.TANK, dir);
-					buildingTank += 20;
-					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK, progressTank+1);
+					buildingTank += 22;
+					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK, buildingTank);
 					return;
 				}
 			}
@@ -702,8 +785,8 @@ public class GARNiDELiABot extends GlobalVars {
 					// Check for spacing
 					if (rc.canBuildRobot(RobotType.SOLDIER, dirToBuild)) {
 						rc.buildRobot(RobotType.SOLDIER, dirToBuild);
-						buildingSoldier += 20;
-						rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER, progressSoldier+1);
+						buildingSoldier += 22;
+						rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER, buildingSoldier);
 						return;
 					}
 				}
@@ -711,7 +794,8 @@ public class GARNiDELiABot extends GlobalVars {
 					// Check for spacing
 					if (rc.canBuildRobot(RobotType.LUMBERJACK, dirToBuild)) {
 						rc.buildRobot(RobotType.LUMBERJACK, dirToBuild);
-						buildingLumberjack += 20;
+						buildingLumberjack += 22;
+						rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK, buildingLumberjack);
 						return;
 					}
 				}
@@ -726,9 +810,10 @@ public class GARNiDELiABot extends GlobalVars {
 //				if (soldierCount > 5*scoutCount) {
 					if (((scoutCount + progressScout) < Math.ceil(rc.getRoundNum()/500)) && (scoutCount < 2/*SCOUT_LIMIT*/)) {
 						if (rc.canBuildRobot(RobotType.SCOUT, dirToBuild)) {
+							System.out.println("Building Scout");
 					        rc.buildRobot(RobotType.SCOUT, dirToBuild);
-					        buildingScout += 20;
-					        rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT, progressScout+1);
+					        buildingScout += 22;
+					        rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT, buildingScout);
 					        return;
 						}
 					}
@@ -739,25 +824,27 @@ public class GARNiDELiABot extends GlobalVars {
 	
 	public static void buildOverride(RobotType Unit, float bullets, Direction buildDir) throws GameActionException {
 		if (bullets >= Unit.bulletCost) {
+			System.out.println("Build Override");
 			if (rc.isBuildReady()) {
 				rc.buildRobot(Unit, buildDir);
 				
 				// Set counters
 				if (Unit == RobotType.LUMBERJACK) {
-					buildingLumberjack += 20;
-					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK, progressLumberjack+1);
+					buildingLumberjack += 22;
+					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_LUMBERJACK, buildingLumberjack);
 				}
 				else if (Unit == RobotType.SCOUT) {
-					buildingScout += 20;
-					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT, progressScout+1);
+					buildingScout += 22;
+					System.out.println("Building Scout");
+					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SCOUT, buildingScout);
 				}
 				else if (Unit == RobotType.SOLDIER) {
-					buildingSoldier += 20;
-					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER, progressSoldier+1);
+					buildingSoldier += 22;
+					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_SOLDIER, buildingSoldier);
 				}
 				else if (Unit == RobotType.TANK) {
-					buildingTank += 20;
-					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK, progressTank+1);
+					buildingTank += 22;
+					rc.broadcast(BroadcastChannels.GARDENER_CONSTRUCT_TANK, buildingTank);
 				}
 			}
 		}
