@@ -91,7 +91,7 @@ public class BestGirlBot extends GlobalVars {
 	// ------------- TREE SEARCH VARIABLES -------------// UNUSED
 	
 	// Parameter that asserts array storage of scout
-	private static final int staticMemorySize = 200;
+	private static final int staticMemorySize = 400;
 	private static final int dynamicMemorySize = TOTAL_TREE_BROADCAST_LIMIT;
 	
 	// Arrays that store the IDs of trees seen or sent by the scout
@@ -121,7 +121,7 @@ public class BestGirlBot extends GlobalVars {
 
 	// Various behavioral constants...
 	private static final float obstacleCheck = (float)0.4;    
-	private static int harvestThreshold = 400;
+	private static int harvestThreshold = 200;
 	private static float defendDistance = 30;
 	
     // Store the last known location of the gardener being tracked
@@ -213,10 +213,6 @@ public class BestGirlBot extends GlobalVars {
         // If the scout is the first to be made and was made early enough, call Rembot..........
         if(rc.readBroadcast(BroadcastChannels.HIRE_REMBOT_CHANNEL) == 1){
         	rc.broadcast(BroadcastChannels.HIRE_REMBOT_CHANNEL, 0);    
-        	// RemBot.init();
-        }
-        
-        if(scoutNumber == 0){
         	RemBot.init();
         }
         
@@ -402,7 +398,9 @@ public class BestGirlBot extends GlobalVars {
 	private static MapLocation decideAction(BroadcastChannels.BroadcastInfo distressInfo, RobotInfo[] enemyRobots) throws GameActionException{
 		
 		// Check to find the nearest bullet tree.......
-		TreeInfo nearestBulletTree = findNearestBulletTree();		
+		TreeInfo nearestBulletTree = findNearestBulletTree();	
+		
+		RobotInfo nearestNonScout = Chirasou.getNearestNonScoutEnemy(enemyRobots, myLocation);
 		
 		// If the scout found some distress signal this turn...
     	if(distressInfo != null){
@@ -432,15 +430,39 @@ public class BestGirlBot extends GlobalVars {
     	}
 		
     	// If the team currently doesn't have too many bullets and the robot is currently not tracking anything...... call the harvest function
-    	else if ((teamBullets < harvestThreshold && nearestBulletTree != null) && enemyRobots.length <= 2){
+    	else if ((teamBullets < harvestThreshold && nearestBulletTree != null) && enemyRobots.length <= 5){
     		
-    		allowedToEngage = false;
+    		if(nearestNonScout != null){
+    			
+	    		// Make sure that the nearest nearby unit is not too close...
+	    		if (myLocation.distanceTo(nearestNonScout.location) >= 7){
+	    			
+	        		allowedToEngage = false;
+	        		
+	        		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
+	        		System.out.println("Team requires additional bullets, so will attempt to find more");            		
+	
+	    			// Do the harvest function to attempt to get some bullets from some trees...
+	        		return harvest(nearestBulletTree);    			
+	    		}
+	     		// Otherwise if the enemy is too close.......
+	    		else{
+	    			allowedToEngage = false;
+	        		return move(enemyRobots);    			
+	    		}
+    		}
     		
-    		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
-    		System.out.println("Team requires additional bullets, so will attempt to find more");            		
+    		// Otherwise if there are no nearby enemies....
+    		else{
+    			
+        		allowedToEngage = false;
+        		
+        		// SYSTEM CHECK - Make sure that the scout knows that there are too few bullets on present team....
+        		System.out.println("Team requires additional bullets, so will attempt to find more");            		
 
-			// Do the harvest function to attempt to get some bullets from some trees...
-    		return harvest(nearestBulletTree);            		
+    			// Do the harvest function to attempt to get some bullets from some trees...
+        		return harvest(nearestBulletTree);    			
+    		}
     	}
     	
     	// Otherwise just call the move function normally......
@@ -649,11 +671,14 @@ public class BestGirlBot extends GlobalVars {
 			// Double check that the robot can interact with the tree print with MAROON DOT
 			if(rc.canInteractWithTree(nearestBulletTree.ID)){
 				
-				// SYSTEM CHECK - Indicate which tree was just shaken...
-				rc.setIndicatorDot(nearestBulletTree.location, 128, 0, 0);
+				if(rc.canShake(nearestBulletTree.ID)){
 				
-				// Shake the tree to obtain the bullets.........
-				rc.shake(nearestBulletTree.ID);
+					// Shake the tree to obtain the bullets.........
+					rc.shake(nearestBulletTree.ID);					
+					
+					// SYSTEM CHECK - Indicate which tree was just shaken...
+					rc.setIndicatorDot(nearestBulletTree.location, 128, 0, 0);
+				}
 				
 				// Since the robot has not yet moved, find the next tree to be shaken
 				TreeInfo newTree = findNearestBulletTree();				
@@ -796,7 +821,11 @@ public class BestGirlBot extends GlobalVars {
     		if (tree.location.distanceTo(myLocation) < minimum){
     		
 	    		if (tree.containedBullets > 0){
-	    			return tree;	    			
+	    			
+	    			// SYSTEM CHECK - Print that a nearby bullet tree has been found...
+	    			System.out.println("Nearby bullet tree found!");
+	    			
+	    			return tree;    			
 	    		}    		
     		}
     	} 
@@ -987,8 +1016,17 @@ public class BestGirlBot extends GlobalVars {
     	// If there is actually an enemy robot nearby
     	if (enemyRobots.length > 0){
     		
+    		// Allow the unit to track scouts iff it is later on in the game....
+    		if(onlyRemIsBestGirl >= 200){
     		// Return the enemy....
-    		return Chirasou.getNearestAlly(enemyRobots, myLocation);		
+    		return Chirasou.getNearestAlly(enemyRobots, myLocation);	
+    		}
+    		
+    		else{
+    		// Return the enemy....
+    		return Chirasou.getNearestNonScoutEnemy(enemyRobots, myLocation);
+    		}
+    		
     	} else{
     		// Otherwise return that there is no enemy to be found
     		return null;    		

@@ -87,6 +87,8 @@ public class BarusuBot extends GlobalVars {
     private static final int treeSearchAngleNumber = 24; // The number of angles that the lumberjack will search in order to find a new tree
     private static final float interactDistance = (float) 0.2; // How close the robot will attempt to get to a tree before attempting to interact with it.....
     
+    // Variables related to target trees....
+    private static MapLocation targetTree;
     
 	// ------------- PATH PLANNING VARIABLES -------------// UNUSED
     
@@ -107,7 +109,7 @@ public class BarusuBot extends GlobalVars {
     // Constants for movement....
     private static final int initialDispersionRounds = 2; // Number of rounds for which the lumberjack will be forced to move away from its initial location
     private static final int distanceDefend = 5; // The maximum distance at which the lumberjack will sincerely attempt to defend its allies...
-    private static final float maxDistanceToTargetTree = 10; // The maximum distance at which a lumberjack a tree to chop down......
+    private static final float maxDistanceToTargetTree = (float) 3; // The maximum distance at which a lumberjack a tree to chop down......
     
 	// Variables related to operational behavior...
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
@@ -151,10 +153,8 @@ public class BarusuBot extends GlobalVars {
         
         treeID = -1;
         treeToHarvest = null;
-       
-        // Initialize path list and goal location
-//       	routingPath = new ArrayList<MapLocation>();    	
-//       	Routing.setRouting(routingPath);
+        
+        targetTree = null;
        	
        	// In order to get the closest current ally..... obtain data for the nearest allied units and then the gardener if it exists....
      	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
@@ -493,75 +493,166 @@ public class BarusuBot extends GlobalVars {
 						
 					}
 					else{
-						// Search for a tree to harvest
-		            	TreeInfo nearestNeutralTree = getNextTreeToHarvest(nearbyTrees, myLocation); 
-		 
-		            	// If a viable tree was found
-		            	if (nearestNeutralTree != null){
-		            		
-		            		// Annul any previous command for the robot...
-		            		isCommanded = false;	goalLocation = null;
-		            		
-		            		// SYSTEM CHECK - Print out that the lumberjack has found a tree to cut.....
-		            		System.out.println("Found a new tree to harvest with ID: " + nearestNeutralTree.ID);
-		            		
-		            		// Set the harvest tree variables accordingly....
-		            		treeToHarvest = nearestNeutralTree;
-		            		treeID = nearestNeutralTree.ID;
-		            		
-		            		// Call the harvest function.....
-		            		return harvest(nearestNeutralTree, nearbyTrees);
-		            	}
-		            	
-		            	// If the robot was previously attempting to move to a location.....
-		            	else if(isCommanded){		            		
+						
+						// If there is no robot to track and the robot is not currently attempting to go to a single tree, utilize the target tree....
+						if(targetTree == null){
+							
+							// Read the gardener channels to get a new target tree...........
+							targetTree = readTargetTree();
+							
+							// If a new target tree was found...
+							if(targetTree!=null){
+								
+								// SYSTEM CHECK - Draw a dot on the location of the targeted tree....
+								rc.setIndicatorDot(targetTree, 255, 0, 0);
+								
+								// If the lumberjack is already next to the target tree... just attempt to harvest it....
+								if(myLocation.distanceTo(targetTree) <= 2.5){
+									
+									// SYSTEM CHECK - Print out that the robot is already near the tree
+									System.out.println("Already near the tree, will attempt to harvest");
+									
+									// Clear the target tree
+									targetTree = null;
+									
+									// Set the tree at the target tree location to be the new target tree....
+									treeToHarvest = rc.senseTreeAtLocation(targetTree);		
+									
+									// If for some reason the tree wasnt there by the time the lumberjack arrived....
+									if (treeToHarvest == null){
+										
+										return move(enemyRobots, nearbyTrees);
+									}
+									else{									
+										// If the lumberjack can still harvest that tree... do so...
+										return harvest(treeToHarvest, nearbyTrees);		
+									}
+								}
+								else{									
+									// Set the target tree as the new location to go to.........
+									setCommandLocation(targetTree);
+									
+									// Tell the robot to go towards the commanded location....		            			
+			            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
+								}
+							}
+						}
+						
+						// If there is a target location to go to......
+						if(targetTree != null){
+							
+							// SYSTEM CHECK - Draw a dot on the location of the targeted tree....
+							rc.setIndicatorDot(targetTree, 255, 0, 0);
+							
+							if(myLocation.distanceTo(targetTree) <= 2.5){
+								
+								// SYSTEM CHECK - Print out that the robot is already near the tree
+								System.out.println("Already near the tree, will attempt to harvest");
+								
+								// Clear the target tree
+								targetTree = null;
+								
+								// Set the tree at the target tree location to be the new target tree....
+								treeToHarvest = rc.senseTreeAtLocation(targetTree);
+								
+								// If for some reason the tree wasnt there by the time the lumberjack arrived....
+								if (treeToHarvest == null){
+									
+									return move(enemyRobots, nearbyTrees);
+								}
+								else{									
+									// If the lumberjack can still harvest that tree... do so...
+									return harvest(treeToHarvest, nearbyTrees);		
+								}			
+							}
+							
+							else{
+								
+								if(isCommanded){									
 
-	            			// Tell the robot to go towards the commanded location....		            			
-	            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
-		            	}
-		            	else{
-		            		
-		            		// SYSTEM CHECK - Print out that no tree was found....
-		            		System.out.println("No tree was found in the search");		
-		            		
-		            		// If the point to move to is out of bounds utilize correctional tools...
-		            		if(!rc.onTheMap(myLocation.add(lastDirection, bodyRadius + strideRadius))){
-		            		
-			            		// SYSTEM CHECK - Print out that the lumberjack is trying to move to is out of bounds....
-			            		System.out.println("Previous direction is out of bounds");	
+									// Tell the robot to go towards the commanded location....		            			
+			            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);								
+								}
+								else{
+									targetTree = null;
+									
+									return move(enemyRobots, nearbyTrees);
+								}
+							}
+						}
+						// If the robot had no target tree.......
+						else{
+						
+							// Search for a tree to harvest
+			            	TreeInfo nearestNeutralTree = getNextTreeToHarvest(nearbyTrees, myLocation); 
+			 
+			            	// If a viable tree was found
+			            	if (nearestNeutralTree != null){
 			            		
-		            			return myLocation.add(lastDirection, strideRadius / 5);		            			
-		            		}
-		            		
-		            		// Attempt to move in the last direction traveled....
-		            		for (int i = 5; i >= 1; i--){
-		            			
-		            			// Get the distance to move away for..... and the resulting map location
-		            			float testDistance = strideRadius / 5 * i;	            			
-		            			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
-		            			
-		            			// Check if the robot can move to the location and if it can, do so.....
-		            			if (rc.canMove(testLocation)){	 
-		            				
-		            				// SYSTEM CHECK - Show a LIGHT GRAY LINE to the location that the lumberjack now wishes to go to....
-		            				// rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
-		            				return testLocation;	            	
-		            			}		            			
-		            			// SYSTEM CHECK Place a dot on all rejected points...
-		            			// rc.setIndicatorDot(testLocation, 255, 211, 25);
-		            		}
-		            		// If a move in the last direction was not possible, simply order the robot to remain still...	
-		            		setCommandLocation(null);
-		            		
-		            		// If there was a valid point to go to...
-		            		if(isCommanded){    			
-
+			            		// Annul any previous command for the robot...
+			            		isCommanded = false;	goalLocation = null;
+			            		
+			            		// SYSTEM CHECK - Print out that the lumberjack has found a tree to cut.....
+			            		System.out.println("Found a new tree to harvest with ID: " + nearestNeutralTree.ID);
+			            		
+			            		// Set the harvest tree variables accordingly....
+			            		treeToHarvest = nearestNeutralTree;
+			            		treeID = nearestNeutralTree.ID;
+			            		
+			            		// Call the harvest function.....
+			            		return harvest(nearestNeutralTree, nearbyTrees);
+			            	}
+			            	
+			            	// If the robot was previously attempting to move to a location.....
+			            	else if(isCommanded){		            		
+	
 		            			// Tell the robot to go towards the commanded location....		            			
 		            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
-		            		}
-		            		else{
-		            			return myLocation;	            		
-		            		}
+			            	}
+			            	else{
+			            		
+			            		// SYSTEM CHECK - Print out that no tree was found....
+			            		System.out.println("No tree was found in the search");		
+			            		
+			            		// If the point to move to is out of bounds utilize correctional tools...
+			            		if(!rc.onTheMap(myLocation.add(lastDirection, bodyRadius + strideRadius))){
+			            		
+				            		// SYSTEM CHECK - Print out that the lumberjack is trying to move to is out of bounds....
+				            		System.out.println("Previous direction is out of bounds");	
+				            		
+			            			return myLocation.add(lastDirection, strideRadius / 5);		            			
+			            		}
+			            		
+			            		// Attempt to move in the last direction traveled....
+			            		for (int i = 5; i >= 1; i--){
+			            			
+			            			// Get the distance to move away for..... and the resulting map location
+			            			float testDistance = strideRadius / 5 * i;	            			
+			            			MapLocation testLocation = myLocation.add(lastDirection, testDistance);
+			            			
+			            			// Check if the robot can move to the location and if it can, do so.....
+			            			if (rc.canMove(testLocation)){	 
+			            				
+			            				// SYSTEM CHECK - Show a LIGHT GRAY LINE to the location that the lumberjack now wishes to go to....
+			            				// rc.setIndicatorLine(myLocation, testLocation, 110, 110, 110);    
+			            				return testLocation;	            	
+			            			}		            			
+			            			// SYSTEM CHECK Place a dot on all rejected points...
+			            			// rc.setIndicatorDot(testLocation, 255, 211, 25);
+			            		}
+			            		// If a move in the last direction was not possible, simply order the robot to remain still...	
+			            		setCommandLocation(null);
+			            		
+			            		// If there was a valid point to go to...
+			            		if(isCommanded){    			
+	
+			            			// Tell the robot to go towards the commanded location....		            			
+			            			return moveTowardsGoalLocation(enemyRobots, nearbyTrees);
+			            		}
+			            		else{
+			            			return myLocation;	            		
+			            		}
+			            	}
 		            	}           				
 		            }
 	            }	        		
@@ -654,6 +745,8 @@ public class BarusuBot extends GlobalVars {
 	    		// Reset the values necessary for switching into a command phase
 	    		goalLocation = null;
 	    		isCommanded = false;
+	    		
+	    		targetTree = null;
 	    		
 	    		// Call the move function again...
 	    		return move(enemyRobots, nearbyTrees);
@@ -935,9 +1028,11 @@ public class BarusuBot extends GlobalVars {
     				TreeInfo treeX = rc.senseTreeAtLocation(locationToCheck);
     				
     				// Make sure that the tree is not a friendly tree
-    				if (treeX.team != allies){    
+    				if (treeX.team != allies){     					
+    					
+    					// If the tree contains a robot.... prioritize it.....
     					if (treeX.getContainedRobot() != null) {
-    						System.out.println("FREELO");
+    						
     						unitTree = treeX;
     					}
 	    				// Add the tree to the list of tree distances
@@ -977,7 +1072,7 @@ public class BarusuBot extends GlobalVars {
     	int directionIndex = -1;
     	
     	// If there is a possibility for reaching tree with a unit then do that 
-    	if (unitTree != null) {
+    	if (unitTree != null && nearbyTrees.length <= 10) {
     		
     		return unitTree;
     	}
@@ -1057,7 +1152,6 @@ public class BarusuBot extends GlobalVars {
 		else{
 			return false;
 		}
-
 	}
 	
 	// ----------------------------------------------------------------------------------//
@@ -1295,10 +1389,18 @@ public class BarusuBot extends GlobalVars {
 	
 	// Function to get the location of a new target tree...........
 	
-	public static MapLocation getTargetTree() throws GameActionException {
+	public static MapLocation readTargetTree() throws GameActionException {
+		
+		
+		// Select the closest of the trees given by the gardener........
+		float minimumDistance = Integer.MAX_VALUE;
 		
 		//set initial variables
 		MapLocation myLocation = rc.getLocation();
+		
+		MapLocation finalTreeLocation = null;
+		
+		int index = -1;
 		
 		//scan through broadcast channels for x and y coordinates of target tree
 		for (int i=0; i<3; i++) {
@@ -1307,22 +1409,28 @@ public class BarusuBot extends GlobalVars {
 			float possibleYCoord = rc.readBroadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1);
 			
 			//will be -1 if nothing to read 
-			if (possibleXCoord < 0) {
+			if (possibleXCoord <= 0) {
 				break;
 			}
 			
 			MapLocation possibleTreeLocation = new MapLocation(possibleXCoord, possibleYCoord);
 			
 			//will only accept as target if within 15 units away
-			if (myLocation.distanceTo(possibleTreeLocation) < maxDistanceToTargetTree) {
+			if (myLocation.distanceTo(possibleTreeLocation) < maxDistanceToTargetTree && myLocation.distanceTo(possibleTreeLocation) < minimumDistance) {
 				
+				minimumDistance = myLocation.distanceTo(possibleTreeLocation);
 				
-				rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i, -1);
-				rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*i + 1, -1);
-				return possibleTreeLocation; 
+				finalTreeLocation = possibleTreeLocation;
+				
+				index = i;
 			}
-		}		
-		//if there is no target tree satisfying above requirements
-		return null;
+		}
+		
+		if (index != -1){
+			rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*index, -1);
+			rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + 2*index + 1, -1);
+			//if there is no target tree satisfying above requirements
+		}
+		return finalTreeLocation;
 	}
 }

@@ -50,7 +50,12 @@ public class Todoruno extends GlobalVars {
 				return "clockwise";
 			}			
 		}
-	}	
+	}		
+ 	
+	// ----------------------------------------------------------------------------------//
+	// -------------------------------- OLD FUNCTIONS --- -------------------------------//
+	// ----------------------------------------------------------------------------------//		
+	
 	
 	// Function to move towards a given robot
 
@@ -142,6 +147,11 @@ public class Todoruno extends GlobalVars {
 		// Return the same function with default muliplier 1
 		return moveTowardsTarget(trackedRobot, myLocation, strideRadius, rotationDirection, desiredMove, 1);
 	}
+	
+ 	
+	// ----------------------------------------------------------------------------------//
+	// -------------------------------- TRACKING FUNCTIONS ------------------------------//
+	// ----------------------------------------------------------------------------------//	
 		
 	
 	// Function to return a new entry to follow (prioritizes combat units...
@@ -255,6 +265,11 @@ public class Todoruno extends GlobalVars {
 		// After the correct information has been ascertained, return it.....
 		return returnRobot;
 	}
+	
+ 	
+	// ----------------------------------------------------------------------------------//
+	// -------------------------------- COMBAT MOVEMENT ---------------------------------//
+	// ----------------------------------------------------------------------------------//	
 	
 	
 	// Function used primarily to fight lumberjacks - kites away..........
@@ -417,25 +432,31 @@ public class Todoruno extends GlobalVars {
 		Direction enemyDirection = startingLocation.directionTo(enemyLocation);
 		
 		// Retrieve whether or not there are trees in the way.....
-		TreeInfo treesInWay = Chirasou.treesInDirection(startingLocation, enemyDirection, nearbyTrees, bodyRadius, strideRadius);
+		TreeInfo treesInWay = Chirasou.treesInDirection(startingLocation, enemyDirection, nearbyTrees, bodyRadius, strideRadius);		
+		
+		// Get a list of allied trees to avoid shooting..
+		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, rc.getTeam());
 		
 		// SYSTEM CHECK - Print out the number of nearby enemy soldiers and allied soldiers.....
 		System.out.println("Number of nearby enemy soldiers: " + nearestEnemySoldiers.size() + " allied soldiers: " + nearestAlliedSoldiers.size());
 		
 		// If there is only one enemy soldier and the line to shoot is free (and there are no trees within the vicinity and the robot is fairly healthy...
 		if (nearestEnemySoldiers.size() == 1 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1)
-				&& rc.getHealth() >= 10 && treesInWay == null){
+				&& rc.getHealth() >= 10 && treesInWay == null && startingLocation.distanceTo(enemyLocation) >= 3){
 			
 			// SYSTEM CHECK - Draw a Yellow line to the target enemy...........
 			rc.setIndicatorLine(startingLocation, enemyLocation, 255, 255, 0);
 			
-			return chargeSoldier(startingLocation, enemySoldier, strideRadius, nearbyAllies);
+			return chargeSoldier(startingLocation, enemySoldier, strideRadius, nearbyAllies, alliedTrees);
 		}
 		// If there is a tree in the way and there are one or two soldiers nearby and there is a tree in the way, that the soldier can hide behind......
-		//else if (nearestEnemySoldiers.size() <= 2 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) && treesInWay != null){
+		else if (nearestEnemySoldiers.size() == 1 && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) && treesInWay != null){
 			
-			//return null;			
-		//}
+			// SYSTEM CHECK - Draw a Light green line to the target enemy...........
+			rc.setIndicatorLine(startingLocation, enemyLocation, 152, 251, 152);
+			
+			return null;			
+		}
 		
 		else{
 			return engageEnemy(startingLocation, enemySoldier, strideRadius, sensorRadius -1);
@@ -446,16 +467,16 @@ public class Todoruno extends GlobalVars {
 	// Function to run at the soldier and fire pentads........... 
 	// Assumes that there are no trees in the way between the soldier and the enemy soldier being charged
 	
-	private static MapLocation chargeSoldier(MapLocation startingLocation, RobotInfo enemySoldier, float strideRadius, RobotInfo[] nearbyAllies) throws GameActionException{
-		
-		// Get a list of allied trees to avoid shooting..
-		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, rc.getTeam());
+	public static MapLocation chargeSoldier(MapLocation startingLocation, RobotInfo enemySoldier, 
+			float strideRadius, RobotInfo[] nearbyAllies, TreeInfo[] alliedTrees) throws GameActionException{
 		
 		// Retrieve the location of the enemy soldier....
-		MapLocation enemyLocation = enemySoldier.location;
+		MapLocation enemyLocation = enemySoldier.location;		
 		
+		float randomize = (float) (Math.random() * Math.PI / 9 - Math.PI/18); 
 		// Direction to..........
-		Direction directionToSoldier = startingLocation.directionTo(enemyLocation);
+		Direction directionTo = startingLocation.directionTo(enemyLocation);
+		Direction directionToSoldier = new Direction(directionTo.radians + randomize);		
 		
 		MapLocation desiredMove = null;
 		
@@ -503,7 +524,38 @@ public class Todoruno extends GlobalVars {
 		return startingLocation;
 	}
 	
+	// Function to shoot at an enemy and then find cover...........	
+	// Assumes that there is a tree in front of the soldier......
 	
+	public static MapLocation shootWithCover(MapLocation startingLocation, RobotInfo enemySoldier, float strideRadius, RobotInfo[]  nearbyAllies) throws GameActionException{
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		return null;
+	}
+	
+	
+	
+	
+	
+	
+	
+ 	
+	// ----------------------------------------------------------------------------------//
+	// -------------------------------- SCOUTING FUNCTIONS -------------------------------//
+	// ----------------------------------------------------------------------------------//	
 	
 	
 	

@@ -1,14 +1,12 @@
 package naclbot;
 import battlecode.common.*;
-import naclbot.units.AI.archon.ArchonBot;
 import naclbot.units.AI.archon.KazumaBot;
 import naclbot.units.AI.gardener.EmiliaBot;
 import naclbot.units.AI.gardener.GARNiDELiABot;
-import naclbot.units.AI.gardener.GardenerBot;
 import naclbot.units.AI.lumberjack.BarusuBot;
 import naclbot.units.AI.scout.BestGirlBot;
 import naclbot.units.AI.soldier.SaberBot;
-import naclbot.units.AI.tank.TankBot;
+import naclbot.units.AI.tank.MeguminBot;
 import naclbot.variables.GlobalVars;
 
 public strictfp class RobotPlayer extends GlobalVars{
@@ -45,7 +43,7 @@ public strictfp class RobotPlayer extends GlobalVars{
 			    break;
 			case TANK:
 				// EmiliaBot.init();
-				TankBot.init();
+				MeguminBot.init();
 			    break;
 			case LUMBERJACK:
 				// EmiliaBot.init();

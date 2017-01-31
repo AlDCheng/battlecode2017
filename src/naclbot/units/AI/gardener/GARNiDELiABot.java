@@ -170,9 +170,9 @@ public class GARNiDELiABot extends GlobalVars {
 				MapLocation loc2 = new MapLocation(x2,y2);
 				MapLocation loc3 = new MapLocation(x3,y3);
 				
-				rc.setIndicatorDot(loc1,0,0,0);
-				rc.setIndicatorDot(loc2,0,0,0);
-				rc.setIndicatorDot(loc3,0,0,0);
+				// rc.setIndicatorDot(loc1,0,0,0);
+				// rc.setIndicatorDot(loc2,0,0,0);
+				// rc.setIndicatorDot(loc3,0,0,0);
 				
 				
 				int rem = rc.getRoundNum();

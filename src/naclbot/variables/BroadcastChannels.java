@@ -553,9 +553,7 @@ public class BroadcastChannels extends GlobalVars {
 			if(distressLocation.distanceTo(myLocation) < respondDistance){
 				
 				// SYSTEM CHECK - display a blue line to the distress location and print out some data...
-				// rc.setIndicatorLine(myLocation, distressLocation, 0, 0, 128);
-				
-				
+				// rc.setIndicatorLine(myLocation, distressLocation, 0, 0, 128);				
 				
 				return newInfo;
 			}
