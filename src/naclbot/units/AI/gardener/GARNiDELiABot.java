@@ -81,6 +81,8 @@ public class GARNiDELiABot extends GlobalVars {
 	private static final float initDistThresh = (float)40;
 	private static final float farDistThresh = (float)60;
 	
+	public static ArrayList<TreeInfo> alreadyAssignedTrees = new ArrayList<TreeInfo>();
+	
 	// Unit entry point
 	public static void init() throws GameActionException {
 		System.out.println("I'm a gardener!");
@@ -902,10 +904,12 @@ public class GARNiDELiABot extends GlobalVars {
 			for (TreeInfo tree: nearbyTrees) {
 				
 				//can be cut down if it is neutral 
-				if (tree.getTeam() == Team.NEUTRAL) {
+				if (tree.getTeam() == Team.NEUTRAL && !alreadyAssignedTrees.contains(tree)) {
 					
 					rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + emptyChannelOffsets.get(index), tree.getLocation().x);
 					rc.broadcastFloat(BroadcastChannels.LUMBERJACK_TREE_CHANNEL + emptyChannelOffsets.get(index) + 1, tree.getLocation().y);
+					
+					alreadyAssignedTrees.add(tree);
 					
 					totalEmpty--;
 					index++;
