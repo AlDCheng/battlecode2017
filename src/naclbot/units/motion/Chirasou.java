@@ -194,13 +194,15 @@ public class Chirasou extends GlobalVars {
     				// SYSTEM CHECK - Place a orange dot on any tree that has been shaken...
     				rc.setIndicatorDot(locationToCheck, 255, 165, 0);
     				
-    				// Check to see if the robot is capable of interacting with a tree....
-    				
+    				// Check to see if the robot is capable of interacting with a tree....    				
     				if(rc.canInteractWithTree(locationToCheck)){
     					
-	    				// Shake the tree and set the boolean for having shaken a tree to true....
-	    				rc.shake(tree.ID);
-	    				hasShaken = true;
+    					// Make sure that the robot hasn't already shaken a tree
+    					if(rc.canShake()){
+		    				// Shake the tree and set the boolean for having shaken a tree to true....
+		    				rc.shake(tree.ID);
+		    				hasShaken = true;
+    					}
     				}
     			}
     		}    		

@@ -207,8 +207,11 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int ENEMY_HAS_BEEN_SEEN_CHANNEL = 1002;
 	
 	// First channel to actually store data for enemy locations
-	public final static int ENEMY_LOCATION_START_CHANNEL = 1003;
+	public final static int ENEMY_LOCATION_START_CHANNEL = 1003;	
 	
+	// First channel to include enemy firing data.........
+	public final static int ENEMY_FIRING_CHANNEL_START = 1250;
+
 	
 	// ------------------------  ENEMY ARCHON INFORMATION ----------------------//
 	
@@ -657,6 +660,7 @@ public class BroadcastChannels extends GlobalVars {
 			return null;
 		}
 	}
+	
 }
 
 

@@ -150,7 +150,8 @@ public class WallFollowing extends GlobalVars{
 		
 		try {			
 			// Indicator line pink for debug
-     		rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+     		//rc.setIndicatorLine(curLoc, dest, 255, 192, 203);
+			rc.setIndicatorDot(dest, 255, 255, 255);
 			
 			// Get point distance
 			float distance = curLoc.distanceTo(dest);
@@ -182,7 +183,7 @@ public class WallFollowing extends GlobalVars{
 				}
 			}
 			
-			rc.setIndicatorLine(curLoc, curLoc.add(startAngle,2), 255, 0, 0);
+			// rc.setIndicatorLine(curLoc, curLoc.add(startAngle,2), 255, 0, 0);
 //			rc.setIndicatorLine(curLoc, curLoc.add(destDir,2), 255, 0, 0);
 //			if (tryWallFollowReturn(startAngle, wfOffset, maxDist, maxDist/2, nextPoints, curLoc)) {
 			if (tryWallFollowReturnAlt(startAngle, wfOffset/2, maxDist, maxDist/2, nextPoints, curLoc)) {
@@ -266,7 +267,7 @@ public class WallFollowing extends GlobalVars{
 							System.out.println("Check bugging");
 							// Check if previously visited
 							if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
-								rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
+								// rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
 								
 								Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
 								
@@ -345,7 +346,7 @@ public class WallFollowing extends GlobalVars{
 						if(rc.canMove(dirMove,distanceCheck)) {
 							// Check if previously visited
 							if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
-								rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
+								// rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
 								
 								Direction dirRot = dir.rotateLeftDegrees(rotL * 90);
 								
@@ -437,7 +438,7 @@ public class WallFollowing extends GlobalVars{
 								if(rc.canMove(dirMove,distanceCheck)) {
 									// Check if previously visited
 									if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
-										rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
+										// rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
 										
 										Direction dirRot = dir.rotateLeftDegrees(-rotL * 90);
 										
@@ -516,7 +517,7 @@ public class WallFollowing extends GlobalVars{
 								if(rc.canMove(dirMove,distanceCheck)) {
 									// Check if previously visited
 									if(!Routing.checkPrevPath(curLoc.add(dirMove, distanceCheck))) {
-										rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
+										// rc.setIndicatorLine(curLoc, curLoc.add(dirMove, 1), 0, 255, 0);
 										
 										Direction dirRot = dir.rotateLeftDegrees(rotL * 90);
 										
