@@ -388,11 +388,30 @@ public class Todoruno extends GlobalVars {
 		
 		float strideRadius, // The stride radius of the robot.........
 		
-		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............			
+		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............	
 		
-		TreeInfo[] nearbyTrees){
+		RobotInfo[] nearbyAllies // The RobotInfo of all nearby allies...		
+		){
+		
+		// SYSTEM CHECK - Make sure that the soldier knows that it is engaging a soldier........... Print out a crimson dot on the soldier.....
+		System.out.println("Engaging an enemy soldier with ID: " );
+		rc.setIndicatorDot(startingLocation, 220, 20, 60);
+		
+		ArrayList<RobotInfo> nearestEnemySoldiers = Chirasou.getNearestSoldiers(nearbyEnemies, startingLocation);
+		ArrayList<RobotInfo> nearestAlliedSoldiers = Chirasou.getNearestSoldiers(nearbyAllies, startingLocation);
+		
+		
+		
+		
+		
+		
+		
+		
 	
-		ArrayList<RobotInfo> nearbySoldiers = null;
+		
+		
+		
+		
 		
 		
 		

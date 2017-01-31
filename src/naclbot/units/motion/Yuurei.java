@@ -174,7 +174,7 @@ public class Yuurei extends GlobalVars {
 			){
 		
 	      	// SYSTEM CHECK- Print out the amount of byte code used prior to  calculating the dodge location......
-	       	System.out.println("Bytecode used prior to intitial calculation of dodge location: " + Clock.getBytecodeNum());
+	        // System.out.println("Bytecode used prior to intitial calculation of dodge location: " + Clock.getBytecodeNum());
 	       	
 			// Location to start search
 			MapLocation scanStartLocation = startingLocation;
@@ -185,7 +185,7 @@ public class Yuurei extends GlobalVars {
 			for (int i = 0; i <= dodgeAngleNumber / 2; i++){
 				
 		      	// SYSTEM CHECK- Print out the amount of byte code per offset interval....
-		       	System.out.println("Bytecode used for dodging on offset: " + i + ": " + Clock.getBytecodeNum());
+		       	// System.out.println("Bytecode used for dodging on offset: " + i + ": " + Clock.getBytecodeNum());
 				
 				// Obtain the direction created by the offset
 				Direction testDir1 = new Direction(directionAway.radians - (i * dodgeAngleOffset));
@@ -195,20 +195,20 @@ public class Yuurei extends GlobalVars {
 				for(float j = strideRadius / 2; j <= strideRadius; j+= strideRadius/2){
 					
 			      	// SYSTEM CHECK- Print out the amount of byte code used prior to 
-			       	System.out.println("Bytecode used for dodging on distance: " + j + ": " + Clock.getBytecodeNum());
+			        // System.out.println("Bytecode used for dodging on distance: " + j + ": " + Clock.getBytecodeNum());
 					
 					// Obtain the possible new locations
 					MapLocation testLocation1 = scanStartLocation.add(testDir1, searchRadius - (scanGranularity * j));
 					MapLocation testLocation2 = scanStartLocation.add(testDir2, searchRadius - (scanGranularity * j));
 			
 					// SYSTEM CHECK- Print out the amount of byte code used prior to 
-					System.out.println("Bytecode used for prior to validating Location1: " + j + ": " + Clock.getBytecodeNum());
+					// System.out.println("Bytecode used for prior to validating Location1: " + j + ": " + Clock.getBytecodeNum());
 										
 					if(isLocationValid(testLocation1)){
 						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge				
 													
 				      	// SYSTEM CHECK- Print out the amount of byte code used prior to 
-				       	System.out.println("Bytecode used after validating Location1: " + j + ": " + Clock.getBytecodeNum());
+				       	// System.out.println("Bytecode used after validating Location1: " + j + ": " + Clock.getBytecodeNum());
 						
 						if(!ifBulletLinesWillIntersect(bulletLines, testLocation1, bodyRadius)){	
 							
@@ -232,7 +232,7 @@ public class Yuurei extends GlobalVars {
 					}
 					
 					// SYSTEM CHECK- Print out the amount of byte code used prior to 
-					System.out.println("Bytecode used for prior to validating Location2: " + j + ": " + Clock.getBytecodeNum());
+					// System.out.println("Bytecode used for prior to validating Location2: " + j + ": " + Clock.getBytecodeNum());
 					
 					if(isLocationValid(testLocation2)){
 						// Assert that no bullet will collide with the robot at this location if the robot is actually looking to dodge				
@@ -240,7 +240,7 @@ public class Yuurei extends GlobalVars {
 						if(!ifBulletLinesWillIntersect(bulletLines, testLocation2, bodyRadius)){	
 							
 					      	// SYSTEM CHECK- Print out the amount of byte code used prior to 
-					       	System.out.println("Bytecode used after validating Location2: " + j + ": " + Clock.getBytecodeNum());
+					       	// System.out.println("Bytecode used after validating Location2: " + j + ": " + Clock.getBytecodeNum());
 							
 							// SYSTEM CHECK - Show which location the robot decides as valid - navy blue dot
 							rc.setIndicatorDot(testLocation2, 0, 0, 128);

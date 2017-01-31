@@ -88,6 +88,10 @@ public class SaberBot extends GlobalVars {
     public static final float attackProbability = (float) 1; // Gives probability of joining an attack at a particular time....
     private static int lastCommanded = attackFrequency; // Int to store the number of rounds since the unit was last in a commanded mode - threshold value
     public static final int giveUpOnRouting = 100; // Variable to determine after how long soldiers decide that Alan's code is a piece of shit......
+    public static final int giveUpDefending = 100; // Variable to determine when the soldiers will stop attempting to defend a certain location.......]
+    private static int roundsDefending;
+    
+    
     
     // Enemy data variables....
 	private static RobotInfo[] previousRobotData; // Array to store the data of enemy robots from the previous turn.....
@@ -140,6 +144,7 @@ public class SaberBot extends GlobalVars {
         foundNormie = false;
         normieEmiliaLover = null;
         previousRobotData = null;
+        roundsDefending = 0;
     	
     	// In order to get the closest current ally..... obtain data for the nearest allied units and then the gardener if it exists....
      	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
@@ -458,7 +463,6 @@ public class SaberBot extends GlobalVars {
 	// Function to determine how the robot will act this turn....
 	
 	private static MapLocation decideAction(BroadcastChannels.BroadcastInfo distressInfo, RobotInfo[] enemyRobots) throws GameActionException{
-
 		
 		// If the scout found some distress signal this turn...
     	if(distressInfo != null){
@@ -474,18 +478,22 @@ public class SaberBot extends GlobalVars {
 				
     			// Set the ID of the offending enemy
 				defendAgainstID = distressInfo.ID;
+				
+		        roundsDefending = 0;
     		}            	
     	}
     	
     	// If the robot is meant to defend........
-    	if (defendLocation != null){
-    		
+    	if (defendLocation != null && roundsDefending <= giveUpDefending){    		
+
 			// Call the defend function to determine what to do.....
     		return defend(enemyRobots);
     	}
     	
     	// Otherwise just call the move function normally......
     	else {
+    		
+    		defendLocation = null;
     		
     		// If the robot currently has orders call the setCommandLocation to see if a new order could be made
     		if(!isCommanded){    			
@@ -523,6 +531,21 @@ public class SaberBot extends GlobalVars {
 			// Track the enemy....            			
 			return engage(enemyRobots);           			
 		}
+		// If the robot has gotten close enough to the defend location and has not yet exited the defned loop, do so....
+		else if (myLocation.distanceTo(defendLocation) <= strideRadius){
+			
+			// SYSTEM CHECK - Print out that the soldier is near the location to defend and has not seen anything....
+			System.out.println("Soldier has arrived at defend location but found nothing.........");			
+			
+			// Reset the variables related to defending........
+			defendLocation = null;            			
+			defendAgainstID = -1; 		
+			
+			// Decide a new action to go to the move loop......			
+			return decideAction(null, enemyRobots);
+		
+		}
+		
 		else{				
 			// SYSTEM CHECK IF the robot has need to defend, it will do so...
 			System.out.println("Travelling back to defend....");			
@@ -543,7 +566,28 @@ public class SaberBot extends GlobalVars {
 			// Get an enemy to attack on the way, if it can find one...
 			
 			// See if a robot to be tracked can be found, allow soldier to track any and all units
-			normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);			
+			normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true, false);	
+			
+			// If no combat units were found.....
+			if (normieEmiliaLover == null){
+				
+				// Enable selection of scouts
+				normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);	
+				
+				if(normieEmiliaLover != null){
+				
+					if (normieEmiliaLover.type == RobotType.SCOUT && rc.senseTreeAtLocation(normieEmiliaLover.location) != null){
+						
+						// SYSTEM CHECK - Print out that the soldier found a scout but that it was in a tree, and that it ignored it...
+						System.out.println("Found a scout but ignored it... because it was in a tree....");
+						
+						// SYSTEM CHECK - Draw a green line to any scout it ignored....
+						rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 0, 122, 23);
+						
+						normieEmiliaLover = null;		
+					}	
+				}
+			}
 			
 			// If there was no nearby enemy on the way back to defend...			
 			if (normieEmiliaLover == null){
@@ -568,10 +612,32 @@ public class SaberBot extends GlobalVars {
     private static MapLocation move(RobotInfo[] enemyRobots) throws GameActionException{
 
 		// SYSTEM CHECK - Print out that the robot is searching for nearest enemy to engage
-		System.out.println("Searching for the next enemy to engage....");    	
-    	 
-    	// See if a robot to be tracked can be found, allow soldier to track any and all units
-		normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);		
+		System.out.println("Searching for the next enemy to engage...."); 
+		
+		// See if a robot to be tracked can be found, allow soldier to track any and all units
+		normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, false, true, false);	
+		
+		// If no combat units were found.....
+		if (normieEmiliaLover == null){
+			
+			// Enable selection of scouts
+			normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);	
+			
+			if(normieEmiliaLover != null){
+			
+				if (normieEmiliaLover.type == RobotType.SCOUT && rc.senseTreeAtLocation(normieEmiliaLover.location) != null){
+					
+					// SYSTEM CHECK - Print out that the soldier found a scout but that it was in a tree, and that it ignored it...
+					System.out.println("Found a scout but ignored it... because it was in a tree....");
+					
+					// SYSTEM CHECK - Draw a green line to any scout it ignored....
+					rc.setIndicatorLine(myLocation, normieEmiliaLover.location, 0, 122, 23);
+					
+					normieEmiliaLover = null;		
+				}	
+			}
+		}
+		
 		
 		if((myWaifuIsOnodera >= 500 && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
 			
