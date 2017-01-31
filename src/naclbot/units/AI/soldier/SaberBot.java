@@ -145,6 +145,7 @@ public class SaberBot extends GlobalVars {
         normieEmiliaLover = null;
         previousRobotData = null;
         roundsDefending = 0;
+        lastFiredLocation = null;
     	
     	// In order to get the closest current ally..... obtain data for the nearest allied units and then the gardener if it exists....
      	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
@@ -404,22 +405,21 @@ public class SaberBot extends GlobalVars {
 	            		
 	            		hasShot = false;
 	            		
-		            	if (normieID != -1){
+		            	if (normieID != -1){		  
 		            		
 		            		// SYSTEM CHECK - Show who the robot is aiming at...
 		            		System.out.println("Currently shooting at a robot with ID: " + normieID);
 		            		
 		            		// Get a list of allied trees to avoid shooting..
-		            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
+		            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);		            		
+		            	
+		            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
 		            		
-		            		if(rc.canSenseRobot(normieID)){
-		            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
-		            		}
-		            		else{
-		            			normieID= -1;
-		            			normieEmiliaLover = null;
-		            		}
-		            	}
+		            		lastFiredLocation = normieEmiliaLover.location;
+		            		
+	            			normieID= -1;
+	            			normieEmiliaLover = null;
+		            	}		            	
 		            	
 		            	if(hasShot){            		
 		            		// SYSTEM CHECK - Inform that the robot has shot something this round....
