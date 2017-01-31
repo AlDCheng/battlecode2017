@@ -8,11 +8,15 @@ import naclbot.variables.GlobalVars;
 
 /* ------------------   Overview ----------------------
  * 
- * Functions for controlling shooting and aiming
+ * Functions for controlling movement and engagement
  *
  * ~~ Coded by Illiyia (akimn@#mit.edu)
  * 
  *  * Debug statements all begin with SYSTEM CHECK 
+ *  
+ *  PLEASE SAVE ME FROM THE CANCER THAT THIS CODE HAS
+ *  BECOME - DONT LOOK DONT LOOK AT THE SOLDIER SHOOTING
+ *  FUNCTIONS THEY WILL ACTUALLY JUST GIVE YOU CANCER
  * 
  ---------------------------------------------------- */
 
@@ -65,6 +69,10 @@ public class Todoruno extends GlobalVars {
 	public final static float coverAngleCheckOffset = (float) (Math.PI /(coverAngleCheckNumber * 2));
 	public final static int coverDistanceCheckNumber = 2;
 	
+	public final static float maximumPairDirectionSeparation = (float) (Math.PI/4);
+	public final static float minimumPairPentadSeparation = (float) (Math.PI/6);
+	public final static float maximumPairDistanceSeparation = (float) 2.5;
+	public final static float maximalNearPairDistance = (float) 4.5;
 	
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- OLD FUNCTIONS --- -------------------------------//
@@ -429,7 +437,10 @@ public class Todoruno extends GlobalVars {
 		
 		RobotInfo[] nearbyEnemies, // The RobotInfo of all nearby soldiers.............			
 		RobotInfo[] nearbyAllies, // The RobotInfo of all nearby allies...		
-		TreeInfo[] nearbyTrees // The location of any nearby trees....
+		TreeInfo[] nearbyTrees, // The location of any nearby trees....
+		
+		ArrayList<RobotInfo> nearestEnemySoldiers, // List of all nearby soldiers of enemy team
+		ArrayList<RobotInfo> nearestAlliedSoldiers // List of all nearby soldiers of allied team
 		
 		) throws GameActionException{
 		
@@ -438,9 +449,12 @@ public class Todoruno extends GlobalVars {
 		rc.setIndicatorDot(startingLocation, 220, 20, 60);
 		
 		// Get array lists of all nearby allied and enemy soldiers..........		
-		ArrayList<RobotInfo> nearestEnemySoldiers = Chirasou.getNearestSoldiers(nearbyEnemies, startingLocation);
-		ArrayList<RobotInfo> nearestAlliedSoldiers = Chirasou.getNearestSoldiers(nearbyAllies, startingLocation);
-		
+		if(nearestEnemySoldiers == null){
+			nearestEnemySoldiers = Chirasou.getNearestSoldiers(nearbyEnemies, startingLocation);
+		}
+		if(nearestAlliedSoldiers == null){
+			nearestAlliedSoldiers = Chirasou.getNearestSoldiers(nearbyAllies, startingLocation);
+		}
 		// Retrieve the location of the enemy soldier.... and the direction to it
 		MapLocation enemyLocation = enemySoldier.location;
 		Direction enemyDirection = startingLocation.directionTo(enemyLocation);
@@ -459,7 +473,7 @@ public class Todoruno extends GlobalVars {
 		System.out.println("Number of nearby enemy soldiers: " + nearestEnemySoldiers.size() + " allied soldiers: " + nearestAlliedSoldiers.size());
 		
 		// If there is only one enemy soldier and the line to shoot is free (and there are no trees within the vicinity and the robot is fairly healthy...
-		if ((nearestEnemySoldiers.size()==1 && nearestAlliedSoldiers.size() <= 2) && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1)
+		if ((nearestEnemySoldiers.size() == 1 && nearestAlliedSoldiers.size() <= 2) && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1)
 				&& treesInWay == null && (currentHealth >= minSoldierHealthCharge && startingLocation.distanceTo(enemyLocation) >= minSoldierDistanceCharge && currentHealth >= enemyHealth + 10)){
 			
 			// SYSTEM CHECK - Draw a Yellow line to the target enemy...........
@@ -469,7 +483,7 @@ public class Todoruno extends GlobalVars {
 		}
 		
 		// If the robot is in low health or is too close to the enemy, of which there is only one, shoot forward while moving backwards....
-		else if((nearestEnemySoldiers.size()==1 && nearestAlliedSoldiers.size() <= 2) && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) 
+		else if((nearestEnemySoldiers.size() == 1 && nearestAlliedSoldiers.size() <= 2) && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) 
 				&& treesBehind == null && (currentHealth < minSoldierHealthCharge || startingLocation.distanceTo(enemyLocation) < minSoldierDistanceCharge || currentHealth < enemyHealth + 10)){
 			
 			// SYSTEM CHECK - Draw an orange line to the target enemy...........
@@ -479,14 +493,20 @@ public class Todoruno extends GlobalVars {
 			
 		}
 		// If there is a tree in the way and there are one or two soldiers nearby and there is a tree in the way, that the soldier can hide behind......
-		else if ((nearestEnemySoldiers.size() <=1 && nearestAlliedSoldiers.size() <= 2) && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) && treesInWay != null){
+		else if ((nearestEnemySoldiers.size() <= 2 && nearestAlliedSoldiers.size() <= 2) && !Korosenai.isLineBLockedByTree(startingLocation, enemyLocation, 1) && treesInWay != null){
 			
 			// SYSTEM CHECK - Draw a Light green line to the target enemy...........
 			rc.setIndicatorLine(startingLocation, enemyLocation, 152, 251, 152);
 			
 			return shootWithCover(startingLocation, enemySoldier, strideRadius, bodyRadius, nearbyAllies, alliedTrees);			
 		}
-		
+		// If there is simply a pair of enemies to deal with.......
+		else if((nearestEnemySoldiers.size() == 2  && nearestAlliedSoldiers.size() <= 2)){
+			
+			return engagePair(startingLocation, enemySoldier, nearestEnemySoldiers, nearestAlliedSoldiers, strideRadius, bodyRadius, sensorRadius, 
+					nearbyEnemies, nearbyAllies, nearbyTrees, alliedTrees, treesInWay, treesBehind);			
+		}
+		// For all other cases.....
 		else{
 			return engageEnemy(startingLocation, enemySoldier, strideRadius, sensorRadius -1);
 		}
@@ -765,10 +785,184 @@ public class Todoruno extends GlobalVars {
 		}
 
 		return startingLocation;
+	}
+	
+	public static MapLocation engagePair(			
+			
+			MapLocation startingLocation, RobotInfo enemySoldier, ArrayList<RobotInfo> enemySoldiers, ArrayList<RobotInfo> alliedSoldiers,
+			float strideRadius, float bodyRadius, float sensorRadius, RobotInfo[] nearbyEnemies, RobotInfo[] nearbyAllies, 
+			TreeInfo[] nearbyTrees, TreeInfo[] alliedTrees, TreeInfo treesInWay, TreeInfo treesBehind) throws GameActionException{
+		
+		// Retrieve the locations of the two soldiers....
+		MapLocation location1 = enemySoldiers.get(0).location;
+		MapLocation location2 = enemySoldiers.get(1).location;
+		
+		// Retrieve the distances to the two soldiers......
+		float distance1 = startingLocation.distanceTo(location1);
+		float distance2 = startingLocation.distanceTo(location2);
+		
+		// Get the difference in distances between the two units
+		float diffDistance = Math.abs(distance1 - distance2);
+		float minimumDistance = Math.min(distance1, distance2);
+		
+		// Get the directions to the two units
+		Direction direction1 = startingLocation.directionTo(location1);		
+		Direction direction2 = startingLocation.directionTo(location2);
+		
+		// Get the direction in the centre of the two units
+		Direction middleDirection = new Direction((float) ((direction1.radians + Math.PI * 2) % (Math.PI * 2) + (direction2.radians + Math.PI * 2) % (Math.PI * 2)) / 2);
+		Direction directionAway = middleDirection.opposite();
+		
+		// Initialize a move to make.....
+		MapLocation desiredMove = null;
+		
+		// If the angular distance between the two units is small enough so that the soldier could reliably shoot both....
+		if(Math.abs(direction1.radians - direction2.radians) <= maximumPairDirectionSeparation
+				&& diffDistance <= maximumPairDistanceSeparation && minimumDistance >= maximalNearPairDistance && treesInWay == null){
+			
+			if(Math.abs(direction1.radians - direction2.radians) <= minimumPairPentadSeparation){
+				
+				// SYSTEM CHECK - Draw a line to the two enemies in SEA GREEN
+				rc.setIndicatorLine(startingLocation, location1, 32, 178, 170);
+				rc.setIndicatorLine(startingLocation, location2, 32, 178, 170);
+				
+				// SYSTEM CHECK - Draw a MEDIUMM BLUE line towards the middle location....
+				rc.setIndicatorLine(startingLocation, startingLocation.add(middleDirection, 10), 30, 144, 255);
+				
+				// Check to see if the robot can fire a triad.....
+				if(Korosenai.canFireTriad(middleDirection, startingLocation, nearbyAllies, alliedTrees)){
+					
+					// Fire the triad
+					rc.fireTriadShot(middleDirection);
+				}
+				// If the robot cannot fire a triad shot for some rason....
+				else{					
+					// Check to see if the robot can fire a single...
+					if(Korosenai.canFireSingle(middleDirection, startingLocation, nearbyAllies, alliedTrees)){
+						
+						// Fire the triad
+						rc.fireSingleShot(middleDirection);
+					}				
+				}				
+			}
+			else{
+				
+				// SYSTEM CHECK - Draw a line to the two enemies in TEAL
+				rc.setIndicatorLine(startingLocation, location1, 0, 128, 128);	
+				rc.setIndicatorLine(startingLocation, location2, 0, 128, 128);	
+				
+				// SYSTEM CHECK - Draw a MEDIUMM BLUE line towards the middle location....
+				rc.setIndicatorLine(startingLocation, startingLocation.add(middleDirection, 10), 30, 144, 255);
+				
+				if(Korosenai.canFirePentad(middleDirection, startingLocation, nearbyAllies, alliedTrees)){
+					
+					// Fire the pentad!
+					rc.firePentadShot(middleDirection);
+				}
+				// If the robot cannot fire the pentad.....
+				else{
+					
+					// Check to see if the robot can fire a triad.....
+					if(Korosenai.canFireTriad(middleDirection, startingLocation, nearbyAllies, alliedTrees)){
+						
+						// Fire the triad
+						rc.fireTriadShot(middleDirection);
+					}
+					// If the robot cannot fire a triad shot for some rason....
+					else{					
+						// Check to see if the robot can fire a single...
+						if(Korosenai.canFireSingle(middleDirection, startingLocation, nearbyAllies, alliedTrees)){
+							
+							// Fire the triad
+							rc.fireSingleShot(middleDirection);
+						}				
+					}
+				}	
+			}
+			
+			// If there is nothing blocking the way behind..... attempt to move back
+			if(treesBehind == null){
+				
+				// SYSTEM CHECK - Print out that the soldier will attempt to track back after shooting...
+				System.out.println("Will attempt to track back");
+				
+				for(int i = 1; i <= 10; i ++){
+					
+					if (rc.canMove(startingLocation.add(directionAway, strideRadius * i / 10))){
+						desiredMove = startingLocation.add(directionAway, strideRadius * i / 10);
+					}			
+				}
+				// If the soldier can indeed track backwards, do so.......
+				if(desiredMove != null){
+					
+					// If the soldier can move in the target direction......
+					rc.move(desiredMove);
+					return desiredMove;
+				}
+				// If there was no location for the robot to go to..
+				else{
+					
+					// SYSTEM CHECK - Print out that the unit couldn't move back even though the back check said otherwise....
+					System.out.println("Backtracking unsuccesfully executed... ");
+					
+					return startingLocation;
+				}
+			}
+			else{
+				
+				// Attempt a random move in the general backwards direction.....
+				MapLocation moveAttempt = Yuurei.tryMoveInDirection(directionAway, 15, 6, strideRadius, startingLocation);
+				
+				// If the robot could successfully move backwards.....
+				if(moveAttempt!= null){
+					
+					// SYSTEM CHECk - Print out that the move was succesful...
+					System.out.println("Found a way to move backwards....");
+					
+					// Return the successful move 
+					return moveAttempt;
+				}
+				else{
+					
+					// Otherwise return starting location....
+					return startingLocation;
+				}
+				
+			}
+		}
+		else if (diffDistance > maximumPairDistanceSeparation){
+			
+			if (distance1 > distance2){
+				
+				// SYSTEM CHECK - Draw a pink indicator light to the discarded location.......
+				rc.setIndicatorLine(startingLocation, location1, 255, 192, 203);
+				
+				// Remove the entry from the arraylist and re run the engageSoldier command....
+				enemySoldiers.remove(0);
+				
+				return engageSoldier(startingLocation, enemySoldier, strideRadius, bodyRadius, sensorRadius, 
+						nearbyEnemies, nearbyAllies, nearbyTrees, enemySoldiers, alliedSoldiers);
+			}
+			else{
+				// SYSTEM CHECK - Draw a pink indicator light to the discarded location.......
+				rc.setIndicatorLine(startingLocation, location2, 255, 192, 203);
+				
+				// Remove the entry from the arraylist and re run the engageSoldier command....
+				enemySoldiers.remove(1);
+				
+				return engageSoldier(startingLocation, enemySoldier, strideRadius, bodyRadius, sensorRadius, 
+						nearbyEnemies, nearbyAllies, nearbyTrees, enemySoldiers, alliedSoldiers);
+			}			
+		}
+		else{
+			
+			// SYSTEM CHECK - Print that the pair engage will be dealt with normally...
+			System.out.println("Pair engagement should be done normally..... Calling engageEnemy... ");
+			
+			return engageEnemy(startingLocation, enemySoldier, strideRadius, sensorRadius -1);
+		}
 	}	
-	
-	
-	
+
  	
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- SCOUTING FUNCTIONS -------------------------------//

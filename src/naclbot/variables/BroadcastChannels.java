@@ -110,7 +110,7 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int LUMBERJACKS_ALIVE_CHANNEL = 9951;
 	
 	// Stores coordinates of trees that lumberjacks should cut down 
-	public final static int LUMBERJACK_TREE_CHANNEL = 9952;
+	public final static int LUMBERJACK_TREE_CHANNEL = 3000;
 	// Stores the beginning of the information that BarusuBot will use this turn.....
 			// BarusuBot Information
 			// Bit 0 - Tree #1 x coord.
@@ -119,6 +119,13 @@ public class BroadcastChannels extends GlobalVars {
 			// Bit 3 - Tree #2 y coord.
 			// Bit 4 - Tree #3 x coord.
 			// Bit 5 - Tree #3 y coord.
+			// Bit 6 - Tree #4 y coord.
+			// Bit 7 - Tree #4 y coord.
+			// Bit 8 - Tree #5 y coord.
+			// Bit 9 - Tree #5 y coord.
+			// Bit 10 - Tree #6 y coord.
+			// Bit 11 - Tree #6 y coord.
+	
 	
 	// ----------------------- REMBOT INFORMATION -------------------------//
 	
@@ -207,8 +214,25 @@ public class BroadcastChannels extends GlobalVars {
 	public final static int ENEMY_HAS_BEEN_SEEN_CHANNEL = 1002;
 	
 	// First channel to actually store data for enemy locations
-	public final static int ENEMY_LOCATION_START_CHANNEL = 1003;
+	public final static int ENEMY_LOCATION_START_CHANNEL = 1003;	
 	
+	// First channel to include enemy firing data.........
+	public final static int ENEMY_FIRING_CHANNEL_START = 1250;
+	
+	// Channel to store who last updated the enemy firing channel
+	public final static int LAST_UPDATER_ENEMY_FIRING_LOCATIONS = 1249;
+	
+	// Channel to store how many updates have been to the firing locations thus far
+	public static final int NUMBER_UPDATES_FIRING_LOCATION_THIS_TURN = 1248;
+	
+	// Maximum number of firing locations to be stored
+	public static final int MAX_FIRING_LOCATIONS = 5;
+	
+	// Offset of each firing location...
+		// Bit 0 - Map Location x
+		// Bit 1 - Map location y...	
+	public static final int FIRING_LOCATION_OFFSET = 2;
+
 	
 	// ------------------------  ENEMY ARCHON INFORMATION ----------------------//
 	
@@ -280,6 +304,7 @@ public class BroadcastChannels extends GlobalVars {
 		}
 	}
 	
+	
 	// Convert a robot's int converted to its type for interpretation
 	
 	public static RobotType getRobotIntToType(int type){
@@ -311,6 +336,7 @@ public class BroadcastChannels extends GlobalVars {
 	
 	
 	// Class to better obtain data from broadcasts - since cannot initialize RobotInfo but want ID.....	
+	
 	public static class BroadcastInfo{
 		// Stores an ID value and locations....
 		public int ID;
@@ -441,6 +467,7 @@ public class BroadcastChannels extends GlobalVars {
 		}				
 	}
 
+	
 	// Function to obtain the locations of any archons on the map, if there are any....
 	
 	public static BroadcastInfo readEnemyArchonLocations() throws GameActionException{
@@ -478,7 +505,9 @@ public class BroadcastChannels extends GlobalVars {
 		}
 	}
 	
+	
 	// Function for gardeners and archons to show that they are being attacked.......
+	
 	public static void broadcastDistress(float previousHealth, RobotInfo[] nearestEnemies, MapLocation myLocation, int unitNumber) throws GameActionException{
 		
 		// Get the current health of the robot
@@ -532,6 +561,7 @@ public class BroadcastChannels extends GlobalVars {
 		}
 	}	
 	
+	
 	// Function to obtain information on distress signals if they happened....
 	// Returns a location to go to if the location is within the respondDistance of the current location of the roobot
 	
@@ -574,6 +604,7 @@ public class BroadcastChannels extends GlobalVars {
 			return null;
 		}		
 	}
+	
 	
     // Get the location of the nearest enemy and broadcast.... Clearly if you can see the enemy it is likely that they can see you as well
     
@@ -636,6 +667,9 @@ public class BroadcastChannels extends GlobalVars {
 		}				
 	}	
 	
+	
+	// Function to read the locations of nearby enemies - to use in path planning
+
 	public static BroadcastInfo readEnemyLocations() throws GameActionException{
 		
 		if(rc.readBroadcast(ENEMY_HAS_BEEN_SEEN_CHANNEL) != 0){
@@ -656,6 +690,98 @@ public class BroadcastChannels extends GlobalVars {
 		else{
 			return null;
 		}
+	}
+	
+	
+	// Function to broadcast firing locations so that allied robots out of range can also shoot at a given location....
+	
+	public static void broadcastFiringLocations(int unitNumber, MapLocation targetLocation) throws GameActionException{
+		
+		// See who last updated the enemy locations
+		int lastUpdatedUnitNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_FIRING_LOCATIONS);
+			
+		// SYSTEM CHECK - Check who last updated the channel....
+		 System.out.println("The last unit  to have updated this channel has unitNumber: " + lastUpdatedUnitNumber);
+		 
+		if (lastUpdatedUnitNumber >= unitNumber){ 
+			
+			// Clear the number of signals sent this turn
+			rc.broadcast(BroadcastChannels.NUMBER_UPDATES_FIRING_LOCATION_THIS_TURN, 0);
+			rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_FIRING_LOCATIONS, -1);
+			
+				
+			// SYSTEM CHECK - Tell that the channel has been cleared
+			System.out.println("Updater channel for enemy firing  locations reset");				
+		}
+		
+		// Get the number of locations that have already been put into the array
+		int numberUpdated = rc.readBroadcast(NUMBER_UPDATES_FIRING_LOCATION_THIS_TURN );
+		
+		// If the capacity for firing locations has not yet be fulfilled, update the array with the inputted data....
+		if (numberUpdated < MAX_FIRING_LOCATIONS && targetLocation != null){			
+		
+			// SYSTEM CHECK - Draw a lien to the broadcasted location....... SIENNA LINE
+			// rc.setIndicatorLine(rc.getLocation(), targetLocation, 160, 82, 45);
+			
+			// Increment the number of updated locations
+			rc.broadcast(NUMBER_UPDATES_FIRING_LOCATION_THIS_TURN, numberUpdated + 1);
+			
+			// Broadcast unitNumber of proper clearing at beginning of the round....
+			rc.broadcast(BroadcastChannels.LAST_UPDATER_ENEMY_FIRING_LOCATIONS, unitNumber);
+			
+			// Obtain the first channel to broadcast at....
+			int broadcastChannel = ENEMY_FIRING_CHANNEL_START + numberUpdated * FIRING_LOCATION_OFFSET;
+
+			// Broadcast the target locations.........
+			rc.broadcastFloat(broadcastChannel, targetLocation.x);
+			rc.broadcastFloat(broadcastChannel + 1, targetLocation.y);			
+		}		
+	}
+	
+	
+	// Function to read outputted firing locations........
+	
+	public static MapLocation readFiringLocations(MapLocation myLocation, float maxDistance) throws GameActionException{
+		
+		// See who last updated the enemy locations
+		int lastUpdatedUnitNumber = rc.readBroadcast(BroadcastChannels.LAST_UPDATER_ENEMY_FIRING_LOCATIONS);
+			
+		// SYSTEM CHECK - Check who last updated the channel....
+		 System.out.println("Reading: the last unit to have updated this channel has unitNumber: " + lastUpdatedUnitNumber);		 
+		
+		// Obtain the number of units that have updated this channel this turn...
+		int numberUpdated = rc.readBroadcast(NUMBER_UPDATES_FIRING_LOCATION_THIS_TURN );
+		
+		// If there has been an update....
+		if (numberUpdated > 0){
+			
+			for(int i = 1; i <= numberUpdated; i++){
+				
+				// Obtain the first channel to broadcast at....
+				int broadcastChannel = ENEMY_FIRING_CHANNEL_START + (i - 1) * FIRING_LOCATION_OFFSET;
+				
+				// Obtain the x and y coordinates of the location
+				float potentialX = rc.readBroadcastFloat(broadcastChannel);
+				float potentialY = rc.readBroadcastFloat(broadcastChannel + 1);
+				
+				if(potentialX > 0 && potentialY > 0){
+				
+					// Create a map location object......
+					MapLocation potentialLocation = new MapLocation(potentialX, potentialY);
+					
+					// Check to see if the location to fire at is within a reasonable bound of the robot.....
+					if (potentialLocation.distanceTo(myLocation) <= maxDistance){
+						
+						// SYSTEM CHECK - Draw a lien to the broadcasted location....... TAN LINE
+						// rc.setIndicatorLine(rc.getLocation(), potentialLocation, 210, 180, 140);
+						
+						return potentialLocation;
+					}
+				}				
+			}			
+		}
+		return null;
+		
 	}
 }
 

@@ -106,11 +106,15 @@ public class SaberBot extends GlobalVars {
 	private static MapLocation nearestCivilianLocation; // Stores for multiple rounds the location of the nearest civilian robot....	
 	private static final float separationDistance = sensorRadius - 1; // stores how large of a distance soldiers will attempt to keep from nearby units when they engage them...
 	private static MapLocation archonLocation; // Stores the location of the archon that the soldier is by default sent to attack....	
-    // Miscellaneous variables.....
+    private static float archonLocationFactor; // Controls how soon soldiers are allowed to shoot archons.....
+	
+	// Miscellaneous variables.....
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
  	private static boolean checkArchons = false; // Stores whether or not the robot will attempt to look for archons or not....
  	
+ 	// Variables to store values related to firing if no enemies are there.....
  	private static MapLocation lastFiredLocation; // The last location that the soldier fired to...
+ 	private static int lastNumberofEnemies; // Stores the last number of enemies that were near the robot on the previous turn..
  	
  	
 	// ----------------------------------------------------------------------------------//
@@ -141,11 +145,15 @@ public class SaberBot extends GlobalVars {
         // Initialize variables important to self
         myLocation = rc.getLocation();
         normieID = -1;
+        
         foundNormie = false;
         normieEmiliaLover = null;
         previousRobotData = null;
+        
         roundsDefending = 0;
+        
         lastFiredLocation = null;
+        lastNumberofEnemies = 0;
     	
     	// In order to get the closest current ally..... obtain data for the nearest allied units and then the gardener if it exists....
      	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
@@ -183,6 +191,8 @@ public class SaberBot extends GlobalVars {
 		// Retrieve the correct corresponding archon...
 		archonLocation = EnemyArchonSearch.getCorrespondingArchon();
 		
+		archonLocationFactor = (float) (archonLocation.distanceTo(myLocation) / 40 + 1.2);
+		
 		// SYSTEM CHECK - Draw a line to the target enemy archon location...
 		rc.setIndicatorLine(myLocation, archonLocation, 255, 0, 0);
         
@@ -198,7 +208,7 @@ public class SaberBot extends GlobalVars {
     		
     		try{    	
     		    // SYSTEM CHECK  Make sure the robot starts its turn
-                System.out.println("Beginning Turn!");    
+                System.out.println("Unit: " + unitNumber + " is beginning Turn!");    
     			
     			// ------------------------- RESET/UPDATE VARIABLES ----------------//        
     			
@@ -207,7 +217,7 @@ public class SaberBot extends GlobalVars {
             	RobotInfo[] alliedRobots = NearbyUnits(allies, sensorRadius);
             	BulletInfo[] nearbyBullets = rc.senseNearbyBullets();
             	TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
-    			
+            			
             	// Update global variables.....
             	myWaifuIsOnodera = rc.getRoundNum();
 		    	
@@ -405,21 +415,159 @@ public class SaberBot extends GlobalVars {
 	            		
 	            		hasShot = false;
 	            		
+	            		// Get a list of allied trees to avoid shooting..
+	            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);	
+	            		
 		            	if (normieID != -1){		  
 		            		
 		            		// SYSTEM CHECK - Show who the robot is aiming at...
-		            		System.out.println("Currently shooting at a robot with ID: " + normieID);
-		            		
-		            		// Get a list of allied trees to avoid shooting..
-		            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);		            		
-		            	
+		            		System.out.println("Currently shooting at a robot with ID: " + normieID);      		
+		            	            		
+		            		// Run the overarching function to decide what and how much to shoot
 		            		hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
 		            		
+		            		// Set the last location fired from to be the current location fired at
 		            		lastFiredLocation = normieEmiliaLover.location;
 		            		
+		            		// Reset tracking variables.....
 	            			normieID= -1;
 	            			normieEmiliaLover = null;
-		            	}		            	
+	            			
+	            			if(enemyRobots.length >= 1){
+	            				
+	            				// Within the first 300 turns, broadcast any enemies shot at....
+	            				if(myWaifuIsOnodera <= 400){
+	            					
+	            					// Broadcast the location currently fired at.....
+	            					BroadcastChannels.broadcastFiringLocations(unitNumber, lastFiredLocation);
+	            				}
+	            				// Otherwise if sufficient time has passed and there are at least two units nearby...
+	            				else if (myWaifuIsOnodera <= 800 && enemyRobots.length >= 2){
+	            					
+	            					// Broadcast the location currently fired at.....
+	            					BroadcastChannels.broadcastFiringLocations(unitNumber, lastFiredLocation);
+	            				}
+	            				// Otherwise if even more time has passed and there are at least three enemies nearby...
+	            				else if(myWaifuIsOnodera > 800 && enemyRobots.length >= 3){
+	            					
+	            					// Broadcast the location currently fired at.....
+	            					BroadcastChannels.broadcastFiringLocations(unitNumber, lastFiredLocation);
+	            				}	            				
+	            			}
+		            	}		  
+		            	else{
+		            		
+		            		if (lastFiredLocation != null){
+		            			
+		            			// SYSTEM CHECK - Print out that the soildier is attempting to use the previous location fired at to shoot....
+		            			System.out.println("Attempting to use previous fired location to shoot.....");
+		            			
+		            			Direction lastFiredDirection = myLocation.directionTo(lastFiredLocation);	  
+		            			
+		            			// Make sure no tree is in the way of firing
+		            			if(!Korosenai.isLineBLockedByTree(myLocation, lastFiredLocation, 1)){
+		            			
+		            				// If there were previously a lot of enemies to fire at......
+			            			if(lastNumberofEnemies >= 3){
+			            				
+			            				// SYSTEM CHECK - Draw a DARK SLATE GREY LINE towards the lastFiredDirection.....
+				            			rc.setIndicatorLine(myLocation, myLocation.add(lastFiredDirection, 12), 47, 79, 79);
+				            			
+				            			if(Korosenai.canFirePentad(lastFiredDirection, myLocation, alliedRobots, alliedTrees)
+				            					&& desiredMove.distanceTo(lastFiredLocation) <= 9 && rc.getTeamBullets() > 50){
+				        					
+				        					// Fire the pentad!
+				        					rc.firePentadShot(lastFiredDirection);
+				        				}
+				        				// If the robot cannot fire the pentad.....
+				        				else{
+				        					
+				        					// Check to see if the robot can fire a triad.....
+				        					if(Korosenai.canFireTriad(lastFiredDirection, myLocation, alliedRobots, alliedTrees)){
+				        						
+				        						// Fire the triad
+				        						rc.fireTriadShot(lastFiredDirection);
+				        					}
+				        					// If the robot cannot fire a triad shot for some rason....
+				        					else{					
+				        						// Check to see if the robot can fire a single...
+				        						if(Korosenai.canFireSingle(lastFiredDirection, myLocation, alliedRobots, alliedTrees)){
+				        							
+				        							// Fire the triad
+				        							rc.fireSingleShot(lastFiredDirection);
+				        						}				
+				        					}
+				        				}			            				
+			            			}
+			            			// Otherwise if there were previously not too many enemies in the old direction....
+			            			else{		            			
+				            			// SYSTEM CHECK - Draw a SLATE GREY LINE towards the lastFiredDirection.....
+				            			rc.setIndicatorLine(myLocation, myLocation.add(lastFiredDirection, 12), 112, 128, 144);
+		
+				        				// Check to see if the robot can fire a triad.....
+				        				if(Korosenai.canFireTriad(lastFiredDirection, myLocation, alliedRobots, alliedTrees) 
+				        						&& desiredMove.distanceTo(lastFiredLocation) <= 9 && rc.getTeamBullets() > 30){
+				        					
+				        					// Fire the triad
+				        					rc.fireTriadShot(lastFiredDirection);
+				        				}
+				        				// If the robot cannot fire a triad shot for some rason....
+				        				else{					
+				        					// Check to see if the robot can fire a single...
+				        					if(Korosenai.canFireSingle(lastFiredDirection, myLocation, alliedRobots, alliedTrees)){
+				        						
+				        						// Fire the triad
+				        						rc.fireSingleShot(lastFiredDirection);
+				        					}				
+				        				}
+			            			}
+			        				lastFiredLocation = null;			        						
+			            		}
+		     		        }
+		            		
+		            		// If there isn't a lastFiredLocation, try to obtain a location to fire at through the 
+		            		else{
+		            			
+		            			// Cannot broadcast far out locations to shoot since there are soldiers who shoot outside of this block...
+		            			/* 
+		            			// Placeholder for a location to fire to...
+		            			MapLocation newFiringLocation = null;
+		            			
+		            			// In the early game adopt a fairly large range...
+		            			if(myWaifuIsOnodera <= 400){
+	            					
+	            					// Obtain a firing location...
+	            					newFiringLocation = BroadcastChannels.readFiringLocations(myLocation, sensorRadius + 2);
+	            				}
+		            			else{
+		            				// Obtain a firing location...
+	            					newFiringLocation = BroadcastChannels.readFiringLocations(myLocation, (float) (sensorRadius + 1.5));
+		            			}
+		            			
+		            			// If there is a place for the robot to fire to.......
+		            			if(newFiringLocation != null){
+
+		            				// SYSTEM CHECK - Print out that that the robot found a location to shoot at
+        							System.out.println("Obtained a far away firing location.....");
+        							
+		            				// Make sure there is no neutral tree visible in the way......
+		            				if (!Korosenai.isLineBLockedByTree(myLocation, newFiringLocation, 1)){		            				Direction firingDirection = myLocation.directionTo(newFiringLocation);
+		            				
+			            				// Check to see if the robot can fire a single...
+		        						if(Korosenai.canFireSingle(firingDirection, myLocation, alliedRobots, alliedTrees)){
+		        							
+		        							// SYSTEM CHECK - Print out that that the robot fired a single at a far away target.....
+		        							System.out.println("Fired a single at unknown enemy.......");
+		        							
+		        							// Fire the triad
+		        							rc.fireSingleShot(firingDirection);
+	        							}				
+		            				}
+		            			}
+		            			*/
+		            			
+		            		}
+		            	}
 		            	
 		            	if(hasShot){            		
 		            		// SYSTEM CHECK - Inform that the robot has shot something this round....
@@ -455,6 +603,9 @@ public class SaberBot extends GlobalVars {
                 // Make sure to reset track data.....
             	normieID = -1;
             	normieEmiliaLover = null;  
+            	
+            	// Update the nubmer of enemies that were present in the previous turn...
+            	lastNumberofEnemies = enemyRobots.length;
 
                 // Store the data for the locations of the enemies previously.....
                 previousRobotData = enemyRobots;
@@ -581,7 +732,7 @@ public class SaberBot extends GlobalVars {
 			System.out.println("Travelling back to defend....");			
 			
 			// SYSTEM CHECK - display a BLUE LINE to the distress location....
-			rc.setIndicatorLine(myLocation, defendLocation, 0, 0, 128);
+			// rc.setIndicatorLine(myLocation, defendLocation, 0, 0, 128);
      		
 			// If the goal location hasn't already been set to the defending location.... set it as the location to go to
 			if(goalLocation == null){			
@@ -621,7 +772,7 @@ public class SaberBot extends GlobalVars {
 				}
 			}
 			
-			if((myWaifuIsOnodera >= 500 && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
+			if((myWaifuIsOnodera >= 250 * archonLocationFactor && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
 				
 				// SYSTEM CHECK - Print out that the robot will now attempt to fire at archons...
 				System.out.println("Will now attempt to shoot archons....");
@@ -682,7 +833,7 @@ public class SaberBot extends GlobalVars {
 		}
 		
 		
-		if((myWaifuIsOnodera >= 500 && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
+		if((myWaifuIsOnodera >= 250 * archonLocationFactor && normieEmiliaLover == null && rc.getTreeCount() > 10) || (normieEmiliaLover == null && myWaifuIsOnodera > 1500)){
 			
 			// SYSTEM CHECK - Print out that the robot will now attempt to fire at archons...
 			System.out.println("Will now attempt to shoot archons....");
@@ -798,7 +949,8 @@ public class SaberBot extends GlobalVars {
     		// If the enemy is a soldier - utilize the more complex engageSoldier function.....
     		if (normieEmiliaLover.type == RobotType.SOLDIER){
     			
-    			return Todoruno.engageSoldier(myLocation, normieEmiliaLover, strideRadius, bodyRadius, sensorRadius, enemyRobots, nearbyAllies, nearbyTrees);
+    			return Todoruno.engageSoldier(myLocation, normieEmiliaLover, strideRadius, bodyRadius, sensorRadius, 
+    					enemyRobots, nearbyAllies, nearbyTrees, null, null);
     		}
     		
     		// Otherwise if the enemy is a lumberjack or a tank...

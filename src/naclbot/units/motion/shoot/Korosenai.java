@@ -650,6 +650,7 @@ public class Korosenai extends GlobalVars {
 			// Get the direction that the bullet will be traveling at
 			Direction fireDirection = new Direction (targetedDirection.radians + j * pentadOffset);
 			
+			// SYSTEM CHECK - Display a golden line  on the shooting location it checks
 			rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 212, 175, 55);
 			
 			// Check to see if no allies are going to be hit by bullets.....
@@ -687,7 +688,8 @@ public class Korosenai extends GlobalVars {
 			// Get the direction that the bullet will be traveling at
 			Direction fireDirection = new Direction (targetedDirection.radians + j * triadOffset);
 			
-			rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 212, 175, 55);
+			// SYSTEM CHECK - Display a goldenrod line on the shooting location it checks
+			// rc.setIndicatorLine(currentLocation, currentLocation.add(fireDirection, 10), 255, 223, 0);
 			
 			// Check to see if no allies are going to be hit by bullets.....
     		if (isDirectionOccupiedByAlly(currentLocation, fireDirection, nearbyAllies, maximumAllyCheckDistance) ||
@@ -718,7 +720,8 @@ public class Korosenai extends GlobalVars {
     	// SYSTEM CHECK Print out that attempting to fire single shot
 		System.out.println("Attempting to fire a SINGLE SHOT");	
 			
-		rc.setIndicatorLine(currentLocation, currentLocation.add(targetedDirection, 10), 212, 175, 55);
+		// SYSTEM CHECK - Display a bright yellow line on the shooting location it checks
+		// rc.setIndicatorLine(currentLocation, currentLocation.add(targetedDirection, 10), 255, 255, 0);
 		
 		// Check to see if no allies are going to be hit by bullets.....
 		if (isDirectionOccupiedByAlly(currentLocation, targetedDirection, nearbyAllies, maximumAllyCheckDistance) ||
