@@ -110,7 +110,8 @@ public class SaberBot extends GlobalVars {
  	private static boolean believeHasDied; // Stores whether or not the robot believes it will die this turn or not.........
  	private static boolean checkArchons = false; // Stores whether or not the robot will attempt to look for archons or not....
  	
-  
+ 	private static MapLocation lastFiredLocation; // The last location that the soldier fired to...
+ 	
  	
 	// ----------------------------------------------------------------------------------//
 	// -------------------------------- RUNTIME FUNCTIONS -------------------------------//
@@ -396,32 +397,45 @@ public class SaberBot extends GlobalVars {
 	            	// SYSTEM CHECK - Notify that the robot is now attempting to shoot at something........
 	            	// System.out.println("Moving on to shooting phase...................");
 	            	
-	            	boolean hasShot = false;
+	            	boolean hasShot;
 	            	
-	            	if (normieID != -1){
+	            	// If the robot has not yet shot this turn, attempt to find a way to shoot....
+	            	if(!rc.hasAttacked()){
 	            		
-	            		// SYSTEM CHECK - Show who the robot is aiming at...
-	            		System.out.println("Currently shooting at a robot with ID: " + normieID);
+	            		hasShot = false;
 	            		
-	            		// Get a list of allied trees to avoid shooting..
-	            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
-	            		
-	            		if(rc.canSenseRobot(normieID)){
-	            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
-	            		}
-	            		else{
-	            			normieID= -1;
-	            			normieEmiliaLover = null;
-	            		}
-	            	}
-	            	
-	            	if(hasShot){            		
-	            		// SYSTEM CHECK - Inform that the robot has shot something this round....
-	            		System.out.println("The robot has fired a shot this round....");
+		            	if (normieID != -1){
+		            		
+		            		// SYSTEM CHECK - Show who the robot is aiming at...
+		            		System.out.println("Currently shooting at a robot with ID: " + normieID);
+		            		
+		            		// Get a list of allied trees to avoid shooting..
+		            		TreeInfo[] alliedTrees = rc.senseNearbyTrees(-1, allies);
+		            		
+		            		if(rc.canSenseRobot(normieID)){
+		            			hasShot = decideShoot(enemyRobots, alliedRobots, alliedTrees);
+		            		}
+		            		else{
+		            			normieID= -1;
+		            			normieEmiliaLover = null;
+		            		}
+		            	}
+		            	
+		            	if(hasShot){            		
+		            		// SYSTEM CHECK - Inform that the robot has shot something this round....
+		            		System.out.println("The robot has fired a shot this round....");
+		            	}
+		            	else{
+		              		// SYSTEM CHECK - Inform that the robot has not shot something this round.......
+		            		System.out.println("The robot has not fired a shot this round....");            		
+		            	}
 	            	}
 	            	else{
-	              		// SYSTEM CHECK - Inform that the robot has not shot something this round.......
-	            		System.out.println("The robot has not fired a shot this round....");            		
+	            		
+	            		hasShot = true;
+	            		
+	            		// SYSTEM CHECK - Print out that the robot shot something before going through this section of code...
+	            		System.out.println("Robot already fired before entering shooting section.....");	            		
 	            	}
             	}
             	else{
@@ -590,10 +604,12 @@ public class SaberBot extends GlobalVars {
 				// Enable selection of scouts
 				normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);	
 				
-				if(normieEmiliaLover != null){
+				if(normieEmiliaLover != null){				
+
+					Direction directionTo = myLocation.directionTo(normieEmiliaLover.location);
 				
-					if (normieEmiliaLover.type == RobotType.SCOUT && rc.senseTreeAtLocation(normieEmiliaLover.location) != null){
-						
+					if (normieEmiliaLover.type == RobotType.SCOUT && rc.senseTreeAtLocation(myLocation.add(directionTo, sensorRadius - (float) 0.01)) != null){
+					
 						// SYSTEM CHECK - Print out that the soldier found a scout but that it was in a tree, and that it ignored it...
 						System.out.println("Found a scout but ignored it... because it was in a tree....");
 						
@@ -649,8 +665,10 @@ public class SaberBot extends GlobalVars {
 			normieEmiliaLover = Todoruno.getNewEnemyToTrack(enemyRobots, myLocation, true, true, true, false);	
 			
 			if(normieEmiliaLover != null){
+				
+				Direction directionTo = myLocation.directionTo(normieEmiliaLover.location);
 			
-				if (normieEmiliaLover.type == RobotType.SCOUT && rc.senseTreeAtLocation(normieEmiliaLover.location) != null){
+				if (normieEmiliaLover.type == RobotType.SCOUT && rc.senseTreeAtLocation(myLocation.add(directionTo, sensorRadius - (float) 0.01)) != null){
 					
 					// SYSTEM CHECK - Print out that the soldier found a scout but that it was in a tree, and that it ignored it...
 					System.out.println("Found a scout but ignored it... because it was in a tree....");

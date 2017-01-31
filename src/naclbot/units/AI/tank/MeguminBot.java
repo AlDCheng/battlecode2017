@@ -552,7 +552,7 @@ public class MeguminBot extends GlobalVars {
     		}    		
     		// If a move in the last direction was not possible, order the robot to go to original archon location
     		
-    		if (archonLocation.distanceTo(myLocation) > 2){
+    		if (archonLocation.distanceTo(myLocation) > 4){
     			setCommandLocation(archonLocation);
     		}
     		// If there was a valid point to go to...

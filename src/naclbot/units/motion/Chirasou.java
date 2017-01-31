@@ -225,7 +225,7 @@ public class Chirasou extends GlobalVars {
     		
     		if(tree != null){
     			
-    			// SYSTEM CHECK - Draw a red dot on any trees found in this manner....
+    			// SYSTEM CHECK - Draw a RED dot on any trees found in this manner....
     			rc.setIndicatorDot(testLocation, 130, 0, 0);
     			
     			return tree;
@@ -234,8 +234,43 @@ public class Chirasou extends GlobalVars {
     		// If there are no trees in the location to be sweeped......
     		else{
     			
-    			// SYSTEM CHECK - Draw a red dot on any trees found in this manner....
+    			// SYSTEM CHECK - Draw a green dot on any trees not found in this manner....
     			rc.setIndicatorDot(testLocation, 0, 130, 0);    			
+    		}
+    	}
+    	return null;
+    }
+    
+    // Function to see if there are any trees in the general direction of movement of the robot......
+    
+    public static TreeInfo treesInOppositeDirection(MapLocation startingLocation, Direction targetDirection, TreeInfo[] nearbyTrees, float bodyRadius, float strideRadius) throws GameActionException{
+    	    	
+    	Direction opposingDirection = new Direction((float) (targetDirection.radians + Math.PI));
+    	
+    	for (int i = -4; i <= 4; i ++){
+    		
+    		// Get the direction to be sweeped
+    		Direction testDirection = new Direction((float) (opposingDirection.radians + i * Math.PI / 12));
+    		
+    		// Retrieve the location to be sweeped
+    		MapLocation testLocation = startingLocation.add(testDirection, bodyRadius + strideRadius);
+    		
+    		// Get information on any potential tree in the vicinity, if there is one.......    		
+    		TreeInfo tree = rc.senseTreeAtLocation(testLocation);
+    		
+    		if(tree != null){
+    			
+    			// SYSTEM CHECK - Draw a DRAK RED dot on any trees found in this manner....
+    			rc.setIndicatorDot(testLocation, 52, 0, 0);
+    			
+    			return tree;
+    		}
+    		
+    		// If there are no trees in the location to be sweeped......
+    		else{
+    			
+    			// SYSTEM CHECK - Draw a yellow dot on any trees not found in this manner....
+    			rc.setIndicatorDot(testLocation, 204, 204, 0);    			
     		}
     	}
     	return null;
