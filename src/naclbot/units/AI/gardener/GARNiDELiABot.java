@@ -167,6 +167,10 @@ public class GARNiDELiABot extends GlobalVars {
 		
 		boolean voted = false;
 		
+		boolean failedBuild = false;
+		
+		float newScanInt = scanInt;
+		
 		while (true) {
 			try {
 				System.out.println("Clock: " + Clock.getBytecodeNum());
@@ -179,8 +183,7 @@ public class GARNiDELiABot extends GlobalVars {
 				updateTargetTrees();
 				System.out.println("Update Target Trees: " + Clock.getBytecodeNum());
 				
-				setNearbyTreeDots();
-				
+				setNearbyTreeDots();				
 				
 				int rem = rc.getRoundNum();
 				
@@ -351,7 +354,14 @@ public class GARNiDELiABot extends GlobalVars {
                 	// Finds availible spots to build units/plant trees
                 	System.out.println("Before: " + Clock.getBytecodeNum());
                 	
-                	Direction buildDirs[] = ReLife.scanBuildRadius(scanInt, buildDir.opposite().getAngleDegrees(), buildRadius, scanRad);
+                	Direction buildDirs[];
+                	
+                	if(failedBuild) {
+                		buildDirs = ReLife.scanBuildRadius(newScanInt, 0, buildRadius, scanRad);
+                	}
+                	else {
+                		buildDirs = ReLife.scanBuildRadius(scanInt, buildDir.opposite().getAngleDegrees(), buildRadius, scanRad);
+                	}
                 	
                 	System.out.println("After: " + Clock.getBytecodeNum());
                 	
@@ -360,6 +370,16 @@ public class GARNiDELiABot extends GlobalVars {
                 	}
                 	else {
                 		saturated = false;
+                	}
+                	
+                	if((buildDirs[0] == null) && (buildDirs[1] == null)) {
+                		failedBuild = true;
+                		if (scanInt > 1) {
+                			newScanInt = (float)scanInt/2;
+                		}
+                	}
+                	else {
+                		failedBuild = false;
                 	}
                 	
                 	System.out.println("Congestion: " + ReLife.congestion);
@@ -505,7 +525,7 @@ public class GARNiDELiABot extends GlobalVars {
 		                		canMove = false;
 		                	}
 		                	else if (buildDirs[1] != null) {
-		                		buildNextUnit(buildDirs[1], bulletNum, (float)(.8)*(1-emptyDensity));
+		                		buildNextUnit(buildDirs[1], bulletNum, (float)(0.7)*(1-emptyDensity));
 		                	}
                 		}
                 	}
@@ -1015,4 +1035,5 @@ public class GARNiDELiABot extends GlobalVars {
 			rc.setIndicatorDot(loc, 153, 180, 255);
 		}
 	}
+	
 }
